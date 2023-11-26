@@ -84,11 +84,12 @@ class SphericalPatchCovering:
     icosahedral mesh, which implies that each patch has exactly three neighbours.
 
     :arg nref: number of refinements of the icosahedral mesh
-    :arg patch_radius: radius of the patches
     :arg patch_n: number of radial points in each patch
+    :arg patch_radius: radius of the patches. If unspecified this is set to the average
+        distance between neighbouring points in the mesh
     """
 
-    def __init__(self, nref, patch_radius, patch_n):
+    def __init__(self, nref, patch_n, patch_radius=None):
         self.patch_radius = patch_radius
         self.patch_n = patch_n
 
@@ -122,8 +123,20 @@ class SphericalPatchCovering:
             for cell in cells:
                 neighbour_map[cell].update([other for other in cells if other != cell])
         self._neighbours = [list(value) for key, value in sorted(neighbour_map.items())]
+        if patch_radius is None:
+            # Work out edge lengths
+            edge_lengths = []
+            for j, nbs in enumerate(self._neighbours):
+                for k in nbs:
+                    edge_lengths.append(
+                        np.linalg.norm(self._cell_centres[j] - self._cell_centres[k])
+                    )
+            r_theta = np.average(np.asarray(edge_lengths))
+        else:
+            r_theta = patch_radius
+        # construct patches
         self._patches = [
-            SphericalPatch(self._cell_centres[j, :], patch_radius, patch_n)
+            SphericalPatch(self._cell_centres[j, :], r_theta, patch_n)
             for j in range(self._cell_centres.shape[0])
         ]
 
@@ -203,7 +216,7 @@ class SphericalPatchCovering:
         fig.show()
 
 
-sperhical_patch_covering = SphericalPatchCovering(1, 0.1, 4)
+sperhical_patch_covering = SphericalPatchCovering(0, 4)
 print(f"number of patches               = {sperhical_patch_covering.n_patches}")
 print(f"patchsize                       = {sperhical_patch_covering.patch_size}")
 print(f"number of points in all patches = {sperhical_patch_covering.n_points}")
