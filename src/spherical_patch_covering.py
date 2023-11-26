@@ -64,6 +64,11 @@ class SphericalPatch:
             self._points = rot.apply(p)
 
     @property
+    def n_points(self):
+        """Return the number of points"""
+        return len(self._points)
+
+    @property
     def points(self):
         """Return the array of points in the patch
 
@@ -122,6 +127,27 @@ class SphericalPatchCovering:
             for j in range(self._cell_centres.shape[0])
         ]
 
+    @property
+    def n_patches(self):
+        """Return the numner of vertices of the dual grid"""
+        return len(self._patches)
+
+    @property
+    def patch_size(self):
+        """Return the number of points per patch"""
+        return self._patches[0].n_points
+
+    @property
+    def n_points(self):
+        """Return the total number of points in all spherical patches"""
+        return self.n_patches * self.patch_size
+
+    @property
+    def points(self):
+        """return an array of shape (n_patches,n_points_per_patch,3) which
+        contains the points in all patches"""
+        return np.array([patch.points for patch in self._patches])
+
     def visualise(self):
         """Visualise spherical patch covering
 
@@ -178,4 +204,8 @@ class SphericalPatchCovering:
 
 
 sperhical_patch_covering = SphericalPatchCovering(1, 0.1, 4)
+print(f"number of patches               = {sperhical_patch_covering.n_patches}")
+print(f"patchsize                       = {sperhical_patch_covering.patch_size}")
+print(f"number of points in all patches = {sperhical_patch_covering.n_points}")
+print(sperhical_patch_covering.points.shape)
 sperhical_patch_covering.visualise()
