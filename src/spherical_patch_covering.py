@@ -53,11 +53,14 @@ class SphericalPatch:
         north_pole = np.array([0, 0, 1])
         if np.linalg.norm(self._n_normal - north_pole) < 1.0e-14:
             self._points = p
+        elif np.linalg.norm(self._n_normal + north_pole) < 1.0e-14:
+            self._points = p
+            self._points[:, 2] *= -1.0
         else:
-            rot, _ = sp.spatial.transform.Rotation.align_vectors(
-                [self._n_normal],
-                [north_pole],
-            )
+            rotvec = np.cross(north_pole, self._n_normal)
+            rotvec /= np.linalg.norm(rotvec)
+            angle = np.arccos(np.dot(north_pole, self._n_normal))
+            rot = sp.spatial.transform.Rotation.from_rotvec(angle * rotvec)
             self._points = rot.apply(p)
 
     @property
@@ -150,7 +153,7 @@ class SphericalPatchCovering:
                     ),
                 )
         # patches
-        for patch in self._patches:
+        for j, patch in enumerate(self._patches):
             points = patch.points
             fig.add_trace(
                 go.Scatter3d(
@@ -160,10 +163,19 @@ class SphericalPatchCovering:
                     mode="markers",
                     marker_color="red",
                     marker_size=2,
+                )
+            )
+            fig.add_trace(
+                go.Scatter3d(
+                    x=[points[0, 0], vertices[j, 0]],
+                    y=[points[0, 1], vertices[j, 1]],
+                    z=[points[0, 2], vertices[j, 2]],
+                    mode="lines",
+                    line_color="red",
                 ),
             )
         fig.show()
 
 
-sperhical_patch_covering = SphericalPatchCovering(1, 0.2, 4)
+sperhical_patch_covering = SphericalPatchCovering(1, 0.1, 4)
 sperhical_patch_covering.visualise()
