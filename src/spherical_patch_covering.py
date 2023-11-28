@@ -1,8 +1,15 @@
+"""A spherical patch covering consists of circular patches that cover 
+the unit sphere and which are centred at the vertices of the dual mesh
+of a refined icosahedron. Each patch has the same number of points, so that
+the total number of points in the patch covering is 
+n_{patches} x n_{point per patch}
+"""
+
 from collections import defaultdict
 import numpy as np
 import plotly.graph_objects as go
 import scipy as sp
-from firedrake import *
+from firedrake import UnitIcosahedralSphereMesh
 
 
 class SphericalPatch:
@@ -216,9 +223,13 @@ class SphericalPatchCovering:
         fig.show()
 
 
-sperhical_patch_covering = SphericalPatchCovering(0, 4)
-print(f"number of patches               = {sperhical_patch_covering.n_patches}")
-print(f"patchsize                       = {sperhical_patch_covering.patch_size}")
-print(f"number of points in all patches = {sperhical_patch_covering.n_points}")
-print(sperhical_patch_covering.points.shape)
-sperhical_patch_covering.visualise()
+############################################################################
+# M A I N (for testing)
+############################################################################
+if __name__ == "__main__":
+    sperhical_patch_covering = SphericalPatchCovering(0, 4)
+    print(f"number of patches               = {sperhical_patch_covering.n_patches}")
+    print(f"patchsize                       = {sperhical_patch_covering.patch_size}")
+    print(f"number of points in all patches = {sperhical_patch_covering.n_points}")
+    print(sperhical_patch_covering.points.shape)
+    sperhical_patch_covering.visualise()
