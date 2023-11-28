@@ -227,9 +227,9 @@ class SphericalPatchCovering:
 # M A I N (for testing)
 ############################################################################
 if __name__ == "__main__":
-    sperhical_patch_covering = SphericalPatchCovering(0, 4)
-    print(f"number of patches               = {sperhical_patch_covering.n_patches}")
-    print(f"patchsize                       = {sperhical_patch_covering.patch_size}")
-    print(f"number of points in all patches = {sperhical_patch_covering.n_points}")
-    print(sperhical_patch_covering.points.shape)
-    sperhical_patch_covering.visualise()
+    spherical_patch_covering = SphericalPatchCovering(0, 4)
+    print(f"number of patches               = {spherical_patch_covering.n_patches}")
+    print(f"patchsize                       = {spherical_patch_covering.patch_size}")
+    print(f"number of points in all patches = {spherical_patch_covering.n_points}")
+    print(spherical_patch_covering.points.shape)
+    spherical_patch_covering.visualise()
