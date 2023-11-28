@@ -29,7 +29,7 @@ class FunctionToPatchInterpolationLayer(tf.keras.layers.Layer):
     functions to be interpolated and n_{dof} is the number of unknowns per function,
     as defined by the function space. The output has shape
 
-        ([B],n_{func},n_{patches},n_{dof per patch})
+        ([B],n_{patches},n_{func},n_{dof per patch})
 
     where n_{patches} and n_{dof per patch} depend on the SphericalPatchCovering
     """
@@ -116,6 +116,8 @@ class FunctionToPatchInterpolationLayer(tf.keras.layers.Layer):
             ],
             axis=0,
         )
+        # Swap axes
+        Y = tf.transpose(Y, perm=(0, 2, 1, 3))
         # u_interpolated now has shape (B,n_{func},n_{patches},n_{dof per patch})
         if input_dim == 2:
             # remove batch dimension again
