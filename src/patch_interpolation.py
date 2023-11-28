@@ -29,7 +29,7 @@ class FunctionToPatchInterpolationLayer(tf.keras.layers.Layer):
     functions to be interpolated and n_{dof} is the number of unknowns per function,
     as defined by the function space. The output has shape
 
-        ([B],n_{patches},n_{func},n_{dof per patch})
+        ([B],n_{func},n_{patches},n_{dof per patch})
 
     where n_{patches} and n_{dof per patch} depend on the SphericalPatchCovering
     """
