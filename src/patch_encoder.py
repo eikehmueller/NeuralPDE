@@ -15,28 +15,61 @@ class PatchEncoder(tf.keras.layers.Layer):
 
     to obtain tensor of shape
 
-        (*,n_{func},n_{latent})
+        (*,n_{latent}+n_{ancillary})
+
+    here n_{func} = n_{dynamic} + n_{ancillarty is the total number of fields,
+    consisting of both dynamic and ancillary fields. The mapping has a
+    block-structure in the sense that
+
+        [*,:n_dynamic,:] gets mapped to [:n_latent]
+
+    and
+
+        [*,n_dynamic:,:] gets mapped to [n_latent:].
+
     """
 
-    def __init__(self, latent_dim):
+    def __init__(self, n_dynamic, latent_dim, ancillary_dim):
         """Initialise instance
 
-        :arg latent_dim: dimension n_{latent} of latent space"""
+        :arg n_dynamic: number of dynamic fields
+        :arg latent_dim: dimension n_{latent} of latent space
+        :arg ancillary_dim: dimension n_{ancil} of latent ancillary space"""
         super().__init__()
+        self.n_dynamic = n_dynamic
         self.latent_dim = latent_dim
+        self.ancillary_dim = ancillary_dim
 
     def build(self, input_shape):
         """Construct weights
 
         :arg input_shape: shape of the input tensor
         """
-        self.W = self.add_weight(
-            shape=(*input_shape[-2:], self.latent_dim),
+        self.W_dynamic = self.add_weight(
+            shape=(
+                self.n_dynamic,
+                input_shape[-1],
+                self.latent_dim,
+            ),
             initializer="random_normal",
             trainable=True,
         )
-        self.b = self.add_weight(
+        self.b_dynamic = self.add_weight(
             shape=(self.latent_dim,),
+            initializer="zeros",
+            trainable=True,
+        )
+        self.W_ancillary = self.add_weight(
+            shape=(
+                input_shape[-2] - self.n_dynamic,
+                input_shape[-1],
+                self.ancillary_dim,
+            ),
+            initializer="random_normal",
+            trainable=True,
+        )
+        self.b_ancillary = self.add_weight(
+            shape=(self.ancillary_dim,),
             initializer="zeros",
             trainable=True,
         )
@@ -46,7 +79,7 @@ class PatchEncoder(tf.keras.layers.Layer):
 
         Returns a tensor of shape
 
-            ([B],n_{patches},n_{latent})
+            ([B],n_{patches},n_{latent}+n_{ancillary})
 
         where B is the (optional) batch size
 
@@ -54,7 +87,20 @@ class PatchEncoder(tf.keras.layers.Layer):
         """
         input_dim = len(inputs.shape)
         extra_indices = "abcdefgh"[: input_dim - 2]
-        return (
-            tf.einsum(f"{extra_indices}ij,ijk->{extra_indices}k", inputs, self.W)
-            + self.b
+        return tf.concat(
+            [
+                tf.einsum(
+                    f"{extra_indices}ij,ijk->{extra_indices}k",
+                    inputs[..., : self.n_dynamic, :],
+                    self.W_dynamic,
+                )
+                + self.b_dynamic,
+                tf.einsum(
+                    f"{extra_indices}ij,ijk->{extra_indices}k",
+                    inputs[..., self.n_dynamic :, :],
+                    self.W_ancillary,
+                )
+                + self.b_ancillary,
+            ],
+            axis=-1,
         )

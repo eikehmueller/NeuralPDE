@@ -3,7 +3,6 @@ import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 from firedrake import (
-    UnitIcosahedralSphereMesh,
     Function,
     FunctionSpace,
     VertexOnlyMesh,
@@ -13,8 +12,6 @@ from firedrake import (
 
 # NB: need to import tensorflow *after* firedrake ...
 import tensorflow as tf
-
-from spherical_patch_covering import SphericalPatchCovering
 
 
 class FunctionToPatchInterpolationLayer(tf.keras.layers.Layer):
@@ -123,33 +120,3 @@ class FunctionToPatchInterpolationLayer(tf.keras.layers.Layer):
             # remove batch dimension again
             Y = tf.squeeze(Y, axis=0)
         return Y
-
-
-############################################################################
-# M A I N (for testing)
-############################################################################
-
-if __name__ == "__main__":
-    spherical_patch_covering = SphericalPatchCovering(0, 4)
-
-    print(f"number of patches               = {spherical_patch_covering.n_patches}")
-    print(f"patchsize                       = {spherical_patch_covering.patch_size}")
-    print(f"number of points in all patches = {spherical_patch_covering.n_points}")
-
-    mesh = UnitIcosahedralSphereMesh(1)
-    V = FunctionSpace(mesh, "CG", 1)
-
-    layer = FunctionToPatchInterpolationLayer(V, spherical_patch_covering)
-
-    u1 = Function(V)
-    u1.dat.data[2] = 1
-    u2 = Function(V)
-    u2.dat.data[6] = 1
-    x = tf.expand_dims(
-        tf.constant([u1.dat.data, u2.dat.data], dtype=tf.float64), axis=0
-    )
-
-    with tf.GradientTape(persistent=True) as tape:
-        tape.watch(x)
-        y = layer.call(x)
-        print(y.shape)

@@ -11,7 +11,7 @@ class PatchDecoder(tf.keras.layers.Layer):
 
     Apply transformation to tensor of shape
 
-        (*,n_{func},n_{latent})
+        (*,n_{latent})
 
     to obtain tensor of shape
 
@@ -21,7 +21,7 @@ class PatchDecoder(tf.keras.layers.Layer):
     def __init__(self, n_func, patch_size):
         """Initialise instance
 
-        :arg n_func: number of functions
+        :arg n_func: number of functions in output
         :arg patch_size: number of dofs per patch n_{dofs per patch})
         """
         super().__init__()
