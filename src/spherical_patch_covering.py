@@ -168,10 +168,12 @@ class SphericalPatchCovering:
         contains the points in all patches"""
         return np.array([patch.points for patch in self._patches])
 
-    def visualise(self):
+    def visualise(self, data=None):
         """Visualise spherical patch covering
 
         plots the mesh (vertices and edges) and the patch coverings
+
+        :arg data: array of shape (n_patches, patch_size) which is used for coloring
         """
         fig = go.Figure()
         # extract vertices
@@ -183,7 +185,7 @@ class SphericalPatchCovering:
                 y=vertices[:, 1],
                 z=vertices[:, 2],
                 mode="markers",
-                marker_color="blue",
+                marker_color="black",
             ),
         )
         # edges of mesh
@@ -195,7 +197,7 @@ class SphericalPatchCovering:
                         y=[vertices[j, 1], vertices[k, 1]],
                         z=[vertices[j, 2], vertices[k, 2]],
                         mode="lines",
-                        line_color="blue",
+                        line_color="black",
                     ),
                 )
         # patches
@@ -203,23 +205,28 @@ class SphericalPatchCovering:
             points = patch.points
             fig.add_trace(
                 go.Scatter3d(
-                    x=points[:, 0],
-                    y=points[:, 1],
-                    z=points[:, 2],
-                    mode="markers",
-                    marker_color="red",
-                    marker_size=2,
-                )
-            )
-            fig.add_trace(
-                go.Scatter3d(
                     x=[points[0, 0], vertices[j, 0]],
                     y=[points[0, 1], vertices[j, 1]],
                     z=[points[0, 2], vertices[j, 2]],
                     mode="lines",
-                    line_color="red",
+                    line_color="black",
                 ),
             )
+        points = self.points.reshape([-1, 3])
+        if data is None:
+            color = "red"
+        else:
+            color = np.asarray(data).flatten()
+        fig.add_trace(
+            go.Scatter3d(
+                x=points[:, 0],
+                y=points[:, 1],
+                z=points[:, 2],
+                mode="markers",
+                marker=dict(color=color),
+                marker_size=2,
+            )
+        )
         fig.show()
 
 
@@ -227,7 +234,7 @@ class SphericalPatchCovering:
 # M A I N (for testing)
 ############################################################################
 if __name__ == "__main__":
-    spherical_patch_covering = SphericalPatchCovering(0, 4)
+    spherical_patch_covering = SphericalPatchCovering(1, 4)
     print(f"number of patches               = {spherical_patch_covering.n_patches}")
     print(f"patchsize                       = {spherical_patch_covering.patch_size}")
     print(f"number of points in all patches = {spherical_patch_covering.n_points}")
