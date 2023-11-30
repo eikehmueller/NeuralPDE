@@ -11,21 +11,21 @@ class PatchEncoder(tf.keras.layers.Layer):
 
     Apply transformation to tensor of shape
 
-        (*,n_{func},n_{dof per patch})
+        (B,n_{func},n_{dof per patch})
 
     to obtain tensor of shape
 
-        (*,n_{latent}+n_{ancillary})
+        (B,d_{latent}+d_{ancillary})
 
-    here n_{func} = n_{dynamic} + n_{ancillarty is the total number of fields,
+    here n_{func} = n_{dynamic} + n_{ancillary} is the total number of fields,
     consisting of both dynamic and ancillary fields. The mapping has a
     block-structure in the sense that
 
-        [*,:n_dynamic,:] gets mapped to [:n_latent]
+        [*,:n_dynamic,:] gets mapped to [*,:n_latent]
 
     and
 
-        [*,n_dynamic:,:] gets mapped to [n_latent:].
+        [*,n_dynamic:,:] gets mapped to [*,n_latent:].
 
     """
 
@@ -79,24 +79,22 @@ class PatchEncoder(tf.keras.layers.Layer):
 
         Returns a tensor of shape
 
-            ([B],n_{patches},n_{latent}+n_{ancillary})
+            (B,n_{patches},d_{latent}+d_{ancillary})
 
-        where B is the (optional) batch size
+        where B is the batch size
 
-        :arg inputs: a tensor of shape ([B],n_{patches},n_{func},n_{points per patch})
+        :arg inputs: a tensor of shape (B,n_{patches},n_{func},n_{points per patch})
         """
-        input_dim = len(inputs.shape)
-        extra_indices = "abcdefgh"[: input_dim - 2]
         return tf.concat(
             [
                 tf.einsum(
-                    f"{extra_indices}ij,ijk->{extra_indices}k",
+                    f"bmij,ijk->bmk",
                     inputs[..., : self.n_dynamic, :],
                     self.W_dynamic,
                 )
                 + self.b_dynamic,
                 tf.einsum(
-                    f"{extra_indices}ij,ijk->{extra_indices}k",
+                    f"bmij,ijk->bmk",
                     inputs[..., self.n_dynamic :, :],
                     self.W_ancillary,
                 )

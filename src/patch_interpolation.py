@@ -1,7 +1,3 @@
-import os
-
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
 from firedrake import (
     Function,
     FunctionSpace,
@@ -20,13 +16,13 @@ class FunctionToPatchInterpolationLayer(tf.keras.layers.Layer):
 
     The input X has shape
 
-        ([B],n_{func},n_{dof})
+        (B,n_{func},n_{dof})
 
-    where the batch-dimension of size B is optional. n_{func} is the number of
+    where the batch-dimension is of size B. n_{func} is the number of
     functions to be interpolated and n_{dof} is the number of unknowns per function,
     as defined by the function space. The output has shape
 
-        ([B],n_{patches},n_{func},n_{dof per patch})
+        (B,n_{patches},n_{func},n_{dof per patch})
 
     where n_{patches} and n_{dof per patch} depend on the SphericalPatchCovering
     """
@@ -93,16 +89,9 @@ class FunctionToPatchInterpolationLayer(tf.keras.layers.Layer):
     def call(self, inputs):
         """Call layer for a given input tensor
 
-        :arg inputs: tensor of shape ([B],n_{func},n_{dof})
+        :arg inputs: tensor of shape (B,n_{func},n_{dof})
         """
-        input_dim = len(inputs.shape)
-        if input_dim == 2:
-            # add batch dimension if this is not already present
-            X = tf.expand_dims(inputs, axis=0)
-        elif input_dim == 3:
-            X = inputs
-        else:
-            print(f"invalid input shape : {input_dim}")
+        X = inputs
         Y = tf.stack(
             [
                 tf.stack(v, axis=0)
@@ -116,7 +105,4 @@ class FunctionToPatchInterpolationLayer(tf.keras.layers.Layer):
         # Swap axes
         Y = tf.transpose(Y, perm=(0, 2, 1, 3))
         # u_interpolated now has shape (B,n_{func},n_{patches},n_{dof per patch})
-        if input_dim == 2:
-            # remove batch dimension again
-            Y = tf.squeeze(Y, axis=0)
         return Y

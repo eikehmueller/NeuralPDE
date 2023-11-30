@@ -11,11 +11,11 @@ class PatchDecoder(tf.keras.layers.Layer):
 
     Apply transformation to tensor of shape
 
-        (*,n_{latent})
+        (B,n_{patches},d_{latent})
 
     to obtain tensor of shape
 
-        (*,n_{func},n_{dof per patch})
+        (B,n_{patches},n_{func},n_{dof per patch})
     """
 
     def __init__(self, n_func, patch_size):
@@ -49,15 +49,11 @@ class PatchDecoder(tf.keras.layers.Layer):
 
         Returns a tensor of shape
 
-            ([B],n_{patches},n_{func},n_{points per patch})
+            (B,n_{patches},n_{func},n_{points per patch})
 
-        where B is the (optional) batch size
+        where B is the batch size.
 
-        :arg inputs: a tensor of shape ([B],n_{patches},n_{latent})
+        :arg inputs: a tensor of shape (B,n_{patches},d_{latent})
         """
         input_dim = len(inputs.shape)
-        extra_indices = "abcdefgh"[: input_dim - 1]
-        return (
-            tf.einsum(f"{extra_indices}k,kij->{extra_indices}ij", inputs, self.W)
-            + self.b
-        )
+        return tf.einsum(f"bmk,kij->bmij", inputs, self.W) + self.b
