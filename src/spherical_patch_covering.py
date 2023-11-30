@@ -168,6 +168,11 @@ class SphericalPatchCovering:
         contains the points in all patches"""
         return np.array([patch.points for patch in self._patches])
 
+    @property
+    def neighbour_list(self):
+        """return neighbour list"""
+        return list(self._neighbours)
+
     def visualise(self, data=None):
         """Visualise spherical patch covering
 
