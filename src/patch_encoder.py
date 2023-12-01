@@ -11,68 +11,44 @@ class PatchEncoder(tf.keras.layers.Layer):
 
     Apply transformation to tensor of shape
 
-        (B,n_{func},n_{dof per patch})
+        (B,n_{patches},n_{func},n_{dof per patch})
 
     to obtain tensor of shape
 
-        (B,d_{latent}+d_{ancillary})
+        (B,n_{patches},d_{latent}+d_{ancillary})
 
     here n_{func} = n_{dynamic} + n_{ancillary} is the total number of fields,
-    consisting of both dynamic and ancillary fields. The mapping has a
-    block-structure in the sense that
+    consisting of both dynamic and ancillary fields.
 
-        [*,:n_dynamic,:] gets mapped to [*,:n_latent]
+    The mapping has block-structure in the sense that
+
+        [b,i,:,:] gets mapped to [b,i,:d_{latent}]
+
+    by applying dynamic_encoder_model for each index pair (b,i)
 
     and
 
-        [*,n_dynamic:,:] gets mapped to [*,n_latent:].
+        [b,i,n_{dynamic}:,:] gets mapped to [p,i,d_{latent}:].
 
+    by applying ancillary_encoder_model for each index pair (b,i).
+
+    This means that the latent variables in the processor will depend both on the
+    dynamic- and on the ancillary fields on the patches and the ancillary variables in the
+    processor will only depend on the ancillary fields on the patches.
     """
 
-    def __init__(self, n_dynamic, latent_dim, ancillary_dim):
+    def __init__(self, dynamic_encoder_model, ancillary_encoder_model):
         """Initialise instance
 
-        :arg n_dynamic: number of dynamic fields
-        :arg latent_dim: dimension n_{latent} of latent space
-        :arg ancillary_dim: dimension n_{ancil} of latent ancillary space"""
-        super().__init__()
-        self.n_dynamic = n_dynamic
-        self.latent_dim = latent_dim
-        self.ancillary_dim = ancillary_dim
-
-    def build(self, input_shape):
-        """Construct weights
-
-        :arg input_shape: shape of the input tensor
+        :arg dynamic_encoder model: maps tensors of shape (n_{dynamic}+n_{ancillary},patch_size) to
+            tensors of shape (d_{latent},)
+        :arg ancillary_encoder_model: maps tensors of shape (n_{ancillary},patch_size) to
+            tensors of shape (d_{ancillary},)
         """
-        self.W_dynamic = self.add_weight(
-            shape=(
-                self.n_dynamic,
-                input_shape[-1],
-                self.latent_dim,
-            ),
-            initializer="random_normal",
-            trainable=True,
-        )
-        self.b_dynamic = self.add_weight(
-            shape=(self.latent_dim,),
-            initializer="zeros",
-            trainable=True,
-        )
-        self.W_ancillary = self.add_weight(
-            shape=(
-                input_shape[-2] - self.n_dynamic,
-                input_shape[-1],
-                self.ancillary_dim,
-            ),
-            initializer="random_normal",
-            trainable=True,
-        )
-        self.b_ancillary = self.add_weight(
-            shape=(self.ancillary_dim,),
-            initializer="zeros",
-            trainable=True,
-        )
+        super().__init__()
+        self._dynamic_encoder_model = dynamic_encoder_model
+        self._ancillary_encoder_model = ancillary_encoder_model
+        self._n_latent = self._ancillary_encoder_model.layers[0].input_shape[-2]
 
     def call(self, inputs):
         """Call layer and apply linear transformation
@@ -87,18 +63,20 @@ class PatchEncoder(tf.keras.layers.Layer):
         """
         return tf.concat(
             [
-                tf.einsum(
-                    f"bmij,ijk->bmk",
-                    inputs[..., : self.n_dynamic, :],
-                    self.W_dynamic,
-                )
-                + self.b_dynamic,
-                tf.einsum(
-                    f"bmij,ijk->bmk",
-                    inputs[..., self.n_dynamic :, :],
-                    self.W_ancillary,
-                )
-                + self.b_ancillary,
+                tf.stack(
+                    [
+                        self._dynamic_encoder_model(patch)
+                        for patch in tf.unstack(inputs)
+                    ],
+                    axis=0,
+                ),
+                tf.stack(
+                    [
+                        self._ancillary_encoder_model(patch[:, -self._n_latent :])
+                        for patch in tf.unstack(inputs)
+                    ],
+                    axis=0,
+                ),
             ],
             axis=-1,
         )

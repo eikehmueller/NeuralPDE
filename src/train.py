@@ -48,8 +48,43 @@ if __name__ == "__main__":
         axis=0,
     )
 
-    encoder = PatchEncoder(n_dynamic=3, latent_dim=17, ancillary_dim=6)
-    decoder = PatchDecoder(n_func=2, patch_size=spherical_patch_covering.patch_size)
+    n_dynamic = 1
+    n_ancillary = 3
+    latent_dim = 17
+    ancillary_dim = 6
+    n_output = 2
+
+    # encoder models
+    dynamic_encoder_model = tf.keras.Sequential(
+        [
+            tf.keras.Input(
+                shape=(n_dynamic + n_ancillary, spherical_patch_covering.patch_size)
+            ),
+            tf.keras.layers.Flatten(),
+            tf.keras.layers.Dense(units=latent_dim),
+        ]
+    )
+    ancillary_encoder_model = tf.keras.Sequential(
+        [
+            tf.keras.Input(shape=(n_ancillary, spherical_patch_covering.patch_size)),
+            tf.keras.layers.Flatten(),
+            tf.keras.layers.Dense(units=ancillary_dim),
+        ]
+    )
+
+    # decoder model
+    decoder_model = tf.keras.Sequential(
+        [
+            tf.keras.Input(shape=(latent_dim + ancillary_dim,)),
+            tf.keras.layers.Dense(units=n_output * spherical_patch_covering.patch_size),
+            tf.keras.layers.Reshape(
+                target_shape=(n_output, spherical_patch_covering.patch_size)
+            ),
+        ]
+    )
+
+    encoder = PatchEncoder(dynamic_encoder_model, ancillary_encoder_model)
+    decoder = PatchDecoder(decoder_model)
 
     with tf.GradientTape(persistent=True) as tape:
         tape.watch(input)

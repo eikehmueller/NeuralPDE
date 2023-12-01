@@ -18,31 +18,13 @@ class PatchDecoder(tf.keras.layers.Layer):
         (B,n_{patches},n_{func},n_{dof per patch})
     """
 
-    def __init__(self, n_func, patch_size):
+    def __init__(self, decoder_model):
         """Initialise instance
 
-        :arg n_func: number of functions in output
-        :arg patch_size: number of dofs per patch n_{dofs per patch})
+        :arg decoder_model: model used for decoding
         """
         super().__init__()
-        self.n_func = n_func
-        self.patch_size = patch_size
-
-    def build(self, input_shape):
-        """Construct weights
-
-        :arg input_shape: shape of the input tensor
-        """
-        self.W = self.add_weight(
-            shape=(input_shape[-1], self.n_func, self.patch_size),
-            initializer="random_normal",
-            trainable=True,
-        )
-        self.b = self.add_weight(
-            shape=(self.n_func, self.patch_size),
-            initializer="zeros",
-            trainable=True,
-        )
+        self._decoder_model = decoder_model
 
     def call(self, inputs):
         """Call layer and apply linear transformation
@@ -53,7 +35,9 @@ class PatchDecoder(tf.keras.layers.Layer):
 
         where B is the batch size.
 
-        :arg inputs: a tensor of shape (B,n_{patches},d_{latent})
+        :arg inputs: a tensor of shape (B,n_{patches},d_{latent}+{d_ancillary})
         """
-        input_dim = len(inputs.shape)
-        return tf.einsum(f"bmk,kij->bmij", inputs, self.W) + self.b
+        return tf.stack(
+            [self._decoder_model(patch) for patch in tf.unstack(inputs)],
+            axis=0,
+        )
