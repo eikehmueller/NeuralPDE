@@ -13,7 +13,10 @@ from firedrake import (
 import tensorflow as tf
 
 from spherical_patch_covering import SphericalPatchCovering
-from patch_interpolation import FunctionToPatchInterpolationLayer
+from patch_interpolation import (
+    FunctionToPatchInterpolationLayer,
+    PatchToFunctionInterpolationLayer,
+)
 from patch_encoder import PatchEncoder
 from patch_decoder import PatchDecoder
 from neural_solver import NeuralSolver
@@ -33,7 +36,12 @@ if __name__ == "__main__":
     mesh = UnitIcosahedralSphereMesh(1)
     V = FunctionSpace(mesh, "CG", 1)
 
-    layer = FunctionToPatchInterpolationLayer(V, spherical_patch_covering)
+    function2patch_layer = FunctionToPatchInterpolationLayer(
+        V, spherical_patch_covering
+    )
+    patch2function_layer = PatchToFunctionInterpolationLayer(
+        spherical_patch_covering, V
+    )
 
     u = Function(V)
     u.dat.data[2] = 1
@@ -87,15 +95,6 @@ if __name__ == "__main__":
     encoder = PatchEncoder(dynamic_encoder_model, ancillary_encoder_model)
     decoder = PatchDecoder(decoder_model)
 
-    with tf.GradientTape(persistent=True) as tape:
-        tape.watch(input)
-        interp = layer(input)
-        print(interp.shape)
-        latent = encoder(interp)
-        print("latent shape = ", latent.shape)
-        decoded = decoder(latent)
-        print(decoded.shape)
-
     # interaction model
     interaction_model = tf.keras.Sequential(
         [
@@ -112,4 +111,17 @@ if __name__ == "__main__":
         nsteps=4,
         stepsize=0.1,
     )
-    processor(latent)
+
+    with tf.GradientTape(persistent=True) as tape:
+        tape.watch(input)
+        print("input.shape   = ", input.shape)
+        interp = function2patch_layer(input)
+        print("interp.shape  = ", interp.shape)
+        latent_in = encoder(interp)
+        print("latent_in     = ", latent_in.shape)
+        latent_out = processor(latent_in)
+        print("latent_out    = ", latent_out.shape)
+        decoded = decoder(latent_out)
+        print("decoded.shape = ", decoded.shape)
+        output = patch2function_layer(decoded)
+        print("output.shape  = ", output.shape)
