@@ -91,18 +91,16 @@ class FunctionToPatchInterpolationLayer(tf.keras.layers.Layer):
 
         :arg inputs: tensor of shape (B,n_{func},n_{dof})
         """
-        X = inputs
-        Y = tf.stack(
-            [
-                tf.stack(v, axis=0)
-                for v in [
-                    [self._interpolate(u) for u in tf.unstack(batch)]
-                    for batch in tf.unstack(X)
-                ]
-            ],
-            axis=0,
+        return tf.transpose(
+            tf.stack(
+                [
+                    tf.stack(v, axis=0)
+                    for v in [
+                        [self._interpolate(u) for u in tf.unstack(patch)]
+                        for patch in tf.unstack(inputs)
+                    ]
+                ],
+                axis=0,
+            ),
+            perm=(0, 2, 1, 3),
         )
-        # Swap axes
-        Y = tf.transpose(Y, perm=(0, 2, 1, 3))
-        # u_interpolated now has shape (B,n_{func},n_{patches},n_{dof per patch})
-        return Y
