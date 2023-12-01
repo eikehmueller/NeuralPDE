@@ -21,9 +21,9 @@ class NeuralSolver(tf.keras.layers.Layer):
         Phi_theta([Y_{i,j},a_{i,j}]) = Phi_theta(Y_{i_0,j'},Y_{i_1,j'},Y_{i_2,j'};
                                                  a_{i_0,j'},a_{i_1,j},a_{i_2,j'})
 
-    where {i_0,i_1,i_2} is the set of vertices which contains the vertex i itself and its two neighbours
-    (note that the input shape of Phi_theta is (3,d_{latent}+d_{ancillary}) and the output shape is
-    (d_{latent},)).
+    where {i_0,i_1,i_2} is the set of vertices which contains the vertex i itself and its two
+    neighbours. Note that the input shape of Phi_theta is (3,d_{latent}+d_{ancillary}) and the
+    output shape is (d_{latent},).
 
     Then the update implemented here is the forward-Euler model
 
