@@ -16,6 +16,7 @@ from spherical_patch_covering import SphericalPatchCovering
 from patch_interpolation import FunctionToPatchInterpolationLayer
 from patch_encoder import PatchEncoder
 from patch_decoder import PatchDecoder
+from neural_solver import NeuralSolver
 
 
 ############################################################################
@@ -91,6 +92,24 @@ if __name__ == "__main__":
         interp = layer(input)
         print(interp.shape)
         latent = encoder(interp)
-        print(latent.shape)
+        print("latent shape = ", latent.shape)
         decoded = decoder(latent)
         print(decoded.shape)
+
+    # interaction model
+    interaction_model = tf.keras.Sequential(
+        [
+            tf.keras.Input(shape=(3, latent_dim + ancillary_dim)),
+            tf.keras.layers.Flatten(),
+            tf.keras.layers.Dense(units=latent_dim),
+        ]
+    )
+
+    processor = NeuralSolver(
+        spherical_patch_covering,
+        interaction_model=interaction_model,
+        latent_dim=latent_dim,
+        nsteps=4,
+        stepsize=0.1,
+    )
+    processor(latent)
