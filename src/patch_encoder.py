@@ -30,7 +30,7 @@ class PatchEncoder(tf.keras.layers.Layer):
 
         [b,i,n_{dynamic}:,:] gets mapped to [p,i,d_{latent}:].
 
-    by applying ancillary_encoder_model for each index pair (b,i).
+    by applying the ancillary_encoder_model for each index pair (b,i).
 
     This means that the latent variables in the processor will depend both on the
     dynamic- and on the ancillary fields on the patches and the ancillary variables in the
@@ -40,18 +40,19 @@ class PatchEncoder(tf.keras.layers.Layer):
     def __init__(self, dynamic_encoder_model, ancillary_encoder_model):
         """Initialise instance
 
-        :arg dynamic_encoder model: maps tensors of shape (n_{dynamic}+n_{ancillary},patch_size) to
-            tensors of shape (d_{latent},)
-        :arg ancillary_encoder_model: maps tensors of shape (n_{ancillary},patch_size) to
-            tensors of shape (d_{ancillary},)
+        :arg dynamic_encoder model: model that maps tensors of shape
+            (n_{dynamic}+n_{ancillary},patch_size) to tensors of shape (d_{latent},)
+        :arg ancillary_encoder_model: model that maps tensors of shape
+            (n_{ancillary},patch_size) to tensors of shape (d_{ancillary},)
         """
         super().__init__()
         self._dynamic_encoder_model = dynamic_encoder_model
         self._ancillary_encoder_model = ancillary_encoder_model
+        # extract number of latent fields
         self._n_latent = self._ancillary_encoder_model.layers[0].input_shape[-2]
 
     def call(self, inputs):
-        """Call layer and apply linear transformation
+        """Call layer and apply model transformations
 
         Returns a tensor of shape
 
