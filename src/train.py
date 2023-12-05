@@ -12,14 +12,14 @@ from firedrake import (
 # NB: need to import tensorflow *after* firedrake ...
 import tensorflow as tf
 
-from spherical_patch_covering import SphericalPatchCovering
-from patch_interpolation import (
+from neural_pde.spherical_patch_covering import SphericalPatchCovering
+from neural_pde.patch_interpolation import (
     FunctionToPatchInterpolationLayer,
     PatchToFunctionInterpolationLayer,
 )
-from patch_encoder import PatchEncoder
-from patch_decoder import PatchDecoder
-from neural_solver import NeuralSolver
+from neural_pde.patch_encoder import PatchEncoder
+from neural_pde.patch_decoder import PatchDecoder
+from neural_pde.neural_solver import NeuralSolver
 
 
 ############################################################################
