@@ -60,14 +60,15 @@ class FunctionToPatchInterpolationLayer(tf.keras.layers.Layer):
         :arg x: input vector x of size n_{dof}
         """
         # Copy inputs to function
-        with self._u.dat.vec as u_vec:
-            u_vec[:] = x[:]
+        if not tf.is_symbolic_tensor(x):
+            with self._u.dat.vec as u_vec:
+                u_vec[:] = x[:]
         # interpolate
         self._interpolator.interpolate(self._u, output=self._cofunction_v)
         # copy back to tensor
         with self._cofunction_v.dat.vec_ro as v_vec:
             y = tf.reshape(
-                tf.convert_to_tensor(v_vec[:]),
+                tf.convert_to_tensor(v_vec[:], dtype=tf.float32),
                 [self._spherical_patch_covering.n_patches, -1],
             )
 
@@ -84,7 +85,7 @@ class FunctionToPatchInterpolationLayer(tf.keras.layers.Layer):
                 transpose=True,
             )
             with self._v.dat.vec_ro as v_vec:
-                grad_y = tf.convert_to_tensor(v_vec[:])
+                grad_y = tf.convert_to_tensor(v_vec[:], dtype=tf.float32)
             return grad_y
 
         return y, grad
@@ -158,30 +159,32 @@ class PatchToFunctionInterpolationLayer(tf.keras.layers.Layer):
         :arg x: input vector x of shape (n_{patches},n_{points per patch})
         """
         # Copy inputs to function
-        with self._cofunction_u.dat.vec as u_vec:
-            u_vec[:] = tf.reshape(x, [-1])[:]
+        if not tf.is_symbolic_tensor(x):
+            with self._cofunction_u.dat.vec as u_vec:
+                u_vec[:] = tf.reshape(x, [-1])[:]
         # interpolate
         self._interpolator.interpolate(
             self._cofunction_u, output=self._v, transpose=True
         )
         # copy back to tensor
         with self._v.dat.vec_ro as v_vec:
-            y = tf.convert_to_tensor(v_vec[:])
+            y = tf.convert_to_tensor(v_vec[:], dtype=tf.float32)
 
         def grad(upstream):
             """Evaluate gradient
 
             :arg upstream: upstream gradient
             """
-            with self._u.dat.vec as u_vec:
-                u_vec[:] = upstream[:]
+            if not tf.is_symbolic_tensor(upstream):
+                with self._u.dat.vec as u_vec:
+                    u_vec[:] = upstream[:]
             self._interpolator.interpolate(
                 self._u,
-                output=self._confunction_v,
+                output=self._cofunction_v,
             )
             with self._cofunction_v.dat.vec_ro as v_vec:
                 grad_y = tf.reshape(
-                    tf.convert_to_tensor(v_vec[:]),
+                    tf.convert_to_tensor(v_vec[:], dtype=tf.float32),
                     [self._spherical_patch_covering.n_patches, -1],
                 )
             return grad_y
