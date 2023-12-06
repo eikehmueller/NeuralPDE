@@ -71,7 +71,12 @@ class NeuralSolver(tf.keras.layers.Layer):
         Y = inputs
 
         # expand indices
-        indices = tf.expand_dims(tf.constant(self._gather_indices), 0)
+        batch_size = inputs.shape[0]
+        indices = tf.repeat(
+            tf.expand_dims(tf.constant(self._gather_indices), axis=0),
+            repeats=batch_size,
+            axis=0,
+        )
 
         # work out paddings for adding zeros in the ancillary dimensions
         paddings = np.zeros((3, 2))
