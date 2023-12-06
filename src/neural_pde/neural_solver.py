@@ -80,14 +80,16 @@ class NeuralSolver(tf.keras.layers.Layer):
 
         for _ in range(self.nsteps):
             # ---- stage 1 ---- gather to tensor Z of shape
-            #                   ([B],n_patch,3,d_{latent}+d_{ancillary})
+            #                   (B,n_patch,3,d_{latent}+d_{ancillary})
+            print("Y.shape = ", Y.shape)
+            print("indices = ", indices)
             Z = tf.gather_nd(indices=indices, params=Y, batch_dims=1)
 
             # ---- stage 2 ---- apply interaction model to obtain tensor of shape
-            #                   ([B],n_patch,d_{dynamic})
+            #                   (B,n_patch,d_{dynamic})
             fZ = tf.stack([self.interaction_model(z) for z in tf.unstack(Z)])
             # ---- stage 3 ---- pad with zeros in last dimension to obtain a tensor dY of shape
-            #                   ([B],n_patch,d_{dynamic}+d_{ancillary})
+            #                   (B,n_patch,d_{dynamic}+d_{ancillary})
             dY = tf.pad(fZ, paddings=paddings, mode="CONSTANT", constant_values=0)
 
             # ---- stage 4 ---- update Y = Y + dt*dY
