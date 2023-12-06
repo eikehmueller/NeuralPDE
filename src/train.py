@@ -20,6 +20,7 @@ from neural_pde.patch_interpolation import (
 from neural_pde.patch_encoder import PatchEncoder
 from neural_pde.patch_decoder import PatchDecoder
 from neural_pde.neural_solver import NeuralSolver
+from neural_pde.data_generator import AdvectionDataGenerator
 
 
 ############################################################################
@@ -27,6 +28,7 @@ from neural_pde.neural_solver import NeuralSolver
 ############################################################################
 
 if __name__ == "__main__":
+    # construct spherical patch covering
     spherical_patch_covering = SphericalPatchCovering(0, 4)
 
     print(f"number of patches               = {spherical_patch_covering.n_patches}")
@@ -36,34 +38,19 @@ if __name__ == "__main__":
     mesh = UnitIcosahedralSphereMesh(1)
     V = FunctionSpace(mesh, "CG", 1)
 
-    function2patch_layer = FunctionToPatchInterpolationLayer(
-        V, spherical_patch_covering
-    )
-    patch2function_layer = PatchToFunctionInterpolationLayer(
-        spherical_patch_covering, V
-    )
-
-    u = Function(V)
-    u.dat.data[2] = 1
-    x, y, z = SpatialCoordinate(mesh)
-
-    u_x = Function(V).interpolate(x)
-    u_y = Function(V).interpolate(y)
-    u_z = Function(V).interpolate(z)
-    input = tf.expand_dims(
-        tf.constant(
-            [u.dat.data, u_x.dat.data, u_y.dat.data, u_z.dat.data], dtype=tf.float32
-        ),
-        axis=0,
-    )
-
+    # number of dynamic fields: scalar tracer
     n_dynamic = 1
+    # number of ancillary fields: x-, y- and z-coordinates
     n_ancillary = 3
+    # dimension of latent space
     latent_dim = 17
+    # dimension of ancillary space
     ancillary_dim = 6
-    n_output = 2
+    # number of output fields: scalar tracer
+    n_output = 1
 
     # encoder models
+    # dynamic encoder model: map all fields to the latent space
     dynamic_encoder_model = tf.keras.Sequential(
         [
             tf.keras.Input(
@@ -73,6 +60,7 @@ if __name__ == "__main__":
             tf.keras.layers.Dense(units=latent_dim),
         ]
     )
+    # ancillary encoder model: map ancillary fields to ancillary space
     ancillary_encoder_model = tf.keras.Sequential(
         [
             tf.keras.Input(shape=(n_ancillary, spherical_patch_covering.patch_size)),
@@ -81,7 +69,7 @@ if __name__ == "__main__":
         ]
     )
 
-    # decoder model
+    # decoder model: map from latent and ancillary space to output fields
     decoder_model = tf.keras.Sequential(
         [
             tf.keras.Input(shape=(latent_dim + ancillary_dim,)),
@@ -92,9 +80,6 @@ if __name__ == "__main__":
         ]
     )
 
-    encoder = PatchEncoder(dynamic_encoder_model, ancillary_encoder_model)
-    decoder = PatchDecoder(decoder_model)
-
     # interaction model
     interaction_model = tf.keras.Sequential(
         [
@@ -104,24 +89,32 @@ if __name__ == "__main__":
         ]
     )
 
-    processor = NeuralSolver(
-        spherical_patch_covering,
-        interaction_model=interaction_model,
-        latent_dim=latent_dim,
-        nsteps=4,
-        stepsize=0.1,
+    # put everything together into one model that maps from the input to targets
+    model = tf.keras.Sequential(
+        [
+            FunctionToPatchInterpolationLayer(V, spherical_patch_covering),
+            PatchEncoder(dynamic_encoder_model, ancillary_encoder_model),
+            NeuralSolver(
+                spherical_patch_covering,
+                interaction_model=interaction_model,
+                latent_dim=latent_dim,
+                nsteps=4,
+                stepsize=0.1,
+            ),
+            PatchDecoder(decoder_model),
+            PatchToFunctionInterpolationLayer(spherical_patch_covering, V),
+        ]
     )
 
-    with tf.GradientTape(persistent=True) as tape:
-        tape.watch(input)
-        print("input.shape   = ", input.shape)
-        interp = function2patch_layer(input)
-        print("interp.shape  = ", interp.shape)
-        latent_in = encoder(interp)
-        print("latent_in     = ", latent_in.shape)
-        latent_out = processor(latent_in)
-        print("latent_out    = ", latent_out.shape)
-        decoded = decoder(latent_out)
-        print("decoded.shape = ", decoded.shape)
-        output = patch2function_layer(decoded)
-        print("output.shape  = ", output.shape)
+    model.compile(optimizer="adam", loss="mse", metrics=[])
+
+    generator = AdvectionDataGenerator(V, 1.0)
+    batch_size = 8
+    dataset = (
+        tf.data.Dataset.from_generator(
+            generator, output_signature=generator.output_signature
+        )
+        .take(64)
+        .batch(batch_size, drop_remainder=True)
+    )
+    model.fit(dataset, epochs=10)
