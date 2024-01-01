@@ -1,8 +1,7 @@
-import os
-
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
+import torch
 import numpy as np
+from torch.utils.data import Dataset, DataLoader
+
 import itertools
 
 from abc import ABC, abstractmethod
@@ -15,24 +14,23 @@ from firedrake import (
     SpatialCoordinate,
 )
 
-# NB: need to import tensorflow *after* firedrake ...
-import tensorflow as tf
 
-
-class DataGenerator(ABC):
+class SphericalFunctionSpaceDataset(ABC, Dataset):
     """Abstract base class for data generation on a function space
+    defined on a spherical mesh
 
     yields input,target pairs (X,y) where the input X is a tensor
     of shape (n_func, n_dof) and the target y is a tensor
     of shape (n_func_target,n_dof).
     """
 
-    def __init__(self, fs):
+    def __init__(self, fs, nsamples):
         """Initialise new instance
 
         :arg fs: function space
         """
         self._fs = fs
+        self._nsamples = nsamples
 
     @property
     def n_dof(self):
@@ -49,22 +47,21 @@ class DataGenerator(ABC):
         """Number of functions in the target"""
         return self._n_func_target
 
-    @property
-    def output_signature(self):
-        """Return output signature"""
-        return (
-            tf.TensorSpec(shape=(self.n_func_in, self.n_dof), dtype=tf.float32),
-            tf.TensorSpec(shape=(self.n_func_target, self.n_dof), dtype=tf.float32),
-        )
-
     @abstractmethod
-    def __call__(self):
-        """Return a single sample (X,y)"""
+    def __getitem__(self, idx):
+        """Return a single sample (X,y)
+
+        :arg idx: index of sample
+        """
         pass
 
+    def __len__(self):
+        """Return numnber of samples"""
+        return self._nsamples
 
-class AdvectionDataGenerator(DataGenerator):
-    """Data generator for advection
+
+class AdvectionDataset(SphericalFunctionSpaceDataset):
+    """Data set for advection
 
     The input conists of the function fields (u,x,y,z) which represent a
     scalar function u and the three coordinate fields. The output is
@@ -72,14 +69,14 @@ class AdvectionDataGenerator(DataGenerator):
 
     """
 
-    def __init__(self, fs, phi, degree=4):
+    def __init__(self, fs, nsamples, phi, degree=4):
         """Initialise new instance
 
         :arg fs: function space
         :arg phi: rotation angle phi
         :arg degree: polynomial degree used for generating random fields
         """
-        super().__init__(fs)
+        super().__init__(fs, nsamples)
         mesh = self._fs.mesh()
         x, y, z = SpatialCoordinate(mesh)
         self._u_x = Function(self._fs).interpolate(x)
@@ -94,9 +91,9 @@ class AdvectionDataGenerator(DataGenerator):
         self._degree = degree
         self._rng = np.random.default_rng(12345)
 
-    def __call__(self):
-        """Return a single sample (X,y)"""
-        while True:
+        # generate data
+        self._data = []
+        for _ in range(self._nsamples):
             x, y, z = SpatialCoordinate(self._fs.mesh())
             expr_in = 0
             expr_target = 0
@@ -112,23 +109,34 @@ class AdvectionDataGenerator(DataGenerator):
                     * z**jz
                 )
             self._u.project(expr_in)
-            X = tf.constant(
-                [
-                    self._u.dat.data,
-                    self._u_x.dat.data,
-                    self._u_y.dat.data,
-                    self._u_z.dat.data,
-                ],
-                dtype=tf.float32,
+            X = torch.tensor(
+                np.asarray(
+                    [
+                        self._u.dat.data,
+                        self._u_x.dat.data,
+                        self._u_y.dat.data,
+                        self._u_z.dat.data,
+                    ]
+                ),
+                dtype=torch.float64,
             )
             self._u.project(expr_target)
-            y = tf.constant(
-                [
-                    self._u.dat.data,
-                ],
-                dtype=tf.float32,
+            y = torch.tensor(
+                np.asarray(
+                    [
+                        self._u.dat.data,
+                    ]
+                ),
+                dtype=torch.float64,
             )
-            yield (X, y)
+            self._data.append((X, y))
+
+    def __getitem__(self, idx):
+        """Return a single sample (X,y)
+
+        :arg idx: index of sample
+        """
+        return self._data[idx]
 
 
 #######################################################################
@@ -137,16 +145,18 @@ class AdvectionDataGenerator(DataGenerator):
 if __name__ == "__main__":
     mesh = UnitIcosahedralSphereMesh(3)
     V = FunctionSpace(mesh, "CG", 1)
+    degree = 4
+    nsamples = 32
+    batchsize = 4
 
-    generator = AdvectionDataGenerator(V, 1)
-    dataset = tf.data.Dataset.from_generator(
-        generator, output_signature=generator.output_signature
-    )
-    for z in dataset.take(1):
-        print(z[0].shape, z[1].shape)
+    dataset = AdvectionDataset(V, nsamples, degree)
+
+    dataloader = DataLoader(dataset, batch_size=batchsize, shuffle=True)
+    for k, batched_sample in enumerate(iter(dataloader)):
+        print(k, batched_sample[0].shape, batched_sample[1].shape)
         u_in = Function(V, name="input")
-        u_in.dat.data[:] = z[0][0].numpy()
+        u_in.dat.data[:] = batched_sample[0][0, 0].numpy()
         u_target = Function(V, name="target")
-        u_target.dat.data[:] = z[1][0].numpy()
+        u_target.dat.data[:] = batched_sample[1][0].numpy()
         file = File("sample.pvd")
         file.write(u_in, u_target)

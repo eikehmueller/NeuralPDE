@@ -1,6 +1,5 @@
-import os
-
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+import torch
+from torch.utils.data import DataLoader
 
 from firedrake import (
     UnitIcosahedralSphereMesh,
@@ -9,119 +8,93 @@ from firedrake import (
     SpatialCoordinate,
 )
 
-# NB: need to import tensorflow *after* firedrake ...
-import tensorflow as tf
-
 from neural_pde.spherical_patch_covering import SphericalPatchCovering
-from neural_pde.patch_interpolation import (
-    FunctionToPatchInterpolationLayer,
-    PatchToFunctionInterpolationLayer,
-)
 from neural_pde.patch_encoder import PatchEncoder
 from neural_pde.patch_decoder import PatchDecoder
-from neural_pde.neural_solver import NeuralSolver
-from neural_pde.data_generator import AdvectionDataGenerator
+from neural_pde.data_generator import AdvectionDataset
 
+# construct spherical patch covering
+spherical_patch_covering = SphericalPatchCovering(0, 4)
 
-############################################################################
-# M A I N (for testing)
-############################################################################
+print(f"number of patches               = {spherical_patch_covering.n_patches}")
+print(f"patchsize                       = {spherical_patch_covering.patch_size}")
+print(f"number of points in all patches = {spherical_patch_covering.n_points}")
 
-if __name__ == "__main__":
-    # construct spherical patch covering
-    spherical_patch_covering = SphericalPatchCovering(0, 4)
+mesh = UnitIcosahedralSphereMesh(1)
+V = FunctionSpace(mesh, "CG", 1)
 
-    print(f"number of patches               = {spherical_patch_covering.n_patches}")
-    print(f"patchsize                       = {spherical_patch_covering.patch_size}")
-    print(f"number of points in all patches = {spherical_patch_covering.n_points}")
+# number of dynamic fields: scalar tracer
+n_dynamic = 1
+# number of ancillary fields: x-, y- and z-coordinates
+n_ancillary = 3
+# dimension of latent space
+latent_dynamic_dim = 17
+# dimension of ancillary space
+latent_ancillary_dim = 6
+# number of output fields: scalar tracer
+n_output = 2
 
-    mesh = UnitIcosahedralSphereMesh(1)
-    V = FunctionSpace(mesh, "CG", 1)
+# encoder models
+# dynamic encoder model: map all fields to the latent space
+# input:  (n_dynamic+n_ancillary, patch_size)
+# output: (latent_dynamic_dim)
+dynamic_encoder_model = torch.nn.Sequential(
+    torch.nn.Flatten(start_dim=-2, end_dim=-1),
+    torch.nn.Linear(
+        in_features=(n_dynamic + n_ancillary) * spherical_patch_covering.patch_size,
+        out_features=latent_dynamic_dim,
+    ),
+).double()
 
-    # number of dynamic fields: scalar tracer
-    n_dynamic = 1
-    # number of ancillary fields: x-, y- and z-coordinates
-    n_ancillary = 3
-    # dimension of latent space
-    latent_dim = 17
-    # dimension of ancillary space
-    ancillary_dim = 6
-    # number of output fields: scalar tracer
-    n_output = 1
+# ancillary encoder model: map ancillary fields to ancillary space
+# input:  (n_ancillary, patch_size)
+# output: (latent_ancillary_dim)
+ancillary_encoder_model = torch.nn.Sequential(
+    torch.nn.Flatten(start_dim=-2, end_dim=-1),
+    torch.nn.Linear(
+        in_features=n_ancillary * spherical_patch_covering.patch_size,
+        out_features=latent_ancillary_dim,
+    ),
+).double()
 
-    # encoder models
-    # dynamic encoder model: map all fields to the latent space
-    dynamic_encoder_model = tf.keras.Sequential(
-        [
-            tf.keras.Input(
-                shape=(n_dynamic + n_ancillary, spherical_patch_covering.patch_size)
-            ),
-            tf.keras.layers.Flatten(),
-            tf.keras.layers.Dense(units=latent_dim),
-        ]
-    )
-    # ancillary encoder model: map ancillary fields to ancillary space
-    ancillary_encoder_model = tf.keras.Sequential(
-        [
-            tf.keras.Input(shape=(n_ancillary, spherical_patch_covering.patch_size)),
-            tf.keras.layers.Flatten(),
-            tf.keras.layers.Dense(units=ancillary_dim),
-        ]
-    )
+# decoder model: map latent variables to variables on patches
+# input:  (d_latent)
+# output: (n_out,patch_size)
+decoder_model = torch.nn.Sequential(
+    torch.nn.Linear(
+        in_features=latent_dynamic_dim + latent_ancillary_dim,
+        out_features=n_output * spherical_patch_covering.patch_size,
+    ),
+    torch.nn.Unflatten(
+        dim=-1, unflattened_size=(n_output, spherical_patch_covering.patch_size)
+    ),
+).double()
 
-    # decoder model: map from latent and ancillary space to output fields
-    decoder_model = tf.keras.Sequential(
-        [
-            tf.keras.Input(shape=(latent_dim + ancillary_dim,)),
-            tf.keras.layers.Dense(units=n_output * spherical_patch_covering.patch_size),
-            tf.keras.layers.Reshape(
-                target_shape=(n_output, spherical_patch_covering.patch_size)
-            ),
-        ]
-    )
+# patch encoder
+patch_encoder = PatchEncoder(
+    V,
+    spherical_patch_covering,
+    dynamic_encoder_model,
+    ancillary_encoder_model,
+    n_dynamic,
+)
 
-    # interaction model
-    interaction_model = tf.keras.Sequential(
-        [
-            tf.keras.Input(shape=(3, latent_dim + ancillary_dim)),
-            tf.keras.layers.Flatten(),
-            tf.keras.layers.Dense(units=latent_dim),
-        ]
-    )
+# patch decoder
+patch_decoder = PatchDecoder(
+    V,
+    spherical_patch_covering,
+    decoder_model,
+)
 
-    # put everything together into one model that maps from the input to targets
-    model = tf.keras.Sequential(
-        [
-            FunctionToPatchInterpolationLayer(V, spherical_patch_covering),
-            PatchEncoder(dynamic_encoder_model, ancillary_encoder_model),
-            NeuralSolver(
-                spherical_patch_covering,
-                interaction_model=interaction_model,
-                latent_dim=latent_dim,
-                nsteps=4,
-                stepsize=0.1,
-            ),
-            PatchDecoder(decoder_model),
-            PatchToFunctionInterpolationLayer(spherical_patch_covering, V),
-        ]
-    )
+degree = 4
+nsamples = 16
+batchsize = 8
 
-    model.compile(optimizer="adam", loss="mse", metrics=[])
+dataset = AdvectionDataset(V, nsamples, degree)
 
-    generator = AdvectionDataGenerator(V, 1.0)
-    batch_size = 8
-    dataset = (
-        tf.data.Dataset.from_generator(
-            generator, output_signature=generator.output_signature
-        )
-        .take(64)
-        .batch(batch_size, drop_remainder=True)
-    )
-
-    log_dir = "./tb_logs/"
-
-    tboard_callback = tf.keras.callbacks.TensorBoard(
-        log_dir=log_dir, histogram_freq=1, profile_batch="0,1"
-    )
-
-    model.fit(dataset, epochs=10, callbacks=[tboard_callback])
+dataloader = DataLoader(dataset, batch_size=batchsize, shuffle=True)
+for k, batched_sample in enumerate(iter(dataloader)):
+    X, y = batched_sample
+    z = patch_encoder(X)
+    output = patch_decoder(z)
+    print(k, "X: ", X.shape, "y: ", y.shape, "z: ", z.shape, "output: ", output.shape)
