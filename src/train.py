@@ -117,4 +117,11 @@ if __name__ == "__main__":
         .take(64)
         .batch(batch_size, drop_remainder=True)
     )
-    model.fit(dataset, epochs=10)
+
+    log_dir = "./tb_logs/"
+
+    tboard_callback = tf.keras.callbacks.TensorBoard(
+        log_dir=log_dir, histogram_freq=1, profile_batch="0,1"
+    )
+
+    model.fit(dataset, epochs=10, callbacks=[tboard_callback])
