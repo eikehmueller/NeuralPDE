@@ -3,15 +3,14 @@ from torch.utils.data import DataLoader
 
 from firedrake import (
     UnitIcosahedralSphereMesh,
-    Function,
     FunctionSpace,
-    SpatialCoordinate,
 )
 
 from neural_pde.spherical_patch_covering import SphericalPatchCovering
 from neural_pde.patch_encoder import PatchEncoder
 from neural_pde.patch_decoder import PatchDecoder
 from neural_pde.data_generator import AdvectionDataset
+from neural_pde.neural_solver import NeuralSolver
 
 # construct spherical patch covering
 spherical_patch_covering = SphericalPatchCovering(0, 4)
@@ -32,7 +31,7 @@ latent_dynamic_dim = 17
 # dimension of ancillary space
 latent_ancillary_dim = 6
 # number of output fields: scalar tracer
-n_output = 2
+n_output = 1
 
 # encoder models
 # dynamic encoder model: map all fields to the latent space
@@ -70,31 +69,55 @@ decoder_model = torch.nn.Sequential(
     ),
 ).double()
 
-# patch encoder
-patch_encoder = PatchEncoder(
-    V,
-    spherical_patch_covering,
-    dynamic_encoder_model,
-    ancillary_encoder_model,
-    n_dynamic,
-)
+# interaction model: function on latent space
+# input:  (d_latent,4)
+# output: (d_latent^dynamic)
+interaction_model = torch.nn.Sequential(
+    torch.nn.Flatten(start_dim=-2, end_dim=-1),
+    torch.nn.Linear(
+        in_features=4 * (latent_dynamic_dim + latent_ancillary_dim),
+        out_features=latent_dynamic_dim,
+    ),
+).double()
 
-# patch decoder
-patch_decoder = PatchDecoder(
-    V,
-    spherical_patch_covering,
-    decoder_model,
-)
-
+# dataset
 degree = 4
 nsamples = 16
 batchsize = 8
 
 dataset = AdvectionDataset(V, nsamples, degree)
 
+# Full model: encoder + processor + decoder
+model = torch.nn.Sequential(
+    PatchEncoder(
+        V,
+        spherical_patch_covering,
+        dynamic_encoder_model,
+        ancillary_encoder_model,
+        n_dynamic,
+    ),
+    NeuralSolver(spherical_patch_covering, interaction_model, nsteps=1, stepsize=1.0),
+    PatchDecoder(V, spherical_patch_covering, decoder_model),
+)
+
 dataloader = DataLoader(dataset, batch_size=batchsize, shuffle=True)
-for k, batched_sample in enumerate(iter(dataloader)):
-    X, y = batched_sample
-    z = patch_encoder(X)
-    output = patch_decoder(z)
-    print(k, "X: ", X.shape, "y: ", y.shape, "z: ", z.shape, "output: ", output.shape)
+
+optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+
+loss_fn = torch.nn.MSELoss()
+
+nepoch = 2
+
+loss_history = []
+
+# main training loop
+for epoch in range(nepoch):
+    for i, sample_batched in enumerate(iter(dataset)):
+        X, y_target = sample_batched
+        optimizer.zero_grad()
+        y = model(X)
+        loss = loss_fn(y, y_target)
+        loss.backward()
+        optimizer.step()
+    loss_history.append(loss.item())
+    print(f"{epoch:6d}", loss.item())

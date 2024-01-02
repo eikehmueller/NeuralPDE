@@ -1,8 +1,7 @@
-import tensorflow as tf
-import numpy as np
+import torch
 
 
-class NeuralSolver(tf.keras.layers.Layer):
+class NeuralSolver(torch.nn.Module):
     """Neural solver which integrates forward the equations of motion in latent space.
 
     A state in latent space can be written as [Y^{(k)}_{i,j},a_{i,j}] where i is the index of
@@ -35,7 +34,6 @@ class NeuralSolver(tf.keras.layers.Layer):
         self,
         spherical_patch_covering,
         interaction_model,
-        latent_dim,
         nsteps=1,
         stepsize=1.0,
     ):
@@ -44,58 +42,45 @@ class NeuralSolver(tf.keras.layers.Layer):
         :arg spherical_patch_covering: the spherical patch covering that defines the topology and
             local patches
         :arg interaction_model: model that describes the interactions Phi_theta
-        :arg latent_dim: dimension of latent space
         :arg nsteps: number of forward-Euler steps
         :arg stepsize: size dt of steps
         """
         super().__init__()
         self.spherical_patch_covering = spherical_patch_covering
         self.interaction_model = interaction_model
-        self.latent_dim = latent_dim
         self.nsteps = nsteps
         self.stepsize = stepsize
+        # list of neighbours, including the index itself
+        self._neighbour_list = [
+            [j] + beta
+            for j, beta in enumerate(self.spherical_patch_covering.neighbour_list)
+        ]
 
-        # construct indices for gathering neighbour data in the correct shape
-        self._gather_indices = tf.constant(
-            [
-                [[idx] for idx in subindices]
-                for subindices in self.spherical_patch_covering.neighbour_list
-            ]
-        )
-
-    def call(self, inputs):
+    def forward(self, x):
         """Carry out a number of forward-Euler steps for the latent variables on the dual mesh
 
         :arg inputs: tensor of shape (B,n_patch,d_{latent}+d_{ancillary})
         """
-        Y = inputs
-
-        # expand indices
-        batch_size = inputs.shape[0]
-        indices = tf.repeat(
-            tf.expand_dims(tf.constant(self._gather_indices), axis=0),
-            repeats=batch_size,
-            axis=0,
+        # create index list of shape (B,n_patch,4,d_lat)
+        index = (
+            torch.tensor(self._neighbour_list)
+            .unsqueeze(0)
+            .unsqueeze(-1)
+            .expand((x.shape[0], -1, -1, x.shape[-1]))
         )
-
-        # work out paddings for adding zeros in the ancillary dimensions
-        paddings = np.zeros((3, 2))
-        ancillary_dim = inputs.shape[-1] - self.latent_dim
-        paddings[-1, 1] = ancillary_dim
-
         for _ in range(self.nsteps):
             # ---- stage 1 ---- gather to tensor Z of shape
-            #                   (B,n_patch,3,d_{latent}+d_{ancillary})
-            Z = tf.gather_nd(indices=indices, params=Y, batch_dims=1)
-
+            #                   (B,n_patch,4,d_{lat}^{dynamic}+d_{lat}^{ancillary})
+            z = torch.gather(x.unsqueeze(-2).expand((-1, -1, 4, -1)), 1, index)
             # ---- stage 2 ---- apply interaction model to obtain tensor of shape
-            #                   (B,n_patch,d_{dynamic})
-            fZ = tf.stack([self.interaction_model(z) for z in tf.unstack(Z)])
+            #                   (B,n_patch,d_{lat}^{dynamic})
+            fz = self.interaction_model(z)
             # ---- stage 3 ---- pad with zeros in last dimension to obtain a tensor dY of shape
-            #                   (B,n_patch,d_{dynamic}+d_{ancillary})
-            dY = tf.pad(fZ, paddings=paddings, mode="CONSTANT", constant_values=0)
-
+            #                   (B,n_patch,d_{lat}^{dynamic}+d_{lat}^{ancillary})
+            dx = torch.nn.functional.pad(
+                fz, (0, x.shape[-1] - fz.shape[-1]), mode="constant", value=0
+            )
             # ---- stage 4 ---- update Y = Y + dt*dY
-            Y += self.stepsize * dY
+            x += self.stepsize * dx
 
-        return Y
+        return x
