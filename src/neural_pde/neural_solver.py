@@ -71,7 +71,11 @@ class NeuralSolver(torch.nn.Module):
         for _ in range(self.nsteps):
             # ---- stage 1 ---- gather to tensor Z of shape
             #                   (B,n_patch,4,d_{lat}^{dynamic}+d_{lat}^{ancillary})
-            z = torch.gather(x.unsqueeze(-2).expand((-1, -1, 4, -1)), 1, index)
+            z = torch.gather(
+                x.unsqueeze(-2).repeat((x.shape[0], x.shape[1], 4, x.shape[-1])),
+                1,
+                index,
+            )
             # ---- stage 2 ---- apply interaction model to obtain tensor of shape
             #                   (B,n_patch,d_{lat}^{dynamic})
             fz = self.interaction_model(z)
