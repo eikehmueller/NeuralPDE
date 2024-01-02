@@ -112,7 +112,7 @@ loss_history = []
 
 # main training loop
 for epoch in range(nepoch):
-    for i, sample_batched in enumerate(iter(dataset)):
+    for i, sample_batched in enumerate(iter(dataloader)):
         X, y_target = sample_batched
         optimizer.zero_grad()
         y = model(X)
