@@ -2,9 +2,9 @@
 
 
 from firedrake import *
-from firedrake.ml.pytorch import torch_operator
+from firedrake.ml.pytorch import fem_operator
 from pyadjoint import ReducedFunctional, Control
-from firedrake_adjoint import *
+from firedrake.adjoint import *
 import torch
 
 
@@ -85,7 +85,7 @@ class PatchEncoder(torch.nn.Module):
 
         interpolator = Interpolate(TrialFunction(fs), vertex_only_fs)
 
-        self._function_to_patch = torch_operator(
+        self._function_to_patch = fem_operator(
             ReducedFunctional(assemble(action(interpolator, u)), Control(u))
         )
         self._n_dynamic = n_dynamic

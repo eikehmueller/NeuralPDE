@@ -106,7 +106,7 @@ optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
 
 loss_fn = torch.nn.MSELoss()
 
-nepoch = 2
+nepoch = 10
 
 loss_history = []
 

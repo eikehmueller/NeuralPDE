@@ -2,9 +2,9 @@
 
 
 from firedrake import *
-from firedrake.ml.pytorch import torch_operator
+from firedrake.ml.pytorch import fem_operator
 from pyadjoint import ReducedFunctional, Control
-from firedrake_adjoint import *
+from firedrake.adjoint import *
 import torch
 
 
@@ -72,9 +72,13 @@ class PatchDecoder(torch.nn.Module):
 
         u = Cofunction(vertex_only_fs.dual())
 
-        self._patch_to_function = torch_operator(
+        self._patch_to_function = fem_operator(
             ReducedFunctional(assemble(action(adjoint(interpolator), u)), Control(u))
         )
+        ndof = len(Function(fs).dat.data)
+        # self._patch_to_function = torch.nn.Linear(
+        #    in_features=self._npatches * self._patchsize, out_features=ndof
+        # ).double()
 
     def forward(self, x):
         """Forward map
