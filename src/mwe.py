@@ -9,13 +9,6 @@ from pyadjoint import ReducedFunctional, Control
 from firedrake.ml.pytorch import fem_operator
 from pyadjoint.tape import set_working_tape, get_working_tape
 
-# y = f(x)
-# dy/dx = df/dx(x)
-# x = g(z|theta)
-# L(z|theta) = y = f(x) = f(g(x|theta))
-#
-# dL/dtheta = dL/dx * dx/dtheta = df/dx * dg/dtheta
-
 # Construct mesh and point mesh onto which we want to interpolate
 mesh = UnitSquareMesh(4, 4)
 points = [[0.6, 0.1], [0.5, 0.4], [0.7, 0.9]]
@@ -96,8 +89,6 @@ class Decoder(torch.nn.Module):
 
 # PyTorch model: linear layer + encoder layer
 
-# model(theta) = f ( g (theta) )
-# dmodel/dtheta
 model = torch.nn.Sequential(
     torch.nn.Linear(in_features=n_in, out_features=n_in).double(),
     Encoder(fs, vertex_only_fs).double(),
