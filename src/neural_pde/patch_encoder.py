@@ -1,10 +1,10 @@
 """Patch encoder. Encodes the field information into the latent space"""
 
-
 from firedrake import *
 from firedrake.ml.pytorch import fem_operator
 from pyadjoint import ReducedFunctional, Control
 from firedrake.adjoint import *
+from firedrake.__future__ import interpolate
 import torch
 
 
@@ -81,13 +81,15 @@ class PatchEncoder(torch.nn.Module):
         self._patchsize = spherical_patch_covering.patch_size
         vertex_only_mesh = VertexOnlyMesh(mesh, points)
         vertex_only_fs = FunctionSpace(vertex_only_mesh, "DG", 0)
-        u = Function(fs)
 
-        interpolator = Interpolate(TrialFunction(fs), vertex_only_fs)
-
-        self._function_to_patch = fem_operator(
-            ReducedFunctional(assemble(action(interpolator, u)), Control(u))
-        )
+        continue_annotation()
+        with set_working_tape() as _:
+            u = Function(fs)
+            interpolator = interpolate(TestFunction(fs), vertex_only_fs)
+            self._function_to_patch = fem_operator(
+                ReducedFunctional(assemble(action(interpolator, u)), Control(u))
+            )
+        pause_annotation()
         self._n_dynamic = n_dynamic
 
     def forward(self, x):

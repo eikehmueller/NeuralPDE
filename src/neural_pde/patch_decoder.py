@@ -1,10 +1,10 @@
 """Patch decoder. Decoces information from latent space back to a function on the sphere"""
 
-
 from firedrake import *
 from firedrake.ml.pytorch import fem_operator
 from pyadjoint import ReducedFunctional, Control
 from firedrake.adjoint import *
+from firedrake.__future__ import interpolate
 import torch
 
 
@@ -68,17 +68,16 @@ class PatchDecoder(torch.nn.Module):
         vertex_only_mesh = VertexOnlyMesh(mesh, points)
         vertex_only_fs = FunctionSpace(vertex_only_mesh, "DG", 0)
 
-        interpolator = Interpolate(TrialFunction(fs), vertex_only_fs)
-
-        u = Cofunction(vertex_only_fs.dual())
-
-        self._patch_to_function = fem_operator(
-            ReducedFunctional(assemble(action(adjoint(interpolator), u)), Control(u))
-        )
-        ndof = len(Function(fs).dat.data)
-        # self._patch_to_function = torch.nn.Linear(
-        #    in_features=self._npatches * self._patchsize, out_features=ndof
-        # ).double()
+        continue_annotation()
+        with set_working_tape() as _:
+            w = Cofunction(vertex_only_fs.dual())
+            interpolator = interpolate(TestFunction(fs), vertex_only_fs)
+            self._patch_to_function = fem_operator(
+                ReducedFunctional(
+                    assemble(action(adjoint(interpolator), w)), Control(w)
+                )
+            )
+        continue_annotation()
 
     def forward(self, x):
         """Forward map
