@@ -4,10 +4,10 @@ to a set of points"""
 import torch
 from firedrake import *
 from firedrake.__future__ import interpolate
-from firedrake.adjoint import continue_annotation, pause_annotation, stop_annotating
+from firedrake.adjoint import continue_annotation, pause_annotation
 from pyadjoint import ReducedFunctional, Control
 from firedrake.ml.pytorch import fem_operator
-from pyadjoint.tape import set_working_tape, get_working_tape
+from pyadjoint.tape import set_working_tape
 
 # Construct mesh and point mesh onto which we want to interpolate
 mesh = UnitSquareMesh(4, 4)
