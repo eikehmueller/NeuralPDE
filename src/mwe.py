@@ -53,7 +53,10 @@ class Encoder(torch.nn.Module):
         :arg x: input tensor
         """
         # apply differentiable interpolation to each tensor in the batch
-        return torch.stack([self._function_to_patch(y) for y in torch.unbind(x)])
+        if len(x.shape) == 1:
+            return self._function_to_patch(x)
+        else:
+            return torch.stack([self._function_to_patch(y) for y in torch.unbind(x)])
 
 
 class Decoder(torch.nn.Module):
@@ -88,7 +91,10 @@ class Decoder(torch.nn.Module):
         :arg x: input tensor
         """
         # apply differentiable interpolation to each tensor in the batch
-        return torch.stack([self._patch_to_function(y) for y in torch.unbind(x)])
+        if len(x.shape) == 1:
+            return self._patch_to_function(x)
+        else:
+            return torch.stack([self._patch_to_function(y) for y in torch.unbind(x)])
 
 
 # PyTorch model: linear layer + encoder layer
@@ -136,22 +142,25 @@ for layer in (
 ):
     n_in = layer.in_features
     n_out = layer.out_features
+    print(n_in, n_out)
     # extract matrix
     A = np.zeros((n_out, n_in))
     for j in range(n_in):
-        x = torch.zeros((1, n_in), dtype=torch.float64)
-        x[0, j] = 1.0
+        x = torch.zeros(n_in, dtype=torch.float64)
+        x[j] = 1.0
         y = layer(x)
+        z = y.detach()
+        print("z.shape = ", z.shape)
         A[:, j] = np.asarray(y.detach())
     x = torch.zeros(n_in, dtype=torch.float64)
     # extract Jacobian
     J = np.asarray(torch.autograd.functional.jacobian(layer, x))
     print("layer = ", str(layer))
     print("||A|| :")
-    print(np.linalg.norm(A))
+    print(A.shape, np.linalg.norm(A))
     print()
     print("||J|| :")
-    print(np.linalg.norm(J))
+    print(J.shape, np.linalg.norm(J))
     print()
     print("difference ||A-J|| :")
     print(np.linalg.norm(A - J))
