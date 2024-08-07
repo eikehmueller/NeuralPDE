@@ -130,7 +130,7 @@ loss.backward()
 
 
 for layer in (
-    torch.nn.Linear(in_features=n_in, out_features=n_in, bias=False).double(),
+    torch.nn.Linear(in_features=3, out_features=7, bias=False).double(),
     Encoder(fs, vertex_only_fs).double(),
     Decoder(fs, vertex_only_fs).double(),
 ):
