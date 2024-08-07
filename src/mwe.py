@@ -54,9 +54,11 @@ class Encoder(torch.nn.Module):
         """
         # apply differentiable interpolation to each tensor in the batch
         if len(x.shape) == 1:
-            return self._function_to_patch(x)
+            return torch.flatten(self._function_to_patch(x))
         else:
-            return torch.stack([self._function_to_patch(y) for y in torch.unbind(x)])
+            return torch.stack(
+                [torch.flatten(self._function_to_patch(y)) for y in torch.unbind(x)]
+            )
 
 
 class Decoder(torch.nn.Module):
@@ -92,9 +94,11 @@ class Decoder(torch.nn.Module):
         """
         # apply differentiable interpolation to each tensor in the batch
         if len(x.shape) == 1:
-            return self._patch_to_function(x)
+            return torch.flatten(self._patch_to_function(x))
         else:
-            return torch.stack([self._patch_to_function(y) for y in torch.unbind(x)])
+            return torch.stack(
+                [torch.flatten(self._patch_to_function(y)) for y in torch.unbind(x)]
+            )
 
 
 # PyTorch model: linear layer + encoder layer
@@ -142,7 +146,6 @@ for layer in (
 ):
     n_in = layer.in_features
     n_out = layer.out_features
-    print(n_in, n_out)
     # extract matrix
     A = np.zeros((n_out, n_in))
     for j in range(n_in):
