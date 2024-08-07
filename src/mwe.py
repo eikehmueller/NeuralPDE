@@ -150,7 +150,6 @@ for layer in (
         x[j] = 1.0
         y = layer(x)
         z = y.detach()
-        print("z.shape = ", z.shape)
         A[:, j] = np.asarray(y.detach())
     x = torch.zeros(n_in, dtype=torch.float64)
     # extract Jacobian
