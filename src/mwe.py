@@ -19,8 +19,8 @@ fs = FunctionSpace(mesh, "CG", 1)
 vertex_only_fs = FunctionSpace(vom, "DG", 0)
 
 # Sizes of function spaces
-n_in = len(Function(fs).dat.data)
-n_out = len(Function(vertex_only_fs).dat.data)
+n_in = int(fs.dof_count)
+n_out = int(vertex_only_fs.dof_count)
 
 
 class Encoder(torch.nn.Module):
@@ -33,6 +33,8 @@ class Encoder(torch.nn.Module):
         :arg vertex_only_fs: vertex-only function space to which we want to interpolate
         """
         super().__init__()
+        self.in_features = int(fs.dof_count)
+        self.out_features = int(vertex_only_fs.dof_count)
         continue_annotation()
         with set_working_tape() as _:
             u = Function(fs)
@@ -64,6 +66,8 @@ class Decoder(torch.nn.Module):
         :arg vertex_only_fs: vertex-only function space to which we want to interpolate
         """
         super().__init__()
+        self.in_features = int(vertex_only_fs.dof_count)
+        self.out_features = int(fs.dof_count)
         continue_annotation()
         with set_working_tape() as _:
             w = Cofunction(vertex_only_fs.dual())
@@ -123,3 +127,32 @@ optimizer.zero_grad()
 y = model(X)
 loss = loss_fn(y, y_target)
 loss.backward()
+
+
+for layer in (
+    torch.nn.Linear(in_features=n_in, out_features=n_in, bias=False).double(),
+    Encoder(fs, vertex_only_fs).double(),
+    Decoder(fs, vertex_only_fs).double(),
+):
+    n_in = layer.in_features
+    n_out = layer.out_features
+    # extract matrix
+    A = np.zeros((n_out, n_in))
+    for j in range(n_in):
+        x = torch.zeros((1, n_in), dtype=torch.float64)
+        x[0, j] = 1.0
+        y = layer(x)
+        A[:, j] = np.asarray(y.detach())
+    x = torch.zeros(n_in, dtype=torch.float64)
+    # extract Jacobian
+    J = np.asarray(torch.autograd.functional.jacobian(layer, x))
+    print("layer = ", str(layer))
+    print("||A|| :")
+    print(np.linalg.norm(A))
+    print()
+    print("||J|| :")
+    print(np.linalg.norm(J))
+    print()
+    print("difference ||A-J|| :")
+    print(np.linalg.norm(A - J))
+    print()
