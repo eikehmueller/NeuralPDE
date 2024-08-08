@@ -124,7 +124,14 @@ class Decoder(torch.nn.Module):
         :arg x: input tensor
         """
         # apply differentiable interpolation to each tensor in the batch
-        return torch.stack([self._patch_to_function(y) for y in torch.unbind(x)])
+        output_tensor = self._patch_to_function(torch.unbind(x)[0]).squeeze()
+        if x.shape[0] == 1:
+            pass
+        else:
+            for i in range(1, x.shape[0]): # the number of batches we are doing
+                batch_data = self._patch_to_function(torch.unbind(x)[i])
+                output_tensor = torch.vstack([output_tensor, batch_data])
+        return output_tensor
 
 
 # PyTorch model: linear layer + encoder layer
