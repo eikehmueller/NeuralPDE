@@ -4,10 +4,7 @@ to a set of points"""
 import torch
 from firedrake import *
 from firedrake.__future__ import interpolate
-from firedrake.adjoint import continue_annotation, pause_annotation
-from pyadjoint import ReducedFunctional, Control
-from firedrake.ml.pytorch import fem_operator
-from pyadjoint.tape import set_working_tape
+from firedrake.ml.pytorch import from_torch, to_torch
 
 
 # Construct meshes onto which we want to interpolate
@@ -24,6 +21,52 @@ fs2 = FunctionSpace(vom, "DG", 0)
 n_in = len(Function(fs).dat.data)
 n_out = len(Function(fs2).dat.data)
 
+
+class InterpolatorWrapper(torch.autograd.Function):
+
+    @staticmethod
+    def function_to_patch(metadata, x):
+        u = from_torch(x, V=metadata["fs"])
+        w = assemble(action(metadata["interpolator"], u))
+        return to_torch(w)
+
+    @staticmethod
+    def patch_to_function(metadata, x):
+        w = from_torch(x, V=metadata["vertex_only_fs"].dual())
+        u = assemble(action(adjoint(metadata["interpolator"]), w))
+        return to_torch(u)
+
+    @staticmethod
+    def forward(ctx, metadata, *xP):
+        ctx.metadata.update(metadata)
+        if metadata["reverse"]:
+            return InterpolatorWrapper.patch_to_function(metadata, xP[0])
+        else:
+            return InterpolatorWrapper.function_to_patch(metadata, xP[0])
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        if ctx.metadata["reverse"]:
+            return None, InterpolatorWrapper.function_to_patch(
+                ctx.metadata, grad_output
+            )
+        else:
+            return None, InterpolatorWrapper.patch_to_function(
+                ctx.metadata, grad_output
+            )
+
+
+def interpolator_wrapper(fs, vertex_only_fs, reverse=False):
+    interpolator = interpolate(TestFunction(fs), vertex_only_fs)
+    metadata = {
+        "fs": fs,
+        "vertex_only_fs": vertex_only_fs,
+        "interpolator": interpolator,
+        "reverse": reverse,
+    }
+    return partial(InterpolatorWrapper.apply, metadata)
+
+
 class Encoder(torch.nn.Module):
     """Differentiable encoder which maps a function from a function space to
     another function space"""
@@ -37,14 +80,7 @@ class Encoder(torch.nn.Module):
         super().__init__()
         self.in_features = int(fs.dof_count)
         self.out_features = int(fs2.dof_count)
-        continue_annotation()
-        with set_working_tape() as _:
-            u = Function(fs)
-            interpolator = interpolate(TestFunction(fs), fs2)
-            self._function_to_patch = fem_operator(
-                ReducedFunctional(assemble(action(interpolator, u)), Control(u))
-            )
-        pause_annotation()
+        self._function_to_patch = interpolator_wrapper(fs, fs2, reverse=False)
 
     def forward(self, x):
         """Forward pass.
@@ -59,7 +95,7 @@ class Encoder(torch.nn.Module):
         if x.shape[0] == 1:
             pass
         else:
-            for i in range(1, x.shape[0]): # the number of batches we are doing
+            for i in range(1, x.shape[0]):  # the number of batches we are doing
                 batch_data = self._function_to_patch(torch.unbind(x)[i])
                 output_tensor = torch.vstack([output_tensor, batch_data])
         return output_tensor
@@ -77,16 +113,7 @@ class Decoder(torch.nn.Module):
         super().__init__()
         self.in_features = int(fs2.dof_count)
         self.out_features = int(fs.dof_count)
-        continue_annotation()
-        with set_working_tape() as _:
-            w = Cofunction(fs2.dual())
-            interpolator = interpolate(TestFunction(fs), fs2)
-            self._patch_to_function = fem_operator(
-                ReducedFunctional(
-                    assemble(action(adjoint(interpolator), w)), Control(w)
-                )
-            )
-        pause_annotation()
+        self._patch_to_function = interpolator_wrapper(fs, fs2, reverse=True)
 
     def forward(self, x):
         """Forward pass.
@@ -150,15 +177,17 @@ for layer in (
     # extract matrix
     A = np.zeros((n_out, n_in))
     for j in range(n_in):
-        x = torch.zeros((1, n_in), dtype=torch.float64) 
-        x[0, j] = 1.0 
+        x = torch.zeros((1, n_in), dtype=torch.float64)
+        x[0, j] = 1.0
         x.unsqueeze(dim=0)
-        y = layer(x) 
+        y = layer(x)
         A[:, j] = np.asarray(y.detach())
     x = torch.zeros(n_in, dtype=torch.float64)
     x.unsqueeze(dim=0)
     # extract Jacobian
-    J = np.asarray(torch.autograd.functional.jacobian(layer, x.unsqueeze(dim=0))).squeeze()
+    J = np.asarray(
+        torch.autograd.functional.jacobian(layer, x.unsqueeze(dim=0))
+    ).squeeze()
     print("layer = ", str(layer))
     print(f"A is {type(A)}")
     print(f"Shape of A is {A.shape}")
