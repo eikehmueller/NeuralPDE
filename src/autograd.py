@@ -10,7 +10,7 @@ class LinearOperator(torch.autograd.Function):
     def forward(ctx, metadata, *xP):
         """Forward pass"""
         ctx.metadata.update(metadata)
-        return x.detach() @ metadata["A"]
+        return xP[0].detach() @ metadata["A"]
 
     @staticmethod
     def backward(ctx, grad_output):
