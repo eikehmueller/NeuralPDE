@@ -191,7 +191,6 @@ for layer in (
         y = layer(x)
         A[:, j] = np.asarray(y.detach())
     x = torch.zeros(n_in, dtype=torch.float64)
-    x.unsqueeze(dim=0)
     # extract Jacobian
     J = np.asarray(
         torch.autograd.functional.jacobian(layer, x.unsqueeze(dim=0))
