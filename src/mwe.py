@@ -173,6 +173,7 @@ y = model(X)
 loss = loss_fn(y, y_target)
 loss.backward()
 
+### Test 1 - comparing A and J ###
 for layer in (
     torch.nn.Linear(in_features=3, out_features=7, bias=False).double(),
     Encoder(fs, fs2).double(),
@@ -208,3 +209,26 @@ for layer in (
     print("difference ||A-J|| :")
     print(np.linalg.norm(A - J))
     print()
+
+### Test 2 - comparing to interpolated meshes ###
+u = Function(fs)
+x, y = SpatialCoordinate(mesh)
+u.interpolate(1 + sin(x*pi*2)*sin(y*pi*2))
+v = Function(fs2)
+v.interpolate(u)
+
+# dof vectors for u and v
+u_dofs = u.dat.data_ro
+print(f'u_dofs are {u_dofs}')
+v_dofs = v.dat.data_ro
+print(f'v_dofs are {v_dofs}')
+
+# use u_dofs as input for encoder
+# THE INPUT HAS TO BE OF THE FORM (BATCH, N_IN)
+u_dofs_tensor = torch.tensor(u_dofs).unsqueeze(0)
+model = Encoder(fs, fs2).double()
+model_output = model(u_dofs_tensor)
+new_v_dofs = model_output.numpy()
+
+print(f'new_v_dofs are {new_v_dofs}')
+print(f'difference ||v_dofs - new_v_dofs|| = {np.linalg.norm(v_dofs - new_v_dofs)}')
