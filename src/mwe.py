@@ -54,7 +54,7 @@ class InterpolatorWrapper(torch.autograd.Function):
         return to_torch(u)
 
     @staticmethod
-    def forward(ctx, metadata, *xP):
+    def forward(ctx, metadata, x):
         """Forward map
 
         Computes y = A.x if x is a dof-vector on the input function space
@@ -62,13 +62,13 @@ class InterpolatorWrapper(torch.autograd.Function):
 
         :arg ctx: context
         :arg metadata: information on function spaces
-        :arg xP: tensors
+        :arg x: tensor to operate on
         """
         ctx.metadata.update(metadata)
         if metadata["reverse"]:
-            return InterpolatorWrapper.adjoint_interpolate(metadata, xP[0])
+            return InterpolatorWrapper.adjoint_interpolate(metadata, x)
         else:
-            return InterpolatorWrapper.interpolate(metadata, xP[0])
+            return InterpolatorWrapper.interpolate(metadata, x)
 
     @staticmethod
     def backward(ctx, grad_output):
