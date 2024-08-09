@@ -25,7 +25,7 @@ class InterpolatorWrapper(torch.autograd.Function):
         """
         u = from_torch(x, V=metadata["fs_from"])
         w = assemble(action(metadata["interpolator"], u))
-        return to_torch(w)
+        return torch.flatten(to_torch(w))
 
     @staticmethod
     def adjoint_interpolate(metadata, x):
@@ -36,7 +36,7 @@ class InterpolatorWrapper(torch.autograd.Function):
         """
         w = from_torch(x, V=metadata["fs_to"].dual())
         u = assemble(action(adjoint(metadata["interpolator"]), w))
-        return to_torch(u)
+        return torch.flatten(to_torch(u))
 
     @staticmethod
     def forward(ctx, metadata, x):
@@ -235,16 +235,13 @@ for layer in (
     # extract matrix
     A = np.zeros((n_out, n_in))
     for j in range(n_in):
-        x = torch.zeros((1, n_in), dtype=torch.float64)
-        x[0, j] = 1.0
-        x.unsqueeze(dim=0)
+        x = torch.zeros(n_in, dtype=torch.float64)
+        x[j] = 1.0
         y = layer(x)
         A[:, j] = np.asarray(y.detach())
     x = torch.zeros(n_in, dtype=torch.float64)
     # extract Jacobian
-    J = np.asarray(
-        torch.autograd.functional.jacobian(layer, x.unsqueeze(dim=0))
-    ).squeeze()
+    J = np.asarray(torch.autograd.functional.jacobian(layer, x))
     print("layer = ", str(layer))
     print(f"A is {type(A)}")
     print(f"Shape of A is {A.shape}")
