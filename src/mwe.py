@@ -23,44 +23,82 @@ n_out = len(Function(fs2).dat.data)
 
 
 class InterpolatorWrapper(torch.autograd.Function):
+    """Differentiable PyTorch wrapper around Firedrake interpolation
+
+    Allows interpolation of functions between two Firedrake function
+    spaces. Both the forward and adjoint operation are implemented. Since
+    interpolation is a linear operation y = A.x, the gradient is propagated
+    like grad_in = A^T.grad_out
+    """
 
     @staticmethod
-    def function_to_patch(metadata, x):
-        u = from_torch(x, V=metadata["fs"])
+    def interpolate(metadata, x):
+        """Interpolate a function given by its dof-vector
+
+        :arg metadata: information on function spaces
+        :arg x: dof-vector of function on input function space
+        """
+        u = from_torch(x, V=metadata["fs_from"])
         w = assemble(action(metadata["interpolator"], u))
         return to_torch(w)
 
     @staticmethod
-    def patch_to_function(metadata, x):
-        w = from_torch(x, V=metadata["vertex_only_fs"].dual())
+    def adjoint_interpolate(metadata, x):
+        """Map a dual vector on the output function space to the input space
+
+        :arg metadata: information on function spaces
+        :arg x: dof-vector of dual function on output function space
+        """
+        w = from_torch(x, V=metadata["fs_to"].dual())
         u = assemble(action(adjoint(metadata["interpolator"]), w))
         return to_torch(u)
 
     @staticmethod
     def forward(ctx, metadata, *xP):
+        """Forward map
+
+        Computes y = A.x if x is a dof-vector on the input function space
+        or y = A^T.x if x is a dual vector on the output function space
+
+        :arg ctx: context
+        :arg metadata: information on function spaces
+        :arg xP: tensors
+        """
         ctx.metadata.update(metadata)
         if metadata["reverse"]:
-            return InterpolatorWrapper.patch_to_function(metadata, xP[0])
+            return InterpolatorWrapper.adjoint_interpolate(metadata, xP[0])
         else:
-            return InterpolatorWrapper.function_to_patch(metadata, xP[0])
+            return InterpolatorWrapper.interpolate(metadata, xP[0])
 
     @staticmethod
     def backward(ctx, grad_output):
+        """Backward map
+
+        :arg ctx: context
+        :arg grad_output: gradient with respect out output variables
+        """
         if ctx.metadata["reverse"]:
-            return None, InterpolatorWrapper.function_to_patch(
-                ctx.metadata, grad_output
-            )
+            return None, InterpolatorWrapper.interpolate(ctx.metadata, grad_output)
         else:
-            return None, InterpolatorWrapper.patch_to_function(
+            return None, InterpolatorWrapper.adjoint_interpolate(
                 ctx.metadata, grad_output
             )
 
 
-def interpolator_wrapper(fs, vertex_only_fs, reverse=False):
-    interpolator = interpolate(TestFunction(fs), vertex_only_fs)
+def interpolator_wrapper(fs_from, fs_to, reverse=False):
+    """Construct interpolation object from
+
+    Depending on the value of reverse, this either interpolates the
+    dof-vectors of functions from fs_from to fs_to or the dof-vectors of
+    dual functions from fs_to to fs_from
+
+    :arg fs_from: function space which we want to interpolate from
+    :arg fs_to: function space which we want to interpolate to
+    """
+    interpolator = interpolate(TestFunction(fs_from), fs_to)
     metadata = {
-        "fs": fs,
-        "vertex_only_fs": vertex_only_fs,
+        "fs_from": fs_from,
+        "fs_to": fs_to,
         "interpolator": interpolator,
         "reverse": reverse,
     }
