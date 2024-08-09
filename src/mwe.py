@@ -108,7 +108,7 @@ class Encoder(torch.nn.Module):
         super().__init__()
         self.in_features = int(fs_from.dof_count)
         self.out_features = int(fs_to.dof_count)
-        self._function_to_patch = interpolator_wrapper(fs_from, fs_to, reverse=False)
+        self._interpolate = interpolator_wrapper(fs_from, fs_to, reverse=False)
 
     def forward(self, x):
         """Forward pass
@@ -118,15 +118,18 @@ class Encoder(torch.nn.Module):
 
         :arg x: input tensor
         """
-        # apply differentiable interpolation to each tensor in the batch
-        output_tensor = self._function_to_patch(torch.unbind(x)[0]).squeeze()
-        if x.shape[0] == 1:
-            pass
+        return self._forward(x)
+
+    def _forward(self, x):
+        """Recursively apply forward pass
+
+        Unbind the input, recursively call the function and stack the outputs.
+        If x has dimension 1, apply the interpolation.
+        """
+        if x.dim() == 1:
+            return self._interpolate(x)
         else:
-            for i in range(1, x.shape[0]):  # the number of batches we are doing
-                batch_data = self._function_to_patch(torch.unbind(x)[i])
-                output_tensor = torch.vstack([output_tensor, batch_data])
-        return output_tensor
+            return torch.stack([self._forward(y) for y in torch.unbind(x)])
 
 
 class Decoder(torch.nn.Module):
@@ -147,7 +150,7 @@ class Decoder(torch.nn.Module):
         super().__init__()
         self.in_features = int(fs_to.dof_count)
         self.out_features = int(fs_from.dof_count)
-        self._patch_to_function = interpolator_wrapper(fs_from, fs_to, reverse=True)
+        self._adjoint_interpolate = interpolator_wrapper(fs_from, fs_to, reverse=True)
 
     def forward(self, x):
         """Forward pass.
@@ -157,15 +160,18 @@ class Decoder(torch.nn.Module):
 
         :arg x: input tensor
         """
-        # apply differentiable interpolation to each tensor in the batch
-        output_tensor = self._patch_to_function(torch.unbind(x)[0]).squeeze()
-        if x.shape[0] == 1:
-            pass
+        return self._forward(x)
+
+    def _forward(self, x):
+        """Recursively apply forward pass
+
+        Unbind the input, recursively call the function and stack the outputs.
+        If x has dimension 1, apply the revserve interpolation.
+        """
+        if x.dim() == 1:
+            return self._adjoint_interpolate(x)
         else:
-            for i in range(1, x.shape[0]):  # the number of batches we are doing
-                batch_data = self._patch_to_function(torch.unbind(x)[i])
-                output_tensor = torch.vstack([output_tensor, batch_data])
-        return output_tensor
+            return torch.stack([self._forward(y) for y in torch.unbind(x)])
 
 
 # Construct meshes onto which we want to interpolate
@@ -176,16 +182,16 @@ vom = VertexOnlyMesh(mesh, points)
 
 # Function spaces on these meshes
 fs = FunctionSpace(mesh, "CG", 1)
-fs2 = FunctionSpace(vom, "DG", 0)
+fs_vom = FunctionSpace(vom, "DG", 0)
 
 # Sizes of function spaces
 n_in = len(Function(fs).dat.data)
-n_out = len(Function(fs2).dat.data)
+n_out = len(Function(fs_vom).dat.data)
 
 model = torch.nn.Sequential(
     torch.nn.Linear(in_features=n_in, out_features=n_in).double(),
-    Encoder(fs, fs2).double(),
-    Decoder(fs, fs2).double(),
+    Encoder(fs, fs_vom).double(),
+    Decoder(fs, fs_vom).double(),
 )
 
 # Input and target tensors (random)
@@ -220,8 +226,8 @@ loss.backward()
 ### Test 1 - comparing A and J ###
 for layer in (
     torch.nn.Linear(in_features=3, out_features=7, bias=False).double(),
-    Encoder(fs, fs2).double(),
-    Decoder(fs, fs2).double(),
+    Encoder(fs, fs_vom).double(),
+    Decoder(fs, fs_vom).double(),
 ):
     n_in = layer.in_features
     n_out = layer.out_features
@@ -257,7 +263,7 @@ for layer in (
 u = Function(fs)
 x, y = SpatialCoordinate(mesh)
 u.interpolate(1 + sin(x * pi * 2) * sin(y * pi * 2))
-v = Function(fs2)
+v = Function(fs_vom)
 v.interpolate(u)
 
 # dof vectors for u and v
@@ -269,7 +275,7 @@ print(f"v_dofs are {v_dofs}")
 # use u_dofs as input for encoder
 # THE INPUT HAS TO BE OF THE FORM (BATCH, N_IN)
 u_dofs_tensor = torch.tensor(u_dofs).unsqueeze(0)
-model = Encoder(fs, fs2).double()
+model = Encoder(fs, fs_vom).double()
 model_output = model(u_dofs_tensor)
 new_v_dofs = model_output.numpy()
 
