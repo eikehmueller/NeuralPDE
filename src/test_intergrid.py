@@ -5,6 +5,7 @@ import pytest
 from firedrake import *
 import torch
 from intergrid import Encoder, Decoder
+from firedrake.ml.pytorch import to_torch
 
 
 @pytest.fixture
@@ -87,9 +88,8 @@ def test_manual_interpolation(function_spaces):
     v.interpolate(u)
 
     # dof vectors for u and v
-    u_dofs = u.dat.data_ro
-    v_dofs = v.dat.data_ro
-    u_dofs_tensor = torch.tensor(u_dofs)
+    u_dofs = to_torch(u).flatten()
+    v_dofs = to_torch(v).flatten()
     encoder = Encoder(fs, fs_vom).double()
-    w_dofs = np.asarray(encoder(u_dofs_tensor))
+    w_dofs = np.asarray(encoder(u_dofs))
     assert np.all(np.isclose(v_dofs, w_dofs))
