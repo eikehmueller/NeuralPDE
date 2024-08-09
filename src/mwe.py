@@ -162,7 +162,14 @@ class Decoder(torch.nn.Module):
         :arg x: input tensor
         """
         # apply differentiable interpolation to each tensor in the batch
-        return torch.stack([self._patch_to_function(y) for y in torch.unbind(x)])
+        output_tensor = self._patch_to_function(torch.unbind(x)[0]).squeeze()
+        if x.shape[0] == 1:
+            pass
+        else:
+            for i in range(1, x.shape[0]): # the number of batches we are doing
+                batch_data = self._patch_to_function(torch.unbind(x)[i])
+                output_tensor = torch.vstack([output_tensor, batch_data])
+        return output_tensor
 
 
 # PyTorch model: linear layer + encoder layer
@@ -204,6 +211,7 @@ y = model(X)
 loss = loss_fn(y, y_target)
 loss.backward()
 
+### Test 1 - comparing A and J ###
 for layer in (
     torch.nn.Linear(in_features=3, out_features=7, bias=False).double(),
     Encoder(fs, fs2).double(),
@@ -221,7 +229,6 @@ for layer in (
         y = layer(x)
         A[:, j] = np.asarray(y.detach())
     x = torch.zeros(n_in, dtype=torch.float64)
-    x.unsqueeze(dim=0)
     # extract Jacobian
     J = np.asarray(
         torch.autograd.functional.jacobian(layer, x.unsqueeze(dim=0))
@@ -239,3 +246,26 @@ for layer in (
     print("difference ||A-J|| :")
     print(np.linalg.norm(A - J))
     print()
+
+### Test 2 - comparing to interpolated meshes ###
+u = Function(fs)
+x, y = SpatialCoordinate(mesh)
+u.interpolate(1 + sin(x*pi*2)*sin(y*pi*2))
+v = Function(fs2)
+v.interpolate(u)
+
+# dof vectors for u and v
+u_dofs = u.dat.data_ro
+print(f'u_dofs are {u_dofs}')
+v_dofs = v.dat.data_ro
+print(f'v_dofs are {v_dofs}')
+
+# use u_dofs as input for encoder
+# THE INPUT HAS TO BE OF THE FORM (BATCH, N_IN)
+u_dofs_tensor = torch.tensor(u_dofs).unsqueeze(0)
+model = Encoder(fs, fs2).double()
+model_output = model(u_dofs_tensor)
+new_v_dofs = model_output.numpy()
+
+print(f'new_v_dofs are {new_v_dofs}')
+print(f'difference ||v_dofs - new_v_dofs|| = {np.linalg.norm(v_dofs - new_v_dofs)}')
