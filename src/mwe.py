@@ -7,21 +7,6 @@ from firedrake.__future__ import interpolate
 from firedrake.ml.pytorch import from_torch, to_torch
 
 
-# Construct meshes onto which we want to interpolate
-mesh = UnitSquareMesh(3, 3)
-
-points = [[0.6, 0.1], [0.5, 0.4], [0.7, 0.9]]
-vom = VertexOnlyMesh(mesh, points)
-
-# Function spaces on these meshes
-fs = FunctionSpace(mesh, "CG", 1)
-fs2 = FunctionSpace(vom, "DG", 0)
-
-# Sizes of function spaces
-n_in = len(Function(fs).dat.data)
-n_out = len(Function(fs2).dat.data)
-
-
 class InterpolatorWrapper(torch.autograd.Function):
     """Differentiable PyTorch wrapper around Firedrake interpolation
 
@@ -106,22 +91,27 @@ def interpolator_wrapper(fs_from, fs_to, reverse=False):
 
 
 class Encoder(torch.nn.Module):
-    """Differentiable encoder which maps a function from a function space to
-    another function space"""
+    """Differentiable encoder which interpolates to a different function space
 
-    def __init__(self, fs, fs2):
+    This maps dof-vectors of functions u from one function space to
+    dof-vectors of another function v on another function space in such a way
+    that the original function is interpolated to the target space, i.e.
+    v = interpolate(u).
+    """
+
+    def __init__(self, fs_from, fs_to):
         """Initialise new instance
 
-        :arg fs: original function space
-        :arg fs2: vom function space to which we want to interpolate
+        :arg fs_from: original function space
+        :arg fs_to: target function space that we want to interpolate to
         """
         super().__init__()
-        self.in_features = int(fs.dof_count)
-        self.out_features = int(fs2.dof_count)
-        self._function_to_patch = interpolator_wrapper(fs, fs2, reverse=False)
+        self.in_features = int(fs_from.dof_count)
+        self.out_features = int(fs_to.dof_count)
+        self._function_to_patch = interpolator_wrapper(fs_from, fs_to, reverse=False)
 
     def forward(self, x):
-        """Forward pass.
+        """Forward pass
 
         The input will be of shape (batch_size, n_in) and the output of size (batch_size, n_out)
         where n_in and n_out are the dimensions of the function spaces.
@@ -140,18 +130,24 @@ class Encoder(torch.nn.Module):
 
 
 class Decoder(torch.nn.Module):
-    """Differentiable decoder which maps a function from the points to a function space"""
+    """Differentiable encoder which implements the adjoint interpolation to a function space
 
-    def __init__(self, fs, fs2):
+    Maps the dof-vectors of a dual function v* on the target function space
+    to the dof-vectors of a dual function u* on the original function space
+    in such a way that v = interpolate(u). Hence, this class realises the
+    adjoint of the Encoder operation.
+    """
+
+    def __init__(self, fs_from, fs_to):
         """Initialise new instance
 
-        :arg fs: original function space
-        :arg fs2:function space to which we want to interpolate
+        :arg fs_from: original function space that we want to interpolate from
+        :arg fs_to: target function space to which we want to interpolate
         """
         super().__init__()
-        self.in_features = int(fs2.dof_count)
-        self.out_features = int(fs.dof_count)
-        self._patch_to_function = interpolator_wrapper(fs, fs2, reverse=True)
+        self.in_features = int(fs_to.dof_count)
+        self.out_features = int(fs_from.dof_count)
+        self._patch_to_function = interpolator_wrapper(fs_from, fs_to, reverse=True)
 
     def forward(self, x):
         """Forward pass.
@@ -166,16 +162,26 @@ class Decoder(torch.nn.Module):
         if x.shape[0] == 1:
             pass
         else:
-            for i in range(1, x.shape[0]): # the number of batches we are doing
+            for i in range(1, x.shape[0]):  # the number of batches we are doing
                 batch_data = self._patch_to_function(torch.unbind(x)[i])
                 output_tensor = torch.vstack([output_tensor, batch_data])
         return output_tensor
 
 
-# PyTorch model: linear layer + encoder layer
+# Construct meshes onto which we want to interpolate
+mesh = UnitSquareMesh(3, 3)
 
-# model(theta) = f ( g (theta) )
-# dmodel/dtheta
+points = [[0.6, 0.1], [0.5, 0.4], [0.7, 0.9]]
+vom = VertexOnlyMesh(mesh, points)
+
+# Function spaces on these meshes
+fs = FunctionSpace(mesh, "CG", 1)
+fs2 = FunctionSpace(vom, "DG", 0)
+
+# Sizes of function spaces
+n_in = len(Function(fs).dat.data)
+n_out = len(Function(fs2).dat.data)
+
 model = torch.nn.Sequential(
     torch.nn.Linear(in_features=n_in, out_features=n_in).double(),
     Encoder(fs, fs2).double(),
@@ -250,15 +256,15 @@ for layer in (
 ### Test 2 - comparing to interpolated meshes ###
 u = Function(fs)
 x, y = SpatialCoordinate(mesh)
-u.interpolate(1 + sin(x*pi*2)*sin(y*pi*2))
+u.interpolate(1 + sin(x * pi * 2) * sin(y * pi * 2))
 v = Function(fs2)
 v.interpolate(u)
 
 # dof vectors for u and v
 u_dofs = u.dat.data_ro
-print(f'u_dofs are {u_dofs}')
+print(f"u_dofs are {u_dofs}")
 v_dofs = v.dat.data_ro
-print(f'v_dofs are {v_dofs}')
+print(f"v_dofs are {v_dofs}")
 
 # use u_dofs as input for encoder
 # THE INPUT HAS TO BE OF THE FORM (BATCH, N_IN)
@@ -267,5 +273,5 @@ model = Encoder(fs, fs2).double()
 model_output = model(u_dofs_tensor)
 new_v_dofs = model_output.numpy()
 
-print(f'new_v_dofs are {new_v_dofs}')
-print(f'difference ||v_dofs - new_v_dofs|| = {np.linalg.norm(v_dofs - new_v_dofs)}')
+print(f"new_v_dofs are {new_v_dofs}")
+print(f"difference ||v_dofs - new_v_dofs|| = {np.linalg.norm(v_dofs - new_v_dofs)}")
