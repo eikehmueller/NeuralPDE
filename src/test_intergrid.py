@@ -93,3 +93,48 @@ def test_manual_interpolation(function_spaces):
     encoder = Encoder(fs, fs_vom).double()
     w_dofs = np.asarray(encoder(u_dofs))
     assert np.all(np.isclose(v_dofs, w_dofs))
+
+
+def test_two_dimensions(function_spaces):
+    """Check that interpolation using Encoder is the same as manual interpolation
+    for an input tensor with the shape (n, n_in). Output should be of the shape
+    (n, n_vom)"""
+    fs, fs_vom = function_spaces
+    encoder = Encoder(fs, fs_vom).double()
+    mesh = fs.mesh()
+    u1 = Function(fs)
+    u2 = Function(fs)
+    x, y = SpatialCoordinate(mesh)
+    u1.interpolate(1 + sin(x * pi * 2) * sin(y * pi * 2))
+    u2.interpolate(2 + sin(x * pi * 2) * cos(y * pi * 2))
+    u_dofs_tensor = torch.vstack((to_torch(u1).flatten(), to_torch(u2).flatten()))
+    v1 = Function(fs_vom)
+    v1.interpolate(u1)
+    v2 = Function(fs_vom)
+    v2.interpolate(u2)
+    v_dofs_tensor = torch.vstack((to_torch(v1).flatten(), to_torch(v2).flatten()))
+    w_dofs_tensor = np.asarray(encoder(u_dofs_tensor))
+    assert np.all(np.isclose(v_dofs_tensor, w_dofs_tensor))
+
+def test_three_dimensions(function_spaces):
+    """Check that interpolation using Encoder is the same as manual interpolation
+    for an input tensor with the shape (batch_size, n, n_in). Output should be of the shape
+    (batch_size, n, n_vom)"""
+    fs, fs_vom = function_spaces
+    encoder = Encoder(fs, fs_vom).double()
+    mesh = fs.mesh()
+    u1 = Function(fs)
+    u2 = Function(fs)
+    x, y = SpatialCoordinate(mesh)
+    u1.interpolate(1 + sin(x * pi * 2) * sin(y * pi * 2))
+    u2.interpolate(2 + sin(x * pi * 2) * cos(y * pi * 2))
+    u_dofs_tensor = torch.vstack((to_torch(u1).flatten(), to_torch(u2).flatten()))
+    u_dofs_batches = torch.vstack((u_dofs_tensor, u_dofs_tensor, u_dofs_tensor)) 
+    v1 = Function(fs_vom)
+    v1.interpolate(u1)
+    v2 = Function(fs_vom)
+    v2.interpolate(u2)
+    v_dofs_tensor = torch.vstack((to_torch(v1).flatten(), to_torch(v2).flatten()))
+    v_dofs_batches = torch.vstack((v_dofs_tensor, v_dofs_tensor, v_dofs_tensor))
+    w_dofs_batches = np.asarray(encoder(u_dofs_batches))
+    assert np.all(np.isclose(v_dofs_batches, w_dofs_batches))
