@@ -78,7 +78,6 @@ def test_jacobians_are_adjoint(function_spaces):
 def test_manual_interpolation(function_spaces):
     """Check that the encoder gives the same results as manual interpolation
     of the functions"""
-    ### Test 2 - comparing to interpolated meshes ###
     fs, fs_vom = function_spaces
     mesh = fs.mesh()
     u = Function(fs)
@@ -92,4 +91,32 @@ def test_manual_interpolation(function_spaces):
     v_dofs = to_torch(v).flatten()
     encoder = Encoder(fs, fs_vom).double()
     w_dofs = np.asarray(encoder(u_dofs))
+    assert np.all(np.isclose(v_dofs, w_dofs))
+
+
+def test_manual_interpolation_4d(function_spaces):
+    """Check that the encoder gives the same results as manual interpolation
+    of the functions in multiple dimensions"""
+    fs, fs_vom = function_spaces
+    u = Function(fs)
+    v = Function(fs_vom)
+    rng = np.random.default_rng(seed=3426197)
+    n1 = 3
+    n2 = 4
+    n3 = 5
+    n_in = fs.dof_count
+    n_out = fs_vom.dof_count
+    u_dofs = np.empty(shape=(n1, n2, n3, n_in))
+    v_dofs = np.empty(shape=(n1, n2, n3, n_out))
+    for i1 in range(n1):
+        for i2 in range(n2):
+            for i3 in range(n3):
+                with u.dat.vec as u_vec:
+                    u_vec[:] = rng.normal(size=n_in)
+                    u_dofs[i1, i2, i3, :] = u_vec[:]
+                v.interpolate(u)
+                with v.dat.vec_ro as v_vec:
+                    v_dofs[i1, i2, i3, :] = v_vec[:]
+    encoder = Encoder(fs, fs_vom).double()
+    w_dofs = np.asarray(encoder(torch.tensor(u_dofs)))
     assert np.all(np.isclose(v_dofs, w_dofs))
