@@ -1,5 +1,7 @@
 import torch
 from torch.utils.data import DataLoader
+#from torch.utils.tensorboard import SummaryWriter
+#writer = SummaryWriter(runs/solid_body_rotation_experiment_1)
 
 from firedrake import (
     UnitIcosahedralSphereMesh,
@@ -12,24 +14,27 @@ from neural_pde.patch_decoder import PatchDecoder
 from neural_pde.data_generator import AdvectionDataset
 from neural_pde.neural_solver import NeuralSolver
 
-# construct spherical patch covering
+# construct spherical patch covering with
+# arg1: number of refinements of the icosahedral sphere
+# arg2: number of radial points on each patch
 spherical_patch_covering = SphericalPatchCovering(0, 4)
+
 
 print(f"number of patches               = {spherical_patch_covering.n_patches}")
 print(f"patchsize                       = {spherical_patch_covering.patch_size}")
 print(f"number of points in all patches = {spherical_patch_covering.n_points}")
 
-mesh = UnitIcosahedralSphereMesh(1)
-V = FunctionSpace(mesh, "CG", 1)
+mesh = UnitIcosahedralSphereMesh(1) # create the mesh
+V = FunctionSpace(mesh, "CG", 1) # define the function space
 
 # number of dynamic fields: scalar tracer
 n_dynamic = 1
 # number of ancillary fields: x-, y- and z-coordinates
 n_ancillary = 3
 # dimension of latent space
-latent_dynamic_dim = 17
+latent_dynamic_dim = 17 # picked to hopefully capture the behaviour wanted
 # dimension of ancillary space
-latent_ancillary_dim = 6
+latent_ancillary_dim = 6 # also picked to hopefully resolve the behaviour
 # number of output fields: scalar tracer
 n_output = 1
 
@@ -40,16 +45,17 @@ n_output = 1
 dynamic_encoder_model = torch.nn.Sequential(
     torch.nn.Flatten(start_dim=-2, end_dim=-1),
     torch.nn.Linear(
-        in_features=(n_dynamic + n_ancillary) * spherical_patch_covering.patch_size,
-        out_features=latent_dynamic_dim,
+        in_features=(n_dynamic + n_ancillary) * spherical_patch_covering.patch_size, # size of each input sample
+        out_features=latent_dynamic_dim, # size of each output sample
     ),
-).double()
+).double() # double means to cast to double precision (float128)
 
 # ancillary encoder model: map ancillary fields to ancillary space
 # input:  (n_ancillary, patch_size)
 # output: (latent_ancillary_dim)
 ancillary_encoder_model = torch.nn.Sequential(
-    torch.nn.Flatten(start_dim=-2, end_dim=-1),
+    torch.nn.Flatten(start_dim=-2, end_dim=-1), # since we have 2 inputs, this is the same as flattening at 0
+    # and this will lead to a completely flatarray
     torch.nn.Linear(
         in_features=n_ancillary * spherical_patch_covering.patch_size,
         out_features=latent_ancillary_dim,
@@ -70,22 +76,26 @@ decoder_model = torch.nn.Sequential(
 ).double()
 
 # interaction model: function on latent space
-# input:  (d_latent,4)
-# output: (d_latent^dynamic)
 interaction_model = torch.nn.Sequential(
     torch.nn.Flatten(start_dim=-2, end_dim=-1),
     torch.nn.Linear(
-        in_features=4 * (latent_dynamic_dim + latent_ancillary_dim),
+        in_features=4 * (latent_dynamic_dim + latent_ancillary_dim), # do we use a linear model here?? Or do we need a nonlinear part
         out_features=latent_dynamic_dim,
     ),
 ).double()
 
 # dataset
-degree = 4
-nsamples = 16
-batchsize = 8
+phi = 1 # rotation angle of the data
+degree = 4 # degree of the polynomials on the dataset
+n_train_samples = 6 # number of samples in the training dataset
+n_valid_samples = 6
+batchsize = 2 # number of samples to use in each batch
 
-dataset = AdvectionDataset(V, nsamples, degree)
+train_ds = AdvectionDataset(V, n_train_samples, phi, degree)
+valid_ds = AdvectionDataset(V, n_valid_samples, phi, degree) 
+
+train_dl = DataLoader(train_ds, batch_size=batchsize, shuffle=True)
+valid_dl = DataLoader(valid_ds, batch_size=batchsize * 2)
 
 # Full model: encoder + processor + decoder
 model = torch.nn.Sequential(
@@ -100,24 +110,23 @@ model = torch.nn.Sequential(
     PatchDecoder(V, spherical_patch_covering, decoder_model),
 )
 
-dataloader = DataLoader(dataset, batch_size=batchsize, shuffle=True)
+opt = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.1) 
 
-optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+loss_fn = torch.nn.MSELoss() # mean squared error loss function 
 
-loss_fn = torch.nn.MSELoss()
-
-nepoch = 10
-
-loss_history = []
+nepoch = 4
 
 # main training loop
 for epoch in range(nepoch):
-    for i, sample_batched in enumerate(iter(dataloader)):
-        X, y_target = sample_batched
-        optimizer.zero_grad()
-        y = model(X)
-        loss = loss_fn(y, y_target)
-        loss.backward()
-        optimizer.step()
+    for Xb, yb in train_dl:
+        opt.zero_grad() # resets all of the gradients to zero, otherwise the gradients are accumulated
+        y_pred = model(Xb)
+
+        loss = loss_fn(y_pred, yb)
+        loss.backward() 
+        opt.step() # adjust the parameters by the gradient collected in the backwards pass
+    model.eval()
+    with torch.no_grad():
+        valid_loss = sum(loss_fn(model(xb), yb) for xb, yb in valid_dl)
     loss_history.append(loss.item())
     print(f"{epoch:6d}", loss.item())
