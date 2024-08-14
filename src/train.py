@@ -6,6 +6,8 @@ from torch.utils.data import DataLoader
 from firedrake import (
     UnitIcosahedralSphereMesh,
     FunctionSpace,
+    Function,
+    VTKFile
 )
 
 from neural_pde.spherical_patch_covering import SphericalPatchCovering
@@ -97,6 +99,15 @@ valid_ds = AdvectionDataset(V, n_valid_samples, phi, degree)
 train_dl = DataLoader(train_ds, batch_size=batchsize, shuffle=True)
 valid_dl = DataLoader(valid_ds, batch_size=batchsize * 2)
 
+
+# visualise the first object in the training dataset 
+u_in = Function(V, name="input")
+u_in.dat.data[:] = train_ds[0][0][0].numpy()
+u_target = Function(V, name="target")
+u_target.dat.data[:] = train_ds[0][1].numpy()
+file = VTKFile("/home/katie795/internship/solid_body_rotation/output/training_example.pvd")
+file.write(u_in, u_target) # u_target is rotated phi degees CLOCKWISE from u_in
+
 # Full model: encoder + processor + decoder
 model = torch.nn.Sequential(
     PatchEncoder(
@@ -113,6 +124,7 @@ model = torch.nn.Sequential(
 opt = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.1) 
 
 loss_fn = torch.nn.MSELoss() # mean squared error loss function 
+loss_history = []
 
 nepoch = 4
 
@@ -130,3 +142,16 @@ for epoch in range(nepoch):
         valid_loss = sum(loss_fn(model(xb), yb) for xb, yb in valid_dl)
     loss_history.append(loss.item())
     print(f"{epoch:6d}", loss.item())
+
+
+print(valid_ds[0][0])
+# visualise the first object in the training dataset 
+u_in = Function(V, name="input")
+u_in.dat.data[:] = valid_ds[0][0][0].numpy()
+u_target = Function(V, name="target")
+u_target.dat.data[:] = valid_ds[0][1].numpy()
+u_predicted_values = model(valid_ds[0][0].unsqueeze(0)).squeeze()
+u_predicted = Function(V, name="predicted")
+u_predicted.dat.data[:] = u_predicted_values.detach().numpy()
+file = VTKFile("/home/katie795/internship/solid_body_rotation/output/validation_example.pvd")
+file.write(u_in, u_target, u_predicted) 
