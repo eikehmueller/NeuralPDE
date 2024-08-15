@@ -1,7 +1,5 @@
 import torch
 from torch.utils.data import DataLoader
-#from torch.utils.tensorboard import SummaryWriter
-#writer = SummaryWriter(runs/solid_body_rotation_experiment_1)
 
 from firedrake import (
     UnitIcosahedralSphereMesh,
@@ -9,6 +7,9 @@ from firedrake import (
     Function,
     VTKFile
 )
+
+from torch.utils.tensorboard import SummaryWriter
+writer = SummaryWriter("runs/solid_body_rotation_experiment_1")
 
 from neural_pde.spherical_patch_covering import SphericalPatchCovering
 from neural_pde.patch_encoder import PatchEncoder
@@ -21,12 +22,11 @@ from neural_pde.neural_solver import NeuralSolver
 # arg2: number of radial points on each patch
 spherical_patch_covering = SphericalPatchCovering(0, 4)
 
-
 print(f"number of patches               = {spherical_patch_covering.n_patches}")
 print(f"patchsize                       = {spherical_patch_covering.patch_size}")
 print(f"number of points in all patches = {spherical_patch_covering.n_points}")
 
-mesh = UnitIcosahedralSphereMesh(1) # create the mesh
+mesh = UnitIcosahedralSphereMesh(2) # create the mesh
 V = FunctionSpace(mesh, "CG", 1) # define the function space
 
 # number of dynamic fields: scalar tracer
@@ -34,9 +34,9 @@ n_dynamic = 1
 # number of ancillary fields: x-, y- and z-coordinates
 n_ancillary = 3
 # dimension of latent space
-latent_dynamic_dim = 17 # picked to hopefully capture the behaviour wanted
+latent_dynamic_dim = 15 # picked to hopefully capture the behaviour wanted
 # dimension of ancillary space
-latent_ancillary_dim = 6 # also picked to hopefully resolve the behaviour
+latent_ancillary_dim = 7 # also picked to hopefully resolve the behaviour
 # number of output fields: scalar tracer
 n_output = 1
 
@@ -89,9 +89,9 @@ interaction_model = torch.nn.Sequential(
 # dataset
 phi = 1 # rotation angle of the data
 degree = 4 # degree of the polynomials on the dataset
-n_train_samples = 6 # number of samples in the training dataset
-n_valid_samples = 6
-batchsize = 2 # number of samples to use in each batch
+n_train_samples = 20 # number of samples in the training dataset
+n_valid_samples = 10
+batchsize = 5 # number of samples to use in each batch
 
 train_ds = AdvectionDataset(V, n_train_samples, phi, degree)
 valid_ds = AdvectionDataset(V, n_valid_samples, phi, degree) 
@@ -126,7 +126,7 @@ opt = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.1)
 loss_fn = torch.nn.MSELoss() # mean squared error loss function 
 loss_history = []
 
-nepoch = 4
+nepoch = 10
 
 # main training loop
 for epoch in range(nepoch):
@@ -137,14 +137,15 @@ for epoch in range(nepoch):
         loss = loss_fn(y_pred, yb)
         loss.backward() 
         opt.step() # adjust the parameters by the gradient collected in the backwards pass
+    writer.add_scalar("Loss/train", loss, epoch)
     model.eval()
     with torch.no_grad():
         valid_loss = sum(loss_fn(model(xb), yb) for xb, yb in valid_dl)
     loss_history.append(loss.item())
     print(f"{epoch:6d}", loss.item())
 
+writer.flush()
 
-print(valid_ds[0][0])
 # visualise the first object in the training dataset 
 u_in = Function(V, name="input")
 u_in.dat.data[:] = valid_ds[0][0][0].numpy()
@@ -155,3 +156,16 @@ u_predicted = Function(V, name="predicted")
 u_predicted.dat.data[:] = u_predicted_values.detach().numpy()
 file = VTKFile("/home/katie795/internship/solid_body_rotation/output/validation_example.pvd")
 file.write(u_in, u_target, u_predicted) 
+
+patch_encoder = PatchEncoder(V,
+        spherical_patch_covering,
+        dynamic_encoder_model,
+        ancillary_encoder_model,
+        n_dynamic,)
+
+#tensorboard session
+dataiter = iter(train_dl)
+X, y = next(dataiter)
+writer.add_graph(model, X)
+writer.close()
+
