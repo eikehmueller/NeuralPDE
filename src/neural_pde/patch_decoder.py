@@ -1,26 +1,26 @@
-"""Patch decoder. Decoces information from latent space back to a function on the sphere"""
+"""Patch decoder. Decodes information from latent space back to a function on the sphere"""
+
 
 from firedrake import *
-from firedrake.ml.pytorch import fem_operator
-from pyadjoint import ReducedFunctional, Control
+#from firedrake.ml.pytorch import fem_operator
+#from pyadjoint import ReducedFunctional, Control
 from firedrake.adjoint import *
-from firedrake.__future__ import interpolate
 import torch
-
+from intergrid import Decoder
 
 class PatchDecoder(torch.nn.Module):
     """Collective decoding from latent space
 
     The input X has shape
 
-        (B,n_{patches},d_{lat})
+        (B,n_{patches},d_{lat}) or (n_{patches}, d_{lat})
 
     where the batch-dimension is of size B. d_{lat} = d_{lat}^{dynamic} + d_{lat}^{ancillary}
     is the dimension of the latent space, consisting of both dynamic and ancillary variables.
 
     The output has shape
 
-        (B,n_{out},n_{dof})
+        (B,n_{out},n_{dof}) or (n_{out}, n_{dof})
 
     where n_{out} is the number of output functions.
 
@@ -67,41 +67,52 @@ class PatchDecoder(torch.nn.Module):
         self._patchsize = spherical_patch_covering.patch_size
         vertex_only_mesh = VertexOnlyMesh(mesh, points)
         vertex_only_fs = FunctionSpace(vertex_only_mesh, "DG", 0)
-
         continue_annotation()
         with set_working_tape() as _:
-            w = Cofunction(vertex_only_fs.dual())
-            interpolator = interpolate(TestFunction(fs), vertex_only_fs)
-            self._patch_to_function = fem_operator(
-                ReducedFunctional(
-                    assemble(action(adjoint(interpolator), w)), Control(w)
-                )
-            )
-        continue_annotation()
+            self._patch_to_function = Decoder(fs, vertex_only_fs)
+        pause_annotation()
 
     def forward(self, x):
         """Forward map
 
         :arg x: input
         """
-        # Part I: encoding on patches
-        x = self._decoder_model(x)
-        # permute axes to obtain tensor or shape (B,n_{out},n_{patches},n_{dof per patch})
-        x = torch.permute(x, (0, 2, 1, 3))
-        # Part II: (adjoint) interpolation from VOM to spherical function space
-        x = torch.stack(
-            [
-                torch.stack(
-                    [
-                        torch.flatten(
-                            self._patch_to_function(
-                                torch.flatten(z, start_dim=-2, end_dim=-1)
-                            )
+
+        if x.dim() == 2:
+            # Part I: encoding on patches
+            x = self._decoder_model(x)
+            x = torch.permute(x, (1, 0, 2))
+            # Part II: (adjoint) interpolation from VOM to spherical function space
+            x = torch.stack(
+                [
+                    torch.flatten(
+                        self._patch_to_function.forward(
+                            torch.flatten(z, start_dim=-2, end_dim=-1)
                         )
-                        for z in torch.unbind(y)
-                    ]
-                )
-                for y in torch.unbind(x)
-            ]
-        )
-        return x
+                    )
+                    for z in torch.unbind(x)
+                ]
+            )
+            return x
+        else:
+            # Part I: encoding on patches
+            x = self._decoder_model(x)
+            x = torch.permute(x, (0, 2, 1, 3))
+            # Part II: (adjoint) interpolation from VOM to spherical function space
+            x = torch.stack(
+                [
+                    torch.stack(
+                        [
+                            torch.flatten(
+                                self._patch_to_function.forward(
+                                    torch.flatten(z, start_dim=-2, end_dim=-1)
+                                )
+                            )
+                            for z in torch.unbind(y)
+                        ]
+                    )
+                    for y in torch.unbind(x)
+                ]
+            )
+            return x
+
