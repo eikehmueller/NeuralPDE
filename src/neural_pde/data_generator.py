@@ -15,10 +15,6 @@ from firedrake import (
 )
 
 import argparse
-parser = argparse.ArgumentParser()
-parser.add_argument("path_to_output_folder", help="absolute path to output folder")
-args = parser.parse_args()
-path_to_output  = args.path_to_output_folder
 
 
 class SphericalFunctionSpaceDataset(ABC, Dataset):
@@ -149,6 +145,12 @@ class AdvectionDataset(SphericalFunctionSpaceDataset):
 # M A I N
 #######################################################################
 if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("path_to_output_folder", help="absolute path to output folder")
+    args = parser.parse_args()
+    path_to_output = args.path_to_output_folder
+
     mesh = UnitIcosahedralSphereMesh(3)
     V = FunctionSpace(mesh, "CG", 1)
     degree = 4
