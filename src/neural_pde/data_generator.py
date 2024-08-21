@@ -147,7 +147,14 @@ class AdvectionDataset(SphericalFunctionSpaceDataset):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("path_to_output_folder", help="absolute path to output folder")
+    default_path = "/home/katie795/internship/NeuralPDE/output"
+    parser.add_argument(
+    "--path_to_output_folder",
+    type=str,
+    action="store",
+    default=default_path,
+    help="path to output folder",
+)
     args = parser.parse_args()
     path_to_output = args.path_to_output_folder
 
@@ -166,5 +173,5 @@ if __name__ == "__main__":
         u_in.dat.data[:] = batched_sample[0][0, 0].numpy()
         u_target = Function(V, name="target")
         u_target.dat.data[:] = batched_sample[1][0].numpy()
-        file = VTKFile(str(path_to_output) + "/sample.pvd")
+        file = VTKFile(f"{path_to_output}/sample.pvd")
         file.write(u_in, u_target)
