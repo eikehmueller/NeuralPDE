@@ -8,8 +8,22 @@ from firedrake import (
     VTKFile
 )
 
+import argparse
+parser = argparse.ArgumentParser()
+default_path = "/home/katie795/internship/NeuralPDE/output"
+parser.add_argument(
+    "--path_to_output_folder",
+    type=str,
+    action="store",
+    default=default_path,
+    help="path to output folder",
+)
+
+args = parser.parse_args()
+path_to_output  = args.path_to_output_folder
+
 from torch.utils.tensorboard import SummaryWriter
-writer = SummaryWriter("tensorboard_logs/solid_body_rotation_experiment_1")
+writer = SummaryWriter(f"{path_to_output}/tensorboard_logs/solid_body_rotation_experiment_1")
 
 from neural_pde.spherical_patch_covering import SphericalPatchCovering
 from neural_pde.patch_encoder import PatchEncoder
@@ -105,7 +119,7 @@ u_in = Function(V, name="input")
 u_in.dat.data[:] = train_ds[0][0][0].numpy()
 u_target = Function(V, name="target")
 u_target.dat.data[:] = train_ds[0][1].numpy()
-file = VTKFile("/home/katie795/internship/solid_body_rotation/output/training_example.pvd")
+file = VTKFile(f"{path_to_output}/training_example.pvd")
 file.write(u_in, u_target) # u_target is rotated phi degees CLOCKWISE from u_in
 
 # Full model: encoder + processor + decoder
@@ -154,7 +168,7 @@ u_target.dat.data[:] = valid_ds[0][1].numpy()
 u_predicted_values = model(valid_ds[0][0].unsqueeze(0)).squeeze()
 u_predicted = Function(V, name="predicted")
 u_predicted.dat.data[:] = u_predicted_values.detach().numpy()
-file = VTKFile("/home/katie795/internship/solid_body_rotation/output/validation_example.pvd")
+file = VTKFile(f"{path_to_output}/validation_example.pvd")
 file.write(u_in, u_target, u_predicted) 
 
 patch_encoder = PatchEncoder(V,
