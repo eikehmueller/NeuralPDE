@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from firedrake import (
     UnitIcosahedralSphereMesh,
     Function,
-    File,
+    VTKFile,
     FunctionSpace,
     SpatialCoordinate,
 )
@@ -158,5 +158,5 @@ if __name__ == "__main__":
         u_in.dat.data[:] = batched_sample[0][0, 0].numpy()
         u_target = Function(V, name="target")
         u_target.dat.data[:] = batched_sample[1][0].numpy()
-        file = File("sample.pvd")
+        file = VTKFile("../../output/sample.pvd")
         file.write(u_in, u_target)

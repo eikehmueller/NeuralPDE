@@ -8,8 +8,6 @@ from firedrake import (
     VTKFile
 )
 
-print('Testing for wsl')
-
 from torch.utils.tensorboard import SummaryWriter
 writer = SummaryWriter("tensorboard_logs/solid_body_rotation_experiment_1")
 
