@@ -9,7 +9,7 @@ from firedrake import (
 )
 
 from torch.utils.tensorboard import SummaryWriter
-writer = SummaryWriter("runs/solid_body_rotation_experiment_1")
+writer = SummaryWriter("tensorboard_logs/solid_body_rotation_experiment_1")
 
 from neural_pde.spherical_patch_covering import SphericalPatchCovering
 from neural_pde.patch_encoder import PatchEncoder
@@ -34,9 +34,9 @@ n_dynamic = 1
 # number of ancillary fields: x-, y- and z-coordinates
 n_ancillary = 3
 # dimension of latent space
-latent_dynamic_dim = 15 # picked to hopefully capture the behaviour wanted
+latent_dynamic_dim = 7 # picked to hopefully capture the behaviour wanted
 # dimension of ancillary space
-latent_ancillary_dim = 7 # also picked to hopefully resolve the behaviour
+latent_ancillary_dim = 3 # also picked to hopefully resolve the behaviour
 # number of output fields: scalar tracer
 n_output = 1
 
@@ -89,9 +89,9 @@ interaction_model = torch.nn.Sequential(
 # dataset
 phi = 1 # rotation angle of the data
 degree = 4 # degree of the polynomials on the dataset
-n_train_samples = 20 # number of samples in the training dataset
+n_train_samples = 100 # number of samples in the training dataset
 n_valid_samples = 10
-batchsize = 5 # number of samples to use in each batch
+batchsize = 10 # number of samples to use in each batch
 
 train_ds = AdvectionDataset(V, n_train_samples, phi, degree)
 valid_ds = AdvectionDataset(V, n_valid_samples, phi, degree) 
@@ -126,7 +126,7 @@ opt = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.1)
 loss_fn = torch.nn.MSELoss() # mean squared error loss function 
 loss_history = []
 
-nepoch = 10
+nepoch = 5
 
 # main training loop
 for epoch in range(nepoch):
