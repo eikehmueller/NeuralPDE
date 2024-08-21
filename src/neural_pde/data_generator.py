@@ -14,6 +14,12 @@ from firedrake import (
     SpatialCoordinate,
 )
 
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("path_to_output_folder", help="absolute path to output folder")
+args = parser.parse_args()
+path_to_output  = args.path_to_output_folder
+
 
 class SphericalFunctionSpaceDataset(ABC, Dataset):
     """Abstract base class for data generation on a function space
@@ -158,5 +164,5 @@ if __name__ == "__main__":
         u_in.dat.data[:] = batched_sample[0][0, 0].numpy()
         u_target = Function(V, name="target")
         u_target.dat.data[:] = batched_sample[1][0].numpy()
-        file = VTKFile("../../output/sample.pvd")
+        file = VTKFile(str(path_to_output) + "/sample.pvd")
         file.write(u_in, u_target)
