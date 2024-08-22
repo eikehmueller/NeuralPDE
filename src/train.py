@@ -1,12 +1,14 @@
 import torch
-from torch.utils.data import DataLoader
-
+from torch.utils.data import DataLoader, RandomSampler
+from output_functions import clear_output
 from firedrake import (
     UnitIcosahedralSphereMesh,
     FunctionSpace,
     Function,
     VTKFile
 )
+
+clear_output()
 
 import argparse
 parser = argparse.ArgumentParser()
@@ -105,12 +107,14 @@ phi = 1 # rotation angle of the data
 degree = 4 # degree of the polynomials on the dataset
 n_train_samples = 100 # number of samples in the training dataset
 n_valid_samples = 10
-batchsize = 10 # number of samples to use in each batch
+batchsize = 16 # number of samples to use in each batch
 
 train_ds = AdvectionDataset(V, n_train_samples, phi, degree)
 valid_ds = AdvectionDataset(V, n_valid_samples, phi, degree) 
 
-train_dl = DataLoader(train_ds, batch_size=batchsize, shuffle=True)
+# sampler = RandomSampler(train_ds, batch_size=batchsize)
+
+train_dl = DataLoader(train_ds, batch_size=batchsize, shuffle=True, drop_last=True)
 valid_dl = DataLoader(valid_ds, batch_size=batchsize * 2)
 
 
@@ -131,16 +135,16 @@ model = torch.nn.Sequential(
         ancillary_encoder_model,
         n_dynamic,
     ),
-    NeuralSolver(spherical_patch_covering, interaction_model, nsteps=1, stepsize=1.0),
+    NeuralSolver(spherical_patch_covering, interaction_model, nsteps=10, stepsize=0.1),
     PatchDecoder(V, spherical_patch_covering, decoder_model),
 )
 
-opt = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.1) 
+opt = torch.optim.Adam(model.parameters(), lr=0.001) 
 
 loss_fn = torch.nn.MSELoss() # mean squared error loss function 
 loss_history = []
 
-nepoch = 5
+nepoch = 15
 
 # main training loop
 for epoch in range(nepoch):
@@ -151,10 +155,11 @@ for epoch in range(nepoch):
         loss = loss_fn(y_pred, yb)
         loss.backward() 
         opt.step() # adjust the parameters by the gradient collected in the backwards pass
-    writer.add_scalar("Loss/train", loss, epoch)
+    writer.add_scalar("Training loss", loss, epoch)
     model.eval()
     with torch.no_grad():
         valid_loss = sum(loss_fn(model(xb), yb) for xb, yb in valid_dl)
+    writer.add_scalar("Validation loss", valid_loss, epoch)
     loss_history.append(loss.item())
     print(f"{epoch:6d}", loss.item())
 
@@ -178,8 +183,8 @@ patch_encoder = PatchEncoder(V,
         n_dynamic,)
 
 #tensorboard session
-dataiter = iter(train_dl)
-X, y = next(dataiter)
-writer.add_graph(model, X)
+#dataiter = iter(train_dl)
+#X, y = next(dataiter)
+#writer.add_graph(model, X)
 writer.close()
 

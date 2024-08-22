@@ -5,6 +5,11 @@ from firedrake import *
 import torch
 from intergrid import Encoder, Decoder
 
+for i in range(torch.cuda.device_count()):
+   print(torch.cuda.get_device_properties(i).name)
+
+print(torch.cuda.device_count())
+'''
 # Construct meshes onto which we want to interpolate
 mesh = UnitSquareMesh(3, 3)
 
@@ -109,3 +114,4 @@ new_v_dofs = model_output.numpy()
 
 print(f"new_v_dofs are {new_v_dofs}")
 print(f"difference ||v_dofs - new_v_dofs|| = {np.linalg.norm(v_dofs - new_v_dofs)}")
+'''
