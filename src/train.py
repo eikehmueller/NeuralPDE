@@ -1,12 +1,15 @@
 import torch
-from torch.utils.data import DataLoader, RandomSampler
+from torch.utils.data import DataLoader
 from output_functions import clear_output
 from firedrake import (
     UnitIcosahedralSphereMesh,
     FunctionSpace,
     Function,
-    VTKFile
+    VTKFile,
+    errornorm
 )
+
+import numpy as np
 
 clear_output()
 
@@ -42,7 +45,8 @@ print(f"number of patches               = {spherical_patch_covering.n_patches}")
 print(f"patchsize                       = {spherical_patch_covering.patch_size}")
 print(f"number of points in all patches = {spherical_patch_covering.n_points}")
 
-mesh = UnitIcosahedralSphereMesh(2) # create the mesh
+num_ref = 2
+mesh = UnitIcosahedralSphereMesh(num_ref) # create the mesh
 V = FunctionSpace(mesh, "CG", 1) # define the function space
 
 # number of dynamic fields: scalar tracer
@@ -139,9 +143,22 @@ model = torch.nn.Sequential(
     PatchDecoder(V, spherical_patch_covering, decoder_model),
 )
 
-opt = torch.optim.Adam(model.parameters(), lr=0.001) 
+opt = torch.optim.Adam(model.parameters()) 
 
-loss_fn = torch.nn.MSELoss() # mean squared error loss function 
+def rough_L2_error(y_pred, yb):
+
+    
+    # area of an element in a unit icosahedral mesh
+    h_squared = (4 * np.pi ) / (20 * (4.0 ** num_ref))
+
+    loss = torch.sum((y_pred - yb)**2  * h_squared)
+
+    print(loss.shape)
+
+    return loss
+
+        
+#loss_fn = torch.nn.MSELoss() # mean squared error loss function 
 loss_history = []
 
 nepoch = 15
@@ -152,13 +169,13 @@ for epoch in range(nepoch):
         opt.zero_grad() # resets all of the gradients to zero, otherwise the gradients are accumulated
         y_pred = model(Xb)
 
-        loss = loss_fn(y_pred, yb)
+        loss = rough_L2_error(y_pred, yb) #loss_fn(y_pred, yb)
         loss.backward() 
         opt.step() # adjust the parameters by the gradient collected in the backwards pass
     writer.add_scalar("Training loss", loss, epoch)
     model.eval()
     with torch.no_grad():
-        valid_loss = sum(loss_fn(model(xb), yb) for xb, yb in valid_dl)
+        valid_loss = sum(rough_L2_error(model(xb), yb) for xb, yb in valid_dl)
     writer.add_scalar("Validation loss", valid_loss, epoch)
     loss_history.append(loss.item())
     print(f"{epoch:6d}", loss.item())
