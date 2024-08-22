@@ -134,3 +134,103 @@ class NeuralSolver(torch.nn.Module):
 
             return x
 
+class Katies_NeuralSolver(torch.nn.Module):
+    """This is Katie's attempt at replicating the Neural solver. This is to see if
+    they do the same thing - I will try to do this without referencing Eike's one.
+
+    This is a learnable function that that goes from
+    R^{4, d_{lat}} -> R^{d_{lat}^{dyn}}
+
+    Things that we take as arguments are
+    
+    spherical_patch_covering - this is where the red patches on the VOM are defined on the dual mesh
+    interaction_model - the structure of the neural network that goes here 
+                        this is of shape (4 * latent_dimension) (because we want 4 nodes )
+                        output is of shape latent_dynamic_dim ???
+    nsteps=1,  number of steps in the neural solver
+    stepsize=1
+
+    The previous layer of the neural network spits out a tensor of shape
+
+    (B,n_{patches},d_{lat})
+
+    which will be our input shape, and the next layer of the neural netowrk takes a tensor of shape
+
+    (B,n_{patches},d_{lat}).
+
+    So theoretically there should not really be any tensors changing shape.
+
+    Also, the neighbour list is an ordered list, where,
+    node[0] has neighbours neighbour_list[0]
+
+    """
+
+    # start by initializing the class
+    def __init__(self, spherical_patch_covering, interaction_model, nsteps=1, stepsize=1):
+        super().__init__()
+        self.spherical_patch_covering = spherical_patch_covering
+        self.interaction_model = interaction_model
+        self.nsteps = nsteps
+        self.stepsize = stepsize
+
+        # neighbours list here
+        self.neighbour_list = self.spherical_patch_covering.neighbour_list
+
+    # define the forward method for this class
+    # Given an input z_old, what is returned
+    def forward(self, z_old):
+        if z_old.dim() == 2:
+            for _ in range(self.nsteps):
+                # First, z_old is of shape (B, n_patch, d_lat)
+                #print(f'The shape of z_old is {z_old.shape}')
+                #print(self.neighbour_list)
+                # but we want something that has shape (B, n_patch, d_lat, 4) 
+                # first element of each 4 is the one in the middle
+                z_unsqueezed = z_old.unsqueeze(2)
+                #print(f'The shape of z_old is {z_unsqueezed.shape}')
+                z_mid = z_unsqueezed.expand(-1, -1, 4)
+                #print(f'The shape of z_old is now {z_mid.shape}')
+                # now I want to access the elements in the tensors
+                for n_patch in range(z_mid.shape[1]):
+                    for d_lat in range(z_mid.shape[2]):
+                        for beta in range(3):
+                            # i is the same because they are from the same batch size
+                            # The question is: what is the value of a neighbour of z_mid?
+                            # What is the position of a neighbour of z_mid?
+                            # if z_mid has position n_patch, it has position neighbours_list[patch][betha]
+                            z_mid[n_patch][d_lat][beta + 1] = z_old[self.neighbour_list[n_patch][beta]][d_lat]
+            
+                F_theta = self.interaction_model(z_mid)
+                # now we need to be careful because we are only updating the latent space variables
+                #print(f'The shape of F_theta is {F_theta.shape}')
+                num_dyn = F_theta.shape[1]
+                z_old[:, :num_dyn] += self.stepsize * F_theta
+        else:
+            for _ in range(self.nsteps):
+                # First, z_old is of shape (B, n_patch, d_lat)
+                #print(f'The shape of z_old is {z_old.shape}')
+                #print(self.neighbour_list)
+                # but we want something that has shape (B, n_patch, d_lat, 4) 
+                # first element of each 4 is the one in the middle
+                z_unsqueezed = z_old.unsqueeze(3)
+                #print(f'The shape of z_old is {z_unsqueezed.shape}')
+                z_mid = z_unsqueezed.expand(-1, -1, -1, 4)
+                #print(f'The shape of z_old is now {z_mid.shape}')
+                # now I want to access the elements in the tensors
+                for batch in range(z_mid.shape[0]):
+                    for n_patch in range(z_mid.shape[1]):
+                        for d_lat in range(z_mid.shape[2]):
+                            for beta in range(3):
+                                # i is the same because they are from the same batch size
+                                # The question is: what is the value of a neighbour of z_mid?
+                                # What is the position of a neighbour of z_mid?
+                                # if z_mid has position n_patch, it has position neighbours_list[patch][betha]
+                                z_mid[batch][n_patch][d_lat][beta + 1] = z_old[batch][self.neighbour_list[n_patch][beta]][d_lat]
+            
+                F_theta = self.interaction_model(z_mid)
+                # now we need to be careful because we are only updating the latent space variables
+                #print(f'The shape of F_theta is {F_theta.shape}')
+                num_dyn = F_theta.shape[2]
+                z_old[:, :, :num_dyn] += self.stepsize * F_theta
+
+        return z_old

@@ -34,7 +34,7 @@ from neural_pde.spherical_patch_covering import SphericalPatchCovering
 from neural_pde.patch_encoder import PatchEncoder
 from neural_pde.patch_decoder import PatchDecoder
 from neural_pde.data_generator import AdvectionDataset
-from neural_pde.neural_solver import NeuralSolver
+from neural_pde.neural_solver import Katies_NeuralSolver
 
 # construct spherical patch covering with
 # arg1: number of refinements of the icosahedral sphere
@@ -139,7 +139,7 @@ model = torch.nn.Sequential(
         ancillary_encoder_model,
         n_dynamic,
     ),
-    NeuralSolver(spherical_patch_covering, interaction_model, nsteps=10, stepsize=0.1),
+    Katies_NeuralSolver(spherical_patch_covering, interaction_model, nsteps=1, stepsize=1),
     PatchDecoder(V, spherical_patch_covering, decoder_model),
 )
 
@@ -147,14 +147,9 @@ opt = torch.optim.Adam(model.parameters())
 
 def rough_L2_error(y_pred, yb):
 
-    
     # area of an element in a unit icosahedral mesh
     h_squared = (4 * np.pi ) / (20 * (4.0 ** num_ref))
-
     loss = torch.sum((y_pred - yb)**2  * h_squared)
-
-    print(loss.shape)
-
     return loss
 
         
@@ -187,17 +182,11 @@ u_in = Function(V, name="input")
 u_in.dat.data[:] = valid_ds[0][0][0].numpy()
 u_target = Function(V, name="target")
 u_target.dat.data[:] = valid_ds[0][1].numpy()
-u_predicted_values = model(valid_ds[0][0].unsqueeze(0)).squeeze()
+u_predicted_values = model(valid_ds[0][0]).squeeze()
 u_predicted = Function(V, name="predicted")
 u_predicted.dat.data[:] = u_predicted_values.detach().numpy()
 file = VTKFile(f"{path_to_output}/validation_example.pvd")
 file.write(u_in, u_target, u_predicted) 
-
-patch_encoder = PatchEncoder(V,
-        spherical_patch_covering,
-        dynamic_encoder_model,
-        ancillary_encoder_model,
-        n_dynamic,)
 
 #tensorboard session
 #dataiter = iter(train_dl)
