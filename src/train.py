@@ -116,8 +116,6 @@ batchsize = 16 # number of samples to use in each batch
 train_ds = AdvectionDataset(V, n_train_samples, phi, degree)
 valid_ds = AdvectionDataset(V, n_valid_samples, phi, degree) 
 
-# sampler = RandomSampler(train_ds, batch_size=batchsize)
-
 train_dl = DataLoader(train_ds, batch_size=batchsize, shuffle=True, drop_last=True)
 valid_dl = DataLoader(valid_ds, batch_size=batchsize * 2)
 
@@ -146,7 +144,6 @@ model = torch.nn.Sequential(
 opt = torch.optim.Adam(model.parameters()) 
 
 def rough_L2_error(y_pred, yb):
-
     # area of an element in a unit icosahedral mesh
     h_squared = (4 * np.pi ) / (20 * (4.0 ** num_ref))
     loss = torch.sum((y_pred - yb)**2  * h_squared)
@@ -156,7 +153,7 @@ def rough_L2_error(y_pred, yb):
 #loss_fn = torch.nn.MSELoss() # mean squared error loss function 
 loss_history = []
 
-nepoch = 15
+nepoch = 5
 
 # main training loop
 for epoch in range(nepoch):
