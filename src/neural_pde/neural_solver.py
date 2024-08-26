@@ -66,15 +66,19 @@ class NeuralSolver(torch.nn.Module):
         :arg inputs: tensor of shape (B,n_patch,d_{latent}+d_{ancillary}) or (B,n_patch,d_{latent}+d_{ancillary})
         """
 
+        print(f'The dimension of x is {x.dim()}')
+
         if x.dim() == 2:
             index = (
                 torch.tensor(self._neighbour_list)
                 .unsqueeze(-1) 
                 .expand((-1, -1, x.shape[-1])) 
                 )
+            print(index.shape)
             for _ in range(self.nsteps):
                 # ---- stage 1 ---- gather to tensor Z of shape
                 #                   (n_patch,4,d_{lat}^{dynamic}+d_{lat}^{ancillary})
+                print(f'x unsqueezed is {x.unsqueeze(-2).repeat((x.shape[0], 4, x.shape[-1]))}')
                 z = torch.gather(
                     x.unsqueeze(-2).repeat((x.shape[0], 4, x.shape[-1])),
                     0, 
