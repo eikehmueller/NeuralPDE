@@ -67,6 +67,7 @@ class NeuralSolver(torch.nn.Module):
         """
 
         print(f'The dimension of x is {x.dim()}')
+        print(f'The shape of x is {x.shape}')
 
         if x.dim() == 2:
             index = (
@@ -78,12 +79,13 @@ class NeuralSolver(torch.nn.Module):
             for _ in range(self.nsteps):
                 # ---- stage 1 ---- gather to tensor Z of shape
                 #                   (n_patch,4,d_{lat}^{dynamic}+d_{lat}^{ancillary})
-                print(f'x unsqueezed is {x.unsqueeze(-2).repeat((x.shape[0], 4, x.shape[-1]))}')
+                #print(f'x unsqueezed is {x.unsqueeze(-2).repeat((x.shape[0], 4, x.shape[-1]))}')
                 z = torch.gather(
                     x.unsqueeze(-2).repeat((x.shape[0], 4, x.shape[-1])),
                     0, 
                     index, # must have same number of dimensions as the input
                 )
+                print(f'The shape of z is {z.shape}')
 
                 # ---- stage 2 ---- apply interaction model to obtain tensor of shape
                 #                   (B,n_patch,d_{lat}^{dynamic})
@@ -186,17 +188,17 @@ class Katies_NeuralSolver(torch.nn.Module):
         if z_old.dim() == 2:
             for _ in range(self.nsteps):
                 # First, z_old is of shape (B, n_patch, d_lat)
-                #print(f'The shape of z_old is {z_old.shape}')
+                print(f'The shape of z_old is {z_old.shape}')
                 #print(self.neighbour_list)
-                # but we want something that has shape (B, n_patch, d_lat, 4) 
+                # but we want something that has shape (n_patch, d_lat, 4) 
                 # first element of each 4 is the one in the middle
                 z_unsqueezed = z_old.unsqueeze(2)
-                #print(f'The shape of z_old is {z_unsqueezed.shape}')
+                print(f'The shape of z_unsqueezed is {z_unsqueezed.shape}')
                 z_mid = z_unsqueezed.expand(-1, -1, 4)
-                #print(f'The shape of z_old is now {z_mid.shape}')
+                print(f'The shape of z_mid is now {z_mid.shape}')
                 # now I want to access the elements in the tensors
                 for n_patch in range(z_mid.shape[1]):
-                    for d_lat in range(z_mid.shape[2]):
+                    for d_lat in range(z_mid.shape[0]):
                         for beta in range(3):
                             # i is the same because they are from the same batch size
                             # The question is: what is the value of a neighbour of z_mid?
@@ -222,8 +224,8 @@ class Katies_NeuralSolver(torch.nn.Module):
                 #print(f'The shape of z_old is now {z_mid.shape}')
                 # now I want to access the elements in the tensors
                 for batch in range(z_mid.shape[0]):
-                    for n_patch in range(z_mid.shape[1]):
-                        for d_lat in range(z_mid.shape[2]):
+                    for n_patch in range(z_mid.shape[2]):
+                        for d_lat in range(z_mid.shape[1]):
                             for beta in range(3):
                                 # i is the same because they are from the same batch size
                                 # The question is: what is the value of a neighbour of z_mid?

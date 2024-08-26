@@ -21,12 +21,10 @@ def mesh_data():
     return
 
 spherical_patch_covering = SphericalPatchCovering(0, 4)
-num_ref=1
+num_ref=0
 mesh = UnitIcosahedralSphereMesh(num_ref) # create the mesh
 V = FunctionSpace(mesh, "CG", 1) # define the function space
 dataset = AdvectionDataset(V, 7, 1, degree=4)
-#sample_batched =  dataset[0] # sample dof vector
-#print(sample_batched.shape)
 sample = dataset[0][0] # has u, x, y, z
 print(sample.shape) # this is the dof map for one sample
 #self.spherical_patch_covering.neighbour_list 
@@ -41,22 +39,23 @@ interaction_model = torch.nn.Sequential(
         out_features=latent_dynamic_dim,
     ),
 ).double()
+model = torch.nn.Sequential(interaction_model)
 
 def test_same_length_batches(NeuralSolver, Katies_NeuralSolver, sample):
 
-    model1 = NeuralSolver(
+    model1 = torch.nn.Sequential(NeuralSolver(
         spherical_patch_covering,
         interaction_model,
         nsteps=1,
         stepsize=1.0,
-    )
+    ))
 
-    model2 = Katies_NeuralSolver(
+    model2 = torch.nn.Sequential(Katies_NeuralSolver(
         spherical_patch_covering,
         interaction_model,
         nsteps=1,
         stepsize=1.0,
-    )
+    ))
 
     y1 = model1(sample)
     y2 = model2(sample)
