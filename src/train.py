@@ -117,8 +117,14 @@ train_ds = AdvectionDataset(V, n_train_samples, phi, degree)
 valid_ds = AdvectionDataset(V, n_valid_samples, phi, degree) 
 
 train_dl = DataLoader(train_ds, batch_size=batchsize, shuffle=True, drop_last=True)
-valid_dl = DataLoader(valid_ds, batch_size=batchsize * 2)
+valid_dl = DataLoader(valid_ds, batch_size=batchsize * 2, drop_last=True)
 
+assert_testing = {
+    "batchsize" : batchsize,
+    "n_patches" : spherical_patch_covering.n_patches,
+    "d_lat"     : latent_dynamic_dim + latent_ancillary_dim,
+    "d_dyn"     : latent_dynamic_dim
+}
 
 # visualise the first object in the training dataset 
 u_in = Function(V, name="input")
@@ -137,7 +143,11 @@ model = torch.nn.Sequential(
         ancillary_encoder_model,
         n_dynamic,
     ),
-    Katies_NeuralSolver(spherical_patch_covering, interaction_model, nsteps=1, stepsize=1),
+    Katies_NeuralSolver(spherical_patch_covering, 
+                        interaction_model,
+                        nsteps=1, 
+                        stepsize=1,
+                        assert_testing=assert_testing),
     PatchDecoder(V, spherical_patch_covering, decoder_model),
 )
 

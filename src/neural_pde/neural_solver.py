@@ -66,10 +66,8 @@ class NeuralSolver(torch.nn.Module):
         :arg inputs: tensor of shape (B,n_patch,d_{latent}+d_{ancillary}) or (B,n_patch,d_{latent}+d_{ancillary})
         """
 
-        print(f'The dimension of x is {x.dim()}')
-        print(f'The shape of x is {x.shape}')
-
-        if x.dim() == 2:
+        if x.dim() == 2 or x.shape[0] == 1:
+            x = x.squeeze(0)
             index = (
                 torch.tensor(self._neighbour_list)
                 .unsqueeze(-1) 
@@ -79,13 +77,11 @@ class NeuralSolver(torch.nn.Module):
             for _ in range(self.nsteps):
                 # ---- stage 1 ---- gather to tensor Z of shape
                 #                   (n_patch,4,d_{lat}^{dynamic}+d_{lat}^{ancillary})
-                #print(f'x unsqueezed is {x.unsqueeze(-2).repeat((x.shape[0], 4, x.shape[-1]))}')
                 z = torch.gather(
                     x.unsqueeze(-2).repeat((x.shape[0], 4, x.shape[-1])),
                     0, 
                     index, # must have same number of dimensions as the input
                 )
-                print(f'The shape of z is {z.shape}')
 
                 # ---- stage 2 ---- apply interaction model to obtain tensor of shape
                 #                   (B,n_patch,d_{lat}^{dynamic})
@@ -172,7 +168,7 @@ class Katies_NeuralSolver(torch.nn.Module):
     """
 
     # start by initializing the class
-    def __init__(self, spherical_patch_covering, interaction_model, nsteps=1, stepsize=1):
+    def __init__(self, spherical_patch_covering, interaction_model, nsteps=1, stepsize=1, assert_testing=None):
         super().__init__()
         self.spherical_patch_covering = spherical_patch_covering
         self.interaction_model = interaction_model
@@ -182,61 +178,71 @@ class Katies_NeuralSolver(torch.nn.Module):
         # neighbours list here
         self.neighbour_list = self.spherical_patch_covering.neighbour_list
 
-    # define the forward method for this class
-    # Given an input z_old, what is returned
+        self.assert_testing = assert_testing
+
     def forward(self, z_old):
-        if z_old.dim() == 2:
+        if z_old.dim() == 2 or z_old.shape[0] == 1:
             for _ in range(self.nsteps):
-                # First, z_old is of shape (B, n_patch, d_lat)
-                print(f'The shape of z_old is {z_old.shape}')
-                #print(self.neighbour_list)
-                # but we want something that has shape (n_patch, d_lat, 4) 
-                # first element of each 4 is the one in the middle
+                z_old = z_old.squeeze(0)
+                # STEP 1: Create tensor of shape (n_patch, d_lat, 4)
                 z_unsqueezed = z_old.unsqueeze(2)
-                print(f'The shape of z_unsqueezed is {z_unsqueezed.shape}')
                 z_mid = z_unsqueezed.expand(-1, -1, 4)
-                print(f'The shape of z_mid is now {z_mid.shape}')
-                # now I want to access the elements in the tensors
-                for n_patch in range(z_mid.shape[1]):
-                    for d_lat in range(z_mid.shape[0]):
+
+                if self.assert_testing is not None:
+                    assert z_mid.shape[0] == self.assert_testing["n_patches"], "z_mid[1] is not equal to n_patches"
+                    assert z_mid.shape[1] == self.assert_testing["d_lat"],     "z_mid[2] is not equal to d_lat"
+                    assert z_mid.shape[2] == 4,                                "z_mid[3] is not equal to 4"
+
+                # STEP 2: Populate the tensor with data from neighbouring vertices
+                for n_patch in range(z_mid.shape[0]):
+                    for d_lat in range(z_mid.shape[1]):
                         for beta in range(3):
-                            # i is the same because they are from the same batch size
-                            # The question is: what is the value of a neighbour of z_mid?
-                            # What is the position of a neighbour of z_mid?
-                            # if z_mid has position n_patch, it has position neighbours_list[patch][betha]
-                            z_mid[n_patch][d_lat][beta + 1] = z_old[self.neighbour_list[n_patch][beta]][d_lat]
-            
+                            neighbour_position = self.neighbour_list[n_patch][beta]
+                            z_mid[n_patch][d_lat][beta + 1] = z_old[neighbour_position][d_lat]
+                
+                # STEP 3: Define and apply the interaction model
+                # #input (B, n_patches, d_latent, 4) output (B, npatches, d_dyn)
                 F_theta = self.interaction_model(z_mid)
-                # now we need to be careful because we are only updating the latent space variables
-                #print(f'The shape of F_theta is {F_theta.shape}')
+
+                if self.assert_testing is not None:
+                    assert F_theta.shape[0] == self.assert_testing["n_patches"], "F_theta[0] is not equal to n_patches"
+                    assert F_theta.shape[1] == self.assert_testing["d_dyn"],     "F_theta[1] is not equal to d_dyn"
+                
+                # STEP 4: Update the dynamic latent variables in z_old
                 num_dyn = F_theta.shape[1]
                 z_old[:, :num_dyn] += self.stepsize * F_theta
         else:
             for _ in range(self.nsteps):
                 # First, z_old is of shape (B, n_patch, d_lat)
-                #print(f'The shape of z_old is {z_old.shape}')
-                #print(self.neighbour_list)
-                # but we want something that has shape (B, n_patch, d_lat, 4) 
-                # first element of each 4 is the one in the middle
-                z_unsqueezed = z_old.unsqueeze(3)
-                #print(f'The shape of z_old is {z_unsqueezed.shape}')
+                # STEP 1: Create tensor of shape (B, n_patch, d_lat, 4)
+                z_unsqueezed = z_old.unsqueeze(3).double()
                 z_mid = z_unsqueezed.expand(-1, -1, -1, 4)
-                #print(f'The shape of z_old is now {z_mid.shape}')
-                # now I want to access the elements in the tensors
+
+                if self.assert_testing is not None:
+                    assert z_mid.shape[0] == self.assert_testing["batchsize"], "z_mid[0] is not equal to batch size"
+                    assert z_mid.shape[1] == self.assert_testing["n_patches"], "z_mid[1] is not equal to n_patches"
+                    assert z_mid.shape[2] == self.assert_testing["d_lat"],     "z_mid[2] is not equal to d_lat"
+                    assert z_mid.shape[3] == 4,                                "z_mid[3] is not equal to 4"
+
+                # STEP 2: Populate the tensor with data from neighbouring vertices
                 for batch in range(z_mid.shape[0]):
-                    for n_patch in range(z_mid.shape[2]):
-                        for d_lat in range(z_mid.shape[1]):
+                    for n_patch in range(z_mid.shape[1]):
+                        for d_lat in range(z_mid.shape[2]):
                             for beta in range(3):
-                                # i is the same because they are from the same batch size
-                                # The question is: what is the value of a neighbour of z_mid?
-                                # What is the position of a neighbour of z_mid?
-                                # if z_mid has position n_patch, it has position neighbours_list[patch][betha]
-                                z_mid[batch][n_patch][d_lat][beta + 1] = z_old[batch][self.neighbour_list[n_patch][beta]][d_lat]
-            
+                                neighbour_position = self.neighbour_list[n_patch][beta]
+                                z_mid[batch][n_patch][d_lat][beta + 1] = z_old[batch][neighbour_position][d_lat]
+                
+                # STEP 3: Define and apply the interaction model
+                # #input (B, n_patches, d_latent, 4) output (B, npatches, d_dyn)
                 F_theta = self.interaction_model(z_mid)
-                # now we need to be careful because we are only updating the latent space variables
-                #print(f'The shape of F_theta is {F_theta.shape}')
+
+                if self.assert_testing is not None:
+                    assert F_theta.shape[0] == self.assert_testing["batchsize"], "F_theta[0] is not equal to batch size"
+                    assert F_theta.shape[1] == self.assert_testing["n_patches"], "F_theta[1] is not equal to n_patches"
+                    assert F_theta.shape[2] == self.assert_testing["d_dyn"],     "F_theta[2] is not equal to d_dyn"
+
                 num_dyn = F_theta.shape[2]
+                # STEP 4: Update the dynamic latent variables in z_old
                 z_old[:, :, :num_dyn] += self.stepsize * F_theta
 
         return z_old
