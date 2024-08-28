@@ -6,7 +6,6 @@ from firedrake import (
     FunctionSpace,
     Function,
     VTKFile,
-    errornorm
 )
 
 import numpy as np

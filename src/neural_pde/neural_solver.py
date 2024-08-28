@@ -40,6 +40,7 @@ class NeuralSolver(torch.nn.Module):
         interaction_model,
         nsteps=1,
         stepsize=1.0,
+        assert_testing=None
     ):
         """Initialise new instance
 
@@ -73,7 +74,7 @@ class NeuralSolver(torch.nn.Module):
                 .unsqueeze(-1) 
                 .expand((-1, -1, x.shape[-1])) 
                 )
-            print(index.shape)
+            
             for _ in range(self.nsteps):
                 # ---- stage 1 ---- gather to tensor Z of shape
                 #                   (n_patch,4,d_{lat}^{dynamic}+d_{lat}^{ancillary})
@@ -83,21 +84,25 @@ class NeuralSolver(torch.nn.Module):
                     index, # must have same number of dimensions as the input
                 )
 
+                if self.assert_testing is not None:
+                    assert z.shape[0] == self.assert_testing["n_patches"], "z[1] is not equal to n_patches"
+                    assert z.shape[1] == self.assert_testing["d_lat"],     "z[2] is not equal to d_lat"
+                    assert z.shape[2] == 4,                                "z[3] is not equal to 4"
+
                 # ---- stage 2 ---- apply interaction model to obtain tensor of shape
-                #                   (B,n_patch,d_{lat}^{dynamic})
+                #                   (n_patch,d_{lat}^{dynamic})
                 fz = self.interaction_model(z)
+
+                if self.assert_testing is not None:
+                    assert Fz.shape[0] == self.assert_testing["n_patches"], "fz[0] is not equal to n_patches"
+                    assert Fz.shape[1] == self.assert_testing["d_dyn"],     "fz[1] is not equal to d_dyn"
 
 
                 # ---- stage 3 ---- pad with zeros in last dimension to obtain a tensor dY of shape
-                #                   (B,n_patch,d_{lat}^{dynamic}+d_{lat}^{ancillary})
+                #                   (n_patch,d_{lat}^{dynamic}+d_{lat}^{ancillary})
                 dx = torch.nn.functional.pad( 
                     fz, (0, x.shape[-1] - fz.shape[-1]), mode="constant", value=0
                 )
-                # the padding (0, x.shape[-1] - fz.shape[-1]) is a list of 2*length of the source (fz.shape) 
-                # the value of each is the amount of zeros to be added to each dimension. They come in zeros,
-                # i.e. (0,1,1,1) pads a zero a column of zeros at the outermost dimension, then pads zeros
-                # in the innermost dimensions on either side.
-
 
                 # ---- stage 4 ---- update Y = Y + dt*dY
                 x += self.stepsize * dx
@@ -120,10 +125,20 @@ class NeuralSolver(torch.nn.Module):
                     index, 
                 )
 
+                if self.assert_testing is not None:
+                    assert z.shape[0] == self.assert_testing["batchsize"], "z[0] is not equal to batch size"
+                    assert z.shape[1] == self.assert_testing["n_patches"], "z[1] is not equal to n_patches"
+                    assert z.shape[2] == self.assert_testing["d_lat"],     "z[2] is not equal to d_lat"
+                    assert z.shape[3] == 4,                                "z[3] is not equal to 4"
+
                 # ---- stage 2 ---- apply interaction model to obtain tensor of shape
                 #                   (B,n_patch,d_{lat}^{dynamic})
                 fz = self.interaction_model(z)
 
+                if self.assert_testing is not None:
+                    assert fz.shape[0] == self.assert_testing["batchsize"], "fz[0] is not equal to batch size"
+                    assert fz.shape[1] == self.assert_testing["n_patches"], "fz[1] is not equal to n_patches"
+                    assert fz.shape[2] == self.assert_testing["d_dyn"],     "fz[2] is not equal to d_dyn"
 
                 # ---- stage 3 ---- pad with zeros in last dimension to obtain a tensor dY of shape
                 #                   (B,n_patch,d_{lat}^{dynamic}+d_{lat}^{ancillary})
