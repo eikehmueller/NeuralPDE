@@ -197,10 +197,10 @@ for epoch in range(nepoch):
 
     avg_vloss = running_vloss / (n_valid_samples)
 
-    print('LOSS train {} valid {}'.format(avg_loss, avg_vloss))
+    print('Training loss: {} Validation loss {}'.format(avg_loss, avg_vloss))
 
     writer.add_scalars('Training vs. Validation Loss',
-                    { 'Training' : avg_loss, 'Validation' : avg_vloss },
+                    { 'Training loss' : avg_loss, 'Validation loss' : avg_vloss },
                     epoch + 1)
     writer.flush()
     
