@@ -33,7 +33,7 @@ from neural_pde.spherical_patch_covering import SphericalPatchCovering
 from neural_pde.patch_encoder import PatchEncoder
 from neural_pde.patch_decoder import PatchDecoder
 from neural_pde.data_generator import AdvectionDataset
-from neural_pde.neural_solver import Katies_NeuralSolver
+from neural_pde.neural_solver import Katies_NeuralSolver, NeuralSolver
 
 # construct spherical patch covering with
 # arg1: number of refinements of the icosahedral sphere
@@ -109,14 +109,14 @@ interaction_model = torch.nn.Sequential(
 phi = 1 # rotation angle of the data
 degree = 4 # degree of the polynomials on the dataset
 n_train_samples = 100 # number of samples in the training dataset
-n_valid_samples = 10
+n_valid_samples = 16 # needs to be larger than the batch size!!
 batchsize = 16 # number of samples to use in each batch
 
 train_ds = AdvectionDataset(V, n_train_samples, phi, degree)
 valid_ds = AdvectionDataset(V, n_valid_samples, phi, degree) 
 
 train_dl = DataLoader(train_ds, batch_size=batchsize, shuffle=True, drop_last=True)
-valid_dl = DataLoader(valid_ds, batch_size=batchsize * 2, drop_last=True)
+valid_dl = DataLoader(valid_ds, batch_size=batchsize , drop_last=True)
 
 assert_testing = {
     "batchsize" : batchsize,
@@ -142,7 +142,7 @@ model = torch.nn.Sequential(
         ancillary_encoder_model,
         n_dynamic,
     ),
-    Katies_NeuralSolver(spherical_patch_covering, 
+    NeuralSolver(spherical_patch_covering, 
                         interaction_model,
                         nsteps=1, 
                         stepsize=1,
@@ -162,26 +162,54 @@ def rough_L2_error(y_pred, yb):
 #loss_fn = torch.nn.MSELoss() # mean squared error loss function 
 loss_history = []
 
-nepoch = 5
+nepoch = 50
 
 # main training loop
 for epoch in range(nepoch):
+
+    # training loop
+    model.train(True)
+    i = 0 
     for Xb, yb in train_dl:
         opt.zero_grad() # resets all of the gradients to zero, otherwise the gradients are accumulated
         y_pred = model(Xb)
 
-        loss = rough_L2_error(y_pred, yb) #loss_fn(y_pred, yb)
-        loss.backward() 
+        avg_loss = rough_L2_error(y_pred, yb) / batchsize # only if dataloader drops last
+        avg_loss.backward() 
         opt.step() # adjust the parameters by the gradient collected in the backwards pass
-    writer.add_scalar("Training loss", loss, epoch)
-    model.eval()
-    with torch.no_grad():
-        valid_loss = sum(rough_L2_error(model(xb), yb) for xb, yb in valid_dl)
-    writer.add_scalar("Validation loss", valid_loss, epoch)
-    loss_history.append(loss.item())
-    print(f"{epoch:6d}", loss.item())
 
-writer.flush()
+        train_x = epoch * len(train_dl) + i + 1
+        writer.add_scalar("Loss/train", avg_loss, train_x)
+        i += 1 
+
+    running_vloss = 0.0
+
+    model.eval()
+
+    # Disable gradient computation and reduce memory consumption.
+    # validation loop
+    with torch.no_grad():
+        for i, vdata in enumerate(valid_dl):
+            vinputs, vlabels = vdata
+            voutputs = model(vinputs)
+            vloss = rough_L2_error(voutputs, vlabels)
+            running_vloss += vloss
+
+    avg_vloss = running_vloss / (n_valid_samples)
+
+    print('LOSS train {} valid {}'.format(avg_loss, avg_vloss))
+
+    writer.add_scalars('Training vs. Validation Loss',
+                    { 'Training' : avg_loss, 'Validation' : avg_vloss },
+                    epoch + 1)
+    writer.flush()
+    
+    loss_history.append(avg_loss.item())
+
+
+
+
+
 
 # visualise the first object in the training dataset 
 u_in = Function(V, name="input")
