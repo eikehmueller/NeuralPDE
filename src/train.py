@@ -6,6 +6,7 @@ from firedrake import (
     FunctionSpace,
     Function,
     VTKFile,
+    errornorm
 )
 
 import numpy as np
@@ -47,6 +48,7 @@ print(f"number of points in all patches = {spherical_patch_covering.n_points}")
 num_ref = 2
 mesh = UnitIcosahedralSphereMesh(num_ref) # create the mesh
 V = FunctionSpace(mesh, "CG", 1) # define the function space
+h = 1 / (np.sin(2 * np.pi / 5))# from firedrake documentation
 
 # number of dynamic fields: scalar tracer
 n_dynamic = 1
@@ -108,12 +110,12 @@ interaction_model = torch.nn.Sequential(
 # dataset
 phi = 1 # rotation angle of the data
 degree = 4 # degree of the polynomials on the dataset
-n_train_samples = 100 # number of samples in the training dataset
-n_valid_samples = 16 # needs to be larger than the batch size!!
+n_train_samples = 500 # number of samples in the training dataset
+n_valid_samples = 100 # needs to be larger than the batch size!!
 batchsize = 16 # number of samples to use in each batch
 
 train_ds = AdvectionDataset(V, n_train_samples, phi, degree)
-valid_ds = AdvectionDataset(V, n_valid_samples, phi, degree) 
+valid_ds = AdvectionDataset(V, n_valid_samples, phi, degree, seed=123456) 
 
 train_dl = DataLoader(train_ds, batch_size=batchsize, shuffle=True, drop_last=True)
 valid_dl = DataLoader(valid_ds, batch_size=batchsize , drop_last=True)
@@ -152,14 +154,37 @@ model = torch.nn.Sequential(
 
 opt = torch.optim.Adam(model.parameters()) 
 
+## Which Loss function is the best one to use???
+
 def rough_L2_error(y_pred, yb):
     # area of an element in a unit icosahedral mesh
     h_squared = (4 * np.pi ) / (20 * (4.0 ** num_ref))
     loss = torch.sum((y_pred - yb)**2  * h_squared)
+
     return loss
 
+def normalised_L2_error(y_pred, yb):
+    # length of an edge in a unit icosahedral mesh
+    h = 1 / (np.sin(2 * np.pi / 5))# from firedrake documentation
+    loss = h *  torch.sum((y_pred - yb)**2 / (yb.abs()))
+    return loss
+
+
+def accurate_L2_error(y_pred, yb):
+    # DOES NOT WORK YET
+    # More accurate, but more expensive L2_error
+    # this has no mechanism to calculate backwards gradients
+    error = 0
+    for _ in range(yb.shape[0]):
+        u_ex = Function(V)
+        u_ex.dat.data[:] = yb[0].squeeze().detach().numpy()
+        u_h = Function(V) # our approximated expression
+        u_h.dat.data[:] = y_pred[0].squeeze().detach().numpy()
+        error += errornorm(u_ex, u_h)
+    return error
+
         
-#loss_fn = torch.nn.MSELoss() # mean squared error loss function 
+loss_fn = torch.nn.MSELoss() # mean squared error loss function 
 loss_history = []
 
 nepoch = 50
@@ -184,21 +209,18 @@ for epoch in range(nepoch):
 
     running_vloss = 0.0
 
-    model.eval()
-
     # Disable gradient computation and reduce memory consumption.
     # validation loop
+    model.eval()
     with torch.no_grad():
-        for i, vdata in enumerate(valid_dl):
-            vinputs, vlabels = vdata
-            voutputs = model(vinputs)
-            vloss = rough_L2_error(voutputs, vlabels)
+        for Xv, yv in valid_dl:
+            yv_pred = model(Xv)
+            vloss = rough_L2_error(yv_pred, yv)
             running_vloss += vloss
 
     avg_vloss = running_vloss / (n_valid_samples)
 
-    print('Training loss: {} Validation loss {}'.format(avg_loss, avg_vloss))
-
+    print(f'Epoch {epoch}: Training loss: {avg_loss}, Validation loss: {avg_vloss}')
     writer.add_scalars('Training vs. Validation Loss',
                     { 'Training loss' : avg_loss, 'Validation loss' : avg_vloss },
                     epoch + 1)

@@ -71,7 +71,7 @@ class AdvectionDataset(SphericalFunctionSpaceDataset):
 
     """
 
-    def __init__(self, fs, nsamples, phi, degree=4):
+    def __init__(self, fs, nsamples, phi, degree=4, seed=12345):
         """Initialise new instance
 
         :arg fs: function space
@@ -91,7 +91,7 @@ class AdvectionDataset(SphericalFunctionSpaceDataset):
         self._n_func_target = 1
 
         self._degree = degree
-        self._rng = np.random.default_rng(12345)
+        self._rng = np.random.default_rng(seed) # removing the seed seems to make it slower
 
         # generate data
         self._data = []
