@@ -146,8 +146,8 @@ model = torch.nn.Sequential(
     ),
     NeuralSolver(spherical_patch_covering, 
                         interaction_model,
-                        nsteps=1, 
-                        stepsize=1,
+                        nsteps=4, 
+                        stepsize=0.25,
                         assert_testing=assert_testing),
     PatchDecoder(V, spherical_patch_covering, decoder_model),
 )
@@ -165,7 +165,6 @@ def rough_L2_error(y_pred, yb):
 
 def normalised_L2_error(y_pred, yb):
     # length of an edge in a unit icosahedral mesh
-    h = 1 / (np.sin(2 * np.pi / 5))# from firedrake documentation
     loss = h *  torch.sum((y_pred - yb)**2 / (yb.abs()))
     return loss
 
