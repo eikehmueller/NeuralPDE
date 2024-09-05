@@ -1,3 +1,8 @@
+from timeit import default_timer as timer
+from datetime import timedelta
+
+start = timer()
+
 import torch
 from torch.utils.data import DataLoader
 from output_functions import clear_output
@@ -10,10 +15,10 @@ from firedrake import (
 )
 
 import numpy as np
+import argparse
 
 clear_output()
 
-import argparse
 parser = argparse.ArgumentParser()
 default_path = "/home/katie795/internship/NeuralPDE/output"
 parser.add_argument(
@@ -39,7 +44,7 @@ from neural_pde.neural_solver import Katies_NeuralSolver, NeuralSolver
 # construct spherical patch covering with
 # arg1: number of refinements of the icosahedral sphere
 # arg2: number of radial points on each patch
-spherical_patch_covering = SphericalPatchCovering(0, 4)
+spherical_patch_covering = SphericalPatchCovering(0, 2)
 
 print(f"number of patches               = {spherical_patch_covering.n_patches}")
 print(f"patchsize                       = {spherical_patch_covering.patch_size}")
@@ -108,11 +113,11 @@ interaction_model = torch.nn.Sequential(
 ).double()
 
 # dataset
-phi = 1 # rotation angle of the data
+phi = 0.1 # rotation angle of the data
 degree = 4 # degree of the polynomials on the dataset
-n_train_samples = 500 # number of samples in the training dataset
-n_valid_samples = 100 # needs to be larger than the batch size!!
-batchsize = 16 # number of samples to use in each batch
+n_train_samples = 200 # number of samples in the training dataset
+n_valid_samples = 32 # needs to be larger than the batch size!!
+batchsize = 32 # number of samples to use in each batch
 
 train_ds = AdvectionDataset(V, n_train_samples, phi, degree)
 valid_ds = AdvectionDataset(V, n_valid_samples, phi, degree, seed=123456) 
@@ -146,26 +151,29 @@ model = torch.nn.Sequential(
     ),
     NeuralSolver(spherical_patch_covering, 
                         interaction_model,
-                        nsteps=4, 
-                        stepsize=0.25,
+                        nsteps=1, 
+                        stepsize=1,
                         assert_testing=assert_testing),
     PatchDecoder(V, spherical_patch_covering, decoder_model),
 )
 
-opt = torch.optim.Adam(model.parameters()) 
+opt = torch.optim.Adam(model.parameters(), lr=0.00005) 
 
 ## Which Loss function is the best one to use???
 
 def rough_L2_error(y_pred, yb):
     # area of an element in a unit icosahedral mesh
-    h_squared = (4 * np.pi ) / (20 * (4.0 ** num_ref))
-    loss = torch.sum((y_pred - yb)**2  * h_squared)
+    h_squared = (4 * np.pi) / (20 * (4.0 ** num_ref))
+    loss = torch.mean(torch.sum((y_pred - yb)**2  * h_squared))
 
     return loss
 
 def normalised_L2_error(y_pred, yb):
     # length of an edge in a unit icosahedral mesh
-    loss = h *  torch.sum((y_pred - yb)**2 / (yb.abs()))
+    loss = torch.mean(
+        torch.sum(torch.sum((y_pred - yb)**2, dim=1), dim=0) 
+        /torch.sum(torch.sum((yb)**2, dim=1), dim=0)
+        )
     return loss
 
 
@@ -198,7 +206,7 @@ for epoch in range(nepoch):
         opt.zero_grad() # resets all of the gradients to zero, otherwise the gradients are accumulated
         y_pred = model(Xb)
 
-        avg_loss = rough_L2_error(y_pred, yb) / batchsize # only if dataloader drops last
+        avg_loss = normalised_L2_error(y_pred, yb)  # only if dataloader drops last
         avg_loss.backward() 
         opt.step() # adjust the parameters by the gradient collected in the backwards pass
 
@@ -214,10 +222,7 @@ for epoch in range(nepoch):
     with torch.no_grad():
         for Xv, yv in valid_dl:
             yv_pred = model(Xv)
-            vloss = rough_L2_error(yv_pred, yv)
-            running_vloss += vloss
-
-    avg_vloss = running_vloss / (n_valid_samples)
+            avg_vloss = normalised_L2_error(yv_pred, yv)
 
     print(f'Epoch {epoch}: Training loss: {avg_loss}, Validation loss: {avg_vloss}')
     writer.add_scalars('Training vs. Validation Loss',
@@ -229,9 +234,7 @@ for epoch in range(nepoch):
 
 
 
-
-
-
+data_index = 0 # should be between 0 and n_valid_samples
 # visualise the first object in the training dataset 
 u_in = Function(V, name="input")
 u_in.dat.data[:] = valid_ds[0][0][0].numpy()
@@ -247,5 +250,7 @@ file.write(u_in, u_target, u_predicted)
 #dataiter = iter(train_dl)
 #X, y = next(dataiter)
 #writer.add_graph(model, X)
-writer.close()
+#writer.close()
 
+end = timer()
+print(f'Runtime: {timedelta(seconds=end-start)}')
