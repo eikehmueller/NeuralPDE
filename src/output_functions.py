@@ -32,6 +32,7 @@ def move_files_and_directories(wsl_folder, windows_folder):
 def clear_output():
     folder = '/home/katie795/internship/NeuralPDE/output'
     #folder = '~/katies_code/output'
+    #folder = 'output'
     for filename in os.listdir(folder):
         file_path = os.path.join(folder, filename)
         try:

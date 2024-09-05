@@ -3,12 +3,14 @@ to a set of points"""
 
 from firedrake import *
 import torch
-from intergrid import Encoder, Decoder
 
-for i in range(torch.cuda.device_count()):
-   print(torch.cuda.get_device_properties(i).name)
 
-print(torch.cuda.device_count())
+#from intergrid import Encoder, Decoder
+
+#for i in range(torch.cuda.device_count()):
+#   print(torch.cuda.get_device_properties(i).name)
+
+#print(torch.cuda.device_count())
 '''
 # Construct meshes onto which we want to interpolate
 mesh = UnitSquareMesh(3, 3)

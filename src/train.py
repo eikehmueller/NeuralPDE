@@ -15,25 +15,25 @@ from firedrake import (
 )
 
 import numpy as np
-import argparse
+#import argparse
 
-clear_output()
+#clear_output()
 
-parser = argparse.ArgumentParser()
-default_path = "/home/katie795/internship/NeuralPDE/output"
-parser.add_argument(
-    "--path_to_output_folder",
-    type=str,
-    action="store",
-    default=default_path,
-    help="path to output folder",
-)
+#parser = argparse.ArgumentParser()
+#default_path = "/home/katie795/internship/NeuralPDE/output"
+#parser.add_argument(
+#    "--path_to_output_folder",
+#    type=str,
+#    action="store",
+#    default=default_path,
+#    help="path to output folder",
+#)
 
-args = parser.parse_args()
-path_to_output  = args.path_to_output_folder
+#args = parser.parse_args()
+#path_to_output  = args.path_to_output_folder
 
-from torch.utils.tensorboard import SummaryWriter
-writer = SummaryWriter(f"{path_to_output}/tensorboard_logs/solid_body_rotation_experiment_1")
+#from torch.utils.tensorboard import SummaryWriter
+#writer = SummaryWriter(f"{path_to_output}/tensorboard_logs/solid_body_rotation_experiment_1")
 
 from neural_pde.spherical_patch_covering import SphericalPatchCovering
 from neural_pde.patch_encoder import PatchEncoder
@@ -115,7 +115,7 @@ interaction_model = torch.nn.Sequential(
 # dataset
 phi = 0.1 # rotation angle of the data
 degree = 4 # degree of the polynomials on the dataset
-n_train_samples = 200 # number of samples in the training dataset
+n_train_samples = 300 # number of samples in the training dataset
 n_valid_samples = 32 # needs to be larger than the batch size!!
 batchsize = 32 # number of samples to use in each batch
 
@@ -157,22 +157,22 @@ model = torch.nn.Sequential(
     PatchDecoder(V, spherical_patch_covering, decoder_model),
 )
 
-opt = torch.optim.Adam(model.parameters(), lr=0.00005) 
+opt = torch.optim.Adam(model.parameters(), lr=0.0006) 
 
 ## Which Loss function is the best one to use???
 
 def rough_L2_error(y_pred, yb):
     # area of an element in a unit icosahedral mesh
+    # This should be at a maximum 2 * h_squared (calculated from a gamma distribution)
     h_squared = (4 * np.pi) / (20 * (4.0 ** num_ref))
     loss = torch.mean(torch.sum((y_pred - yb)**2  * h_squared))
-
     return loss
 
 def normalised_L2_error(y_pred, yb):
     # length of an edge in a unit icosahedral mesh
     loss = torch.mean(
-        torch.sum(torch.sum((y_pred - yb)**2, dim=1), dim=0) 
-        /torch.sum(torch.sum((yb)**2, dim=1), dim=0)
+        torch.sum(torch.sum((y_pred - yb)**2, dim=(1, 2))) 
+        / torch.sum(torch.sum((np.sqrt(2) * yb)**2, dim=(1, 2)))
         )
     return loss
 
@@ -190,11 +190,7 @@ def accurate_L2_error(y_pred, yb):
         error += errornorm(u_ex, u_h)
     return error
 
-        
-loss_fn = torch.nn.MSELoss() # mean squared error loss function 
-loss_history = []
-
-nepoch = 50
+nepoch = 70
 
 # main training loop
 for epoch in range(nepoch):
@@ -211,7 +207,7 @@ for epoch in range(nepoch):
         opt.step() # adjust the parameters by the gradient collected in the backwards pass
 
         train_x = epoch * len(train_dl) + i + 1
-        writer.add_scalar("Loss/train", avg_loss, train_x)
+        #writer.add_scalar("Loss/train", avg_loss, train_x)
         i += 1 
 
     running_vloss = 0.0
@@ -225,12 +221,10 @@ for epoch in range(nepoch):
             avg_vloss = normalised_L2_error(yv_pred, yv)
 
     print(f'Epoch {epoch}: Training loss: {avg_loss}, Validation loss: {avg_vloss}')
-    writer.add_scalars('Training vs. Validation Loss',
-                    { 'Training loss' : avg_loss, 'Validation loss' : avg_vloss },
-                    epoch + 1)
-    writer.flush()
-    
-    loss_history.append(avg_loss.item())
+    #writer.add_scalars('Training vs. Validation Loss',
+    #                { 'Training loss' : avg_loss, 'Validation loss' : avg_vloss },
+    #                epoch + 1)
+    #writer.flush()
 
 
 
