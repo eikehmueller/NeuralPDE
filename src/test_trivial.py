@@ -27,6 +27,9 @@ u = Function(V)
 n_dofs = len(u.dat.data)
 
 def test_trivial():
+    """This model tests the trivial case where there are no timesteps in the NeuralSolver
+    We choose a random tensor X of shape [32, 4, ndofs] and find Y = model (X)
+    and assert that X == Y."""
     interaction_model = torch.nn.Sequential(
         torch.nn.Flatten(start_dim=-2, end_dim=-1),
         torch.nn.Linear(
@@ -78,10 +81,54 @@ def test_trivial():
         PatchDecoder(V, spherical_patch_covering, decoder_model),
         )
 
-    X = torch.randn(32, latent_dynamic_dim + latent_ancillary_dim, n_dofs).double()
+    X = torch.randn(32, 4, n_dofs).double()
     print(X.shape)
 
     Y = model(X)
-    return
-    #assert torch.allclose(X, Y)
-test_trivial()
+    assert torch.allclose(X, Y)
+
+
+def test_trivial2():
+    """This tests whether the projection is correct
+    
+    PatchEncoder is our projection P. It projects onto the latent space. 
+    If the PatchDecoder is the Transpose of P, then we must have
+    
+    X^TY = XP^TPX = |Px|^2
+    
+    and this is what we check."""
+
+    X = torch.randn(32, 4, n_dofs).double()
+
+    dynamic_encoder_model = torch.nn.Sequential(
+        torch.nn.Flatten(start_dim=-2, end_dim=-1),
+        torch.nn.Linear(
+            in_features=(n_dynamic + n_ancillary) * spherical_patch_covering.patch_size, # size of each input sample
+            out_features=latent_dynamic_dim, # size of each output sample
+        ),
+    ).double() # double means to cast to double precision (float128)
+
+    # ancillary encoder model: map ancillary fields to ancillary space
+    ancillary_encoder_model = torch.nn.Sequential(
+        torch.nn.Flatten(start_dim=-2, end_dim=-1), # since we have 2 inputs, this is the same as flattening at 0
+        # and this will lead to a completely flatarray
+        torch.nn.Linear(
+            in_features=n_ancillary * spherical_patch_covering.patch_size,
+            out_features=latent_ancillary_dim,
+        ),
+    ).double()
+    
+    projection = PatchEncoder(V,
+            spherical_patch_covering,
+            dynamic_encoder_model,
+            ancillary_encoder_model,
+            n_dynamic
+            )
+    Y = projection(X)
+
+    print(X.shape)
+    print(Y.shape)
+
+    print(torch.matmul(torch.transpose(X, 1, 2), Y))
+
+test_trivial2()

@@ -6,34 +6,35 @@ start = timer()
 import torch
 from torch.utils.data import DataLoader
 from output_functions import clear_output
-from firedrake import (
-    UnitIcosahedralSphereMesh,
-    FunctionSpace,
-    Function,
-    VTKFile,
-    errornorm
-)
+from firedrake import *
+from firedrake.adjoint import *
+from firedrake.ml.pytorch import fem_operator
+import matplotlib.pyplot as plt
 
 import numpy as np
-#import argparse
+import argparse
 
-#clear_output()
+continue_annotation()
 
-#parser = argparse.ArgumentParser()
-#default_path = "/home/katie795/internship/NeuralPDE/output"
-#parser.add_argument(
-#    "--path_to_output_folder",
-#    type=str,
-#    action="store",
-#    default=default_path,
-#    help="path to output folder",
-#)
+clear_output()
 
-#args = parser.parse_args()
-#path_to_output  = args.path_to_output_folder
+parser = argparse.ArgumentParser()
+default_path = "/home/katie795/internship/NeuralPDE/output"
+parser.add_argument(
+    "--path_to_output_folder",
+    type=str,
+    action="store",
+    default=default_path,
+    help="path to output folder",
+)
 
-#from torch.utils.tensorboard import SummaryWriter
-#writer = SummaryWriter(f"{path_to_output}/tensorboard_logs/solid_body_rotation_experiment_1")
+args = parser.parse_args()
+path_to_output  = args.path_to_output_folder
+
+test_number = "9"
+
+from torch.utils.tensorboard import SummaryWriter
+writer = SummaryWriter(f"{path_to_output}/tensorboard_logs/solid_body_rotation_experiment_{test_number}")
 
 from neural_pde.spherical_patch_covering import SphericalPatchCovering
 from neural_pde.patch_encoder import PatchEncoder
@@ -50,10 +51,23 @@ print(f"number of patches               = {spherical_patch_covering.n_patches}")
 print(f"patchsize                       = {spherical_patch_covering.patch_size}")
 print(f"number of points in all patches = {spherical_patch_covering.n_points}")
 
-num_ref = 2
+num_ref = 3
 mesh = UnitIcosahedralSphereMesh(num_ref) # create the mesh
 V = FunctionSpace(mesh, "CG", 1) # define the function space
 h = 1 / (np.sin(2 * np.pi / 5))# from firedrake documentation
+
+
+
+#def firedrake_L2_error(u, w):
+#   return assemble((u - w) ** 2 * dx)**0.5
+
+#u = Function(V)
+#w = Function(V)
+#with set_working_tape() as _:
+#   F = ReducedFunctional(firedrake_L2_error(u, w), [Control(u), Control(w)])
+#   G = fem_operator(F)
+
+
 
 # number of dynamic fields: scalar tracer
 n_dynamic = 1
@@ -115,7 +129,7 @@ interaction_model = torch.nn.Sequential(
 # dataset
 phi = 0.1 # rotation angle of the data
 degree = 4 # degree of the polynomials on the dataset
-n_train_samples = 300 # number of samples in the training dataset
+n_train_samples = 200 # number of samples in the training dataset
 n_valid_samples = 32 # needs to be larger than the batch size!!
 batchsize = 32 # number of samples to use in each batch
 
@@ -137,7 +151,7 @@ u_in = Function(V, name="input")
 u_in.dat.data[:] = train_ds[0][0][0].numpy()
 u_target = Function(V, name="target")
 u_target.dat.data[:] = train_ds[0][1].numpy()
-file = VTKFile(f"{path_to_output}/training_example.pvd")
+file = VTKFile(f"{path_to_output}/training_example{test_number}.pvd")
 file.write(u_in, u_target) # u_target is rotated phi degees CLOCKWISE from u_in
 
 # Full model: encoder + processor + decoder
@@ -177,20 +191,10 @@ def normalised_L2_error(y_pred, yb):
     return loss
 
 
-def accurate_L2_error(y_pred, yb):
-    # DOES NOT WORK YET
-    # More accurate, but more expensive L2_error
-    # this has no mechanism to calculate backwards gradients
-    error = 0
-    for _ in range(yb.shape[0]):
-        u_ex = Function(V)
-        u_ex.dat.data[:] = yb[0].squeeze().detach().numpy()
-        u_h = Function(V) # our approximated expression
-        u_h.dat.data[:] = y_pred[0].squeeze().detach().numpy()
-        error += errornorm(u_ex, u_h)
-    return error
-
-nepoch = 70
+nepoch = 200
+training_loss = []
+training_loss_per_epoch = []
+validation_loss_per_epoch = []
 
 # main training loop
 for epoch in range(nepoch):
@@ -199,19 +203,28 @@ for epoch in range(nepoch):
     model.train(True)
     i = 0 
     for Xb, yb in train_dl:
+        print(Xb.shape)
         opt.zero_grad() # resets all of the gradients to zero, otherwise the gradients are accumulated
+
         y_pred = model(Xb)
+        #loss = 0
+        #for i in range(batchsize):
+        #    loss += G(y_pred[i], yb[i])
+        #avg_loss = loss/batchsize
 
         avg_loss = normalised_L2_error(y_pred, yb)  # only if dataloader drops last
         avg_loss.backward() 
         opt.step() # adjust the parameters by the gradient collected in the backwards pass
+        zero_loss = normalised_L2_error(torch.zeros_like(y_pred), y_pred)
 
         train_x = epoch * len(train_dl) + i + 1
-        #writer.add_scalar("Loss/train", avg_loss, train_x)
+        writer.add_scalar("Loss/train", avg_loss, train_x)
+        training_loss.append(avg_loss.detach().numpy())
+        #training_loss.append(zero_loss.detach().numpy())
         i += 1 
-
-    running_vloss = 0.0
-
+    
+    training_loss_per_epoch.append(avg_loss.detach().numpy())
+    #training_loss_per_epoch.append(zero_loss.detach().numpy())
     # Disable gradient computation and reduce memory consumption.
     # validation loop
     model.eval()
@@ -219,16 +232,16 @@ for epoch in range(nepoch):
         for Xv, yv in valid_dl:
             yv_pred = model(Xv)
             avg_vloss = normalised_L2_error(yv_pred, yv)
+            zeros_vloss = normalised_L2_error(torch.zeros_like(yv_pred), yv_pred)
 
     print(f'Epoch {epoch}: Training loss: {avg_loss}, Validation loss: {avg_vloss}')
-    #writer.add_scalars('Training vs. Validation Loss',
-    #                { 'Training loss' : avg_loss, 'Validation loss' : avg_vloss },
-    #                epoch + 1)
-    #writer.flush()
+    writer.add_scalars('Training vs. Validation Loss',
+                    { 'Training loss' : avg_loss, 'Validation loss' : avg_vloss },
+                    epoch + 1)
+    writer.flush()
+    validation_loss_per_epoch.append(avg_vloss.detach().numpy())
+    #validation_loss_per_epoch.append(zeros_vloss.detach().numpy())
 
-
-
-data_index = 0 # should be between 0 and n_valid_samples
 # visualise the first object in the training dataset 
 u_in = Function(V, name="input")
 u_in.dat.data[:] = valid_ds[0][0][0].numpy()
@@ -237,7 +250,7 @@ u_target.dat.data[:] = valid_ds[0][1].numpy()
 u_predicted_values = model(valid_ds[0][0]).squeeze()
 u_predicted = Function(V, name="predicted")
 u_predicted.dat.data[:] = u_predicted_values.detach().numpy()
-file = VTKFile(f"{path_to_output}/validation_example.pvd")
+file = VTKFile(f"{path_to_output}/validation_example{test_number}.pvd")
 file.write(u_in, u_target, u_predicted) 
 
 #tensorboard session
@@ -248,3 +261,29 @@ file.write(u_in, u_target, u_predicted)
 
 end = timer()
 print(f'Runtime: {timedelta(seconds=end-start)}')
+
+print(training_loss)
+
+training_iterations = np.arange(0.0, len(training_loss), 1)
+epoch_iterations = np.arange(0.0, len(training_loss_per_epoch), 1)
+
+fig1, ax1 = plt.subplots()
+ax1.plot(training_iterations, np.array(training_loss))
+ax1.set(xlabel='Number of training iterations', ylabel=r'Normalized $L^2$ loss',
+        title='Training loss')
+ax1.grid()
+fig1.savefig(f'{path_to_output}/training_loss_test{test_number}.png')
+plt.show()
+
+
+fig2, ax2 = plt.subplots()
+ax2.plot(epoch_iterations, np.array(training_loss_per_epoch), label='Training loss', marker='o')
+ax2.plot(epoch_iterations, np.array(validation_loss_per_epoch), label='Validation loss', linestyle='dashed',
+         marker='v')
+ax2.set(xlabel='Number of epochs', ylabel=r'Normalized $L^2$ loss',
+        title='Training and validation loss per epoch')
+ax2.legend()
+ax2.grid()
+fig2.savefig(f'{path_to_output}/validation_loss_test{test_number}.png')
+plt.show()
+plt.close()
