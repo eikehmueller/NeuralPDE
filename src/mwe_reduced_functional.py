@@ -4,7 +4,6 @@ from firedrake.adjoint import *
 from firedrake.ml.pytorch import fem_operator
 continue_annotation()
 import matplotlib.pyplot as plt
-from matplotlib.ticker import AutoLocator
 mesh = RectangleMesh(10, 10, 1, 1) # create the mesh
 V = FunctionSpace(mesh, "CG", 1) # define the function space
 

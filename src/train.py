@@ -8,14 +8,13 @@ from torch.utils.data import DataLoader
 from output_functions import clear_output
 from firedrake import *
 from firedrake.adjoint import *
-from firedrake.ml.pytorch import fem_operator
 import matplotlib.pyplot as plt
+from loss_functions import normalised_L2_error as lossfn
 
 import numpy as np
 import argparse
 
 continue_annotation()
-
 clear_output()
 
 parser = argparse.ArgumentParser()
@@ -31,7 +30,10 @@ parser.add_argument(
 args = parser.parse_args()
 path_to_output  = args.path_to_output_folder
 
+
+##### HYPERPARAMETERS #####
 test_number = "9"
+
 
 from torch.utils.tensorboard import SummaryWriter
 writer = SummaryWriter(f"{path_to_output}/tensorboard_logs/solid_body_rotation_experiment_{test_number}")
@@ -55,19 +57,6 @@ num_ref = 5
 mesh = UnitIcosahedralSphereMesh(num_ref) # create the mesh
 V = FunctionSpace(mesh, "CG", 1) # define the function space
 h = 1 / (np.sin(2 * np.pi / 5))# from firedrake documentation
-
-
-
-#def firedrake_L2_error(u, w):
-#   return assemble((u - w) ** 2 * dx)**0.5
-
-#u = Function(V)
-#w = Function(V)
-#with set_working_tape() as _:
-#   F = ReducedFunctional(firedrake_L2_error(u, w), [Control(u), Control(w)])
-#   G = fem_operator(F)
-
-
 
 # number of dynamic fields: scalar tracer
 n_dynamic = 1
@@ -155,11 +144,6 @@ file = VTKFile(f"{path_to_output}/training_example{test_number}.pvd")
 file.write(u_in, u_target) # u_target is rotated phi degees CLOCKWISE from u_in
 
 
-
-
-
-
-
 # Full model: encoder + processor + decoder
 model = torch.nn.Sequential(
     PatchEncoder(
@@ -179,23 +163,6 @@ model = torch.nn.Sequential(
 
 opt = torch.optim.Adam(model.parameters(), lr=0.0006) 
 
-## Which Loss function is the best one to use???
-
-def rough_L2_error(y_pred, yb):
-    # area of an element in a unit icosahedral mesh
-    # This should be at a maximum 2 * h_squared (calculated from a gamma distribution)
-    h_squared = (4 * np.pi) / (20 * (4.0 ** num_ref))
-    loss = torch.mean(torch.sum((y_pred - yb)**2  * h_squared))
-    return loss
-
-def normalised_L2_error(y_pred, yb):
-    # length of an edge in a unit icosahedral mesh
-    loss = torch.mean(
-        torch.sum(torch.sum((y_pred - yb)**2, dim=(1, 2))) 
-        / torch.sum(torch.sum((np.sqrt(2) * yb)**2, dim=(1, 2)))
-        )
-    return loss
-
 
 nepoch = 1
 training_loss = []
@@ -209,36 +176,29 @@ for epoch in range(nepoch):
     model.train(True)
     i = 0 
     for Xb, yb in train_dl:
-        #print(Xb.shape)
         opt.zero_grad() # resets all of the gradients to zero, otherwise the gradients are accumulated
 
         y_pred = model(Xb)
-        #loss = 0
-        #for i in range(batchsize):
-        #    loss += G(y_pred[i], yb[i])
-        #avg_loss = loss/batchsize
 
-        avg_loss = normalised_L2_error(y_pred, yb)  # only if dataloader drops last
+        avg_loss = lossfn(y_pred, yb)  # only if dataloader drops last
         avg_loss.backward() 
         opt.step() # adjust the parameters by the gradient collected in the backwards pass
-        zero_loss = normalised_L2_error(torch.zeros_like(y_pred), y_pred)
+        zero_loss = lossfn(torch.zeros_like(y_pred), y_pred)
 
         train_x = epoch * len(train_dl) + i + 1
         writer.add_scalar("Loss/train", avg_loss, train_x)
         training_loss.append(avg_loss.detach().numpy())
-        #training_loss.append(zero_loss.detach().numpy())
         i += 1 
     
     training_loss_per_epoch.append(avg_loss.detach().numpy())
-    #training_loss_per_epoch.append(zero_loss.detach().numpy())
-    # Disable gradient computation and reduce memory consumption.
+
     # validation loop
     model.eval()
     with torch.no_grad():
         for Xv, yv in valid_dl:
             yv_pred = model(Xv)
-            avg_vloss = normalised_L2_error(yv_pred, yv)
-            zeros_vloss = normalised_L2_error(torch.zeros_like(yv_pred), yv_pred)
+            avg_vloss = lossfn(yv_pred, yv)
+            zeros_vloss = lossfn(torch.zeros_like(yv_pred), yv_pred)
 
     print(f'Epoch {epoch}: Training loss: {avg_loss}, Validation loss: {avg_vloss}')
     writer.add_scalars('Training vs. Validation Loss',
@@ -246,7 +206,6 @@ for epoch in range(nepoch):
                     epoch + 1)
     writer.flush()
     validation_loss_per_epoch.append(avg_vloss.detach().numpy())
-    #validation_loss_per_epoch.append(zeros_vloss.detach().numpy())
 
 # visualise the first object in the training dataset 
 u_in = Function(V, name="input")
