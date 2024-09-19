@@ -33,7 +33,20 @@ path_to_output  = args.path_to_output_folder
 
 ##### HYPERPARAMETERS #####
 test_number = "9"
-
+n_radial = 2             # number of radial points on each patch
+n_ref = 5                # number of refinements of the icosahedral mesh
+latent_dynamic_dim = 7   # dimension of dynamic latent space
+latent_ancillary_dim = 3 # dimension of ancillary latent space
+phi = 0.1                # rotation angle of the data
+degree = 4               # degree of the polynomials on the dataset
+n_train_samples = 32     # number of samples in the training dataset
+n_valid_samples = 32     # needs to be larger than the batch size!!
+batchsize = 32           # number of samples to use in each batch
+nt = 1                   # number of timesteps
+dt = 1                   # size of the timesteps
+lr = 0.0006              # learning rate of the optimizer
+nepoch = 1               # number of epochs
+##### HYPERPARAMETERS #####
 
 from torch.utils.tensorboard import SummaryWriter
 writer = SummaryWriter(f"{path_to_output}/tensorboard_logs/solid_body_rotation_experiment_{test_number}")
@@ -47,25 +60,19 @@ from neural_pde.neural_solver import Katies_NeuralSolver, NeuralSolver
 # construct spherical patch covering with
 # arg1: number of refinements of the icosahedral sphere
 # arg2: number of radial points on each patch
-spherical_patch_covering = SphericalPatchCovering(0, 2)
+spherical_patch_covering = SphericalPatchCovering(0, n_radial)
 
 print(f"number of patches               = {spherical_patch_covering.n_patches}")
 print(f"patchsize                       = {spherical_patch_covering.patch_size}")
 print(f"number of points in all patches = {spherical_patch_covering.n_points}")
 
-num_ref = 5
-mesh = UnitIcosahedralSphereMesh(num_ref) # create the mesh
+mesh = UnitIcosahedralSphereMesh(n_ref) # create the mesh
 V = FunctionSpace(mesh, "CG", 1) # define the function space
-h = 1 / (np.sin(2 * np.pi / 5))# from firedrake documentation
 
 # number of dynamic fields: scalar tracer
 n_dynamic = 1
 # number of ancillary fields: x-, y- and z-coordinates
 n_ancillary = 3
-# dimension of latent space
-latent_dynamic_dim = 7 # picked to hopefully capture the behaviour wanted
-# dimension of ancillary space
-latent_ancillary_dim = 3 # also picked to hopefully resolve the behaviour
 # number of output fields: scalar tracer
 n_output = 1
 
@@ -79,14 +86,13 @@ dynamic_encoder_model = torch.nn.Sequential(
         in_features=(n_dynamic + n_ancillary) * spherical_patch_covering.patch_size, # size of each input sample
         out_features=latent_dynamic_dim, # size of each output sample
     ),
-).double() # double means to cast to double precision (float128)
+).double() 
 
 # ancillary encoder model: map ancillary fields to ancillary space
 # input:  (n_ancillary, patch_size)
 # output: (latent_ancillary_dim)
 ancillary_encoder_model = torch.nn.Sequential(
-    torch.nn.Flatten(start_dim=-2, end_dim=-1), # since we have 2 inputs, this is the same as flattening at 0
-    # and this will lead to a completely flatarray
+    torch.nn.Flatten(start_dim=-2, end_dim=-1), 
     torch.nn.Linear(
         in_features=n_ancillary * spherical_patch_covering.patch_size,
         out_features=latent_ancillary_dim,
@@ -114,13 +120,6 @@ interaction_model = torch.nn.Sequential(
         out_features=latent_dynamic_dim,
     ),
 ).double()
-
-# dataset
-phi = 0.1 # rotation angle of the data
-degree = 4 # degree of the polynomials on the dataset
-n_train_samples = 32 # number of samples in the training dataset
-n_valid_samples = 32 # needs to be larger than the batch size!!
-batchsize = 32 # number of samples to use in each batch
 
 train_ds = AdvectionDataset(V, n_train_samples, phi, degree)
 valid_ds = AdvectionDataset(V, n_valid_samples, phi, degree, seed=123456) 
@@ -155,16 +154,14 @@ model = torch.nn.Sequential(
     ),
     NeuralSolver(spherical_patch_covering, 
                         interaction_model,
-                        nsteps=5, 
-                        stepsize=0.2,
+                        nsteps=nt, 
+                        stepsize=dt,
                         assert_testing=assert_testing),
     PatchDecoder(V, spherical_patch_covering, decoder_model),
 )
 
 opt = torch.optim.Adam(model.parameters(), lr=0.0006) 
 
-
-nepoch = 1
 training_loss = []
 training_loss_per_epoch = []
 validation_loss_per_epoch = []
