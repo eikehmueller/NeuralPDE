@@ -51,7 +51,7 @@ print(f"number of patches               = {spherical_patch_covering.n_patches}")
 print(f"patchsize                       = {spherical_patch_covering.patch_size}")
 print(f"number of points in all patches = {spherical_patch_covering.n_points}")
 
-num_ref = 3
+num_ref = 5
 mesh = UnitIcosahedralSphereMesh(num_ref) # create the mesh
 V = FunctionSpace(mesh, "CG", 1) # define the function space
 h = 1 / (np.sin(2 * np.pi / 5))# from firedrake documentation
@@ -129,7 +129,7 @@ interaction_model = torch.nn.Sequential(
 # dataset
 phi = 0.1 # rotation angle of the data
 degree = 4 # degree of the polynomials on the dataset
-n_train_samples = 200 # number of samples in the training dataset
+n_train_samples = 32 # number of samples in the training dataset
 n_valid_samples = 32 # needs to be larger than the batch size!!
 batchsize = 32 # number of samples to use in each batch
 
@@ -154,6 +154,12 @@ u_target.dat.data[:] = train_ds[0][1].numpy()
 file = VTKFile(f"{path_to_output}/training_example{test_number}.pvd")
 file.write(u_in, u_target) # u_target is rotated phi degees CLOCKWISE from u_in
 
+
+
+
+
+
+
 # Full model: encoder + processor + decoder
 model = torch.nn.Sequential(
     PatchEncoder(
@@ -165,8 +171,8 @@ model = torch.nn.Sequential(
     ),
     NeuralSolver(spherical_patch_covering, 
                         interaction_model,
-                        nsteps=1, 
-                        stepsize=1,
+                        nsteps=5, 
+                        stepsize=0.2,
                         assert_testing=assert_testing),
     PatchDecoder(V, spherical_patch_covering, decoder_model),
 )
@@ -191,7 +197,7 @@ def normalised_L2_error(y_pred, yb):
     return loss
 
 
-nepoch = 200
+nepoch = 1
 training_loss = []
 training_loss_per_epoch = []
 validation_loss_per_epoch = []
@@ -203,7 +209,7 @@ for epoch in range(nepoch):
     model.train(True)
     i = 0 
     for Xb, yb in train_dl:
-        print(Xb.shape)
+        #print(Xb.shape)
         opt.zero_grad() # resets all of the gradients to zero, otherwise the gradients are accumulated
 
         y_pred = model(Xb)
@@ -244,10 +250,10 @@ for epoch in range(nepoch):
 
 # visualise the first object in the training dataset 
 u_in = Function(V, name="input")
-u_in.dat.data[:] = valid_ds[0][0][0].numpy()
+u_in.dat.data[:] = valid_ds[1][0][0].numpy()
 u_target = Function(V, name="target")
-u_target.dat.data[:] = valid_ds[0][1].numpy()
-u_predicted_values = model(valid_ds[0][0]).squeeze()
+u_target.dat.data[:] = valid_ds[1][1].numpy()
+u_predicted_values = model(valid_ds[1][0]).squeeze()
 u_predicted = Function(V, name="predicted")
 u_predicted.dat.data[:] = u_predicted_values.detach().numpy()
 file = VTKFile(f"{path_to_output}/validation_example{test_number}.pvd")
@@ -285,5 +291,16 @@ ax2.set(xlabel='Number of epochs', ylabel=r'Normalized $L^2$ loss',
 ax2.legend()
 ax2.grid()
 fig2.savefig(f'{path_to_output}/validation_loss_test{test_number}.png')
+
+fig3, ax3 = plt.subplots()
+ax3.set_yscale('log')
+ax3.plot(epoch_iterations, np.array(training_loss_per_epoch), label='Training loss', marker='o')
+ax3.plot(epoch_iterations, np.array(validation_loss_per_epoch), label='Validation loss', linestyle='dashed',
+         marker='v')
+ax3.set(xlabel='Number of epochs', ylabel=r'Normalized $L^2$ loss',
+        title='Log of training and validation loss per epoch')
+ax3.legend()
+ax3.grid()
+fig3.savefig(f'{path_to_output}/log_loss{test_number}.png')
 plt.show()
 plt.close()
