@@ -8,6 +8,38 @@ from firedrake.ml.pytorch import from_torch, to_torch
 __all__ = ["Encoder", "Decoder"]
 
 
+def torch_interpolation_tensor(fs_from, fs_to, transpose=False):
+    """Construct a sparse torch tensor for the interpolation from fs_from to fs_to.
+
+    :arg fs_from: function space to interpolate from
+    :arg fs_to: function space to interpolate to
+    :arg transpose: transpose matrix?
+    """
+    u_from = Function(fs_from)
+    u_to = Function(fs_to)
+
+    ndof_from = fs_from.dof_count
+    ndof_to = fs_to.dof_count
+
+    if transpose:
+        mat = np.empty((ndof_from, ndof_to))
+    else:
+        mat = np.empty((ndof_to, ndof_from))
+
+    for j in range(ndof_from):
+        with u_from.dat.vec as v:
+            v.set(0)
+            v[j] = 1
+        u_to = assemble(interpolate(u_from, fs_to))
+        with u_to.dat.vec as w:
+            if transpose:
+                mat[j, :] = w[:]
+            else:
+                mat[:, j] = w[:]
+    a = torch.tensor(mat)
+    return a.to_sparse()
+
+
 class InterpolatorWrapper(torch.autograd.Function):
     """Differentiable PyTorch wrapper around Firedrake interpolation
 
@@ -100,16 +132,21 @@ class Encoder(torch.nn.Module):
     v = interpolate(u).
     """
 
-    def __init__(self, fs_from, fs_to):
+    def __init__(self, fs_from, fs_to, assemble=True):
         """Initialise new instance
 
         :arg fs_from: original function space
         :arg fs_to: target function space that we want to interpolate to
+        :arg assemble: assemble sparse torch matrix of interpolation
         """
         super().__init__()
         self.in_features = int(fs_from.dof_count)
         self.out_features = int(fs_to.dof_count)
-        self._interpolate = interpolator_wrapper(fs_from, fs_to, reverse=False)
+        self.assemble = assemble
+        if self.assemble:
+            self.a_sparse = torch_interpolation_tensor(fs_from, fs_to, transpose=True)
+        else:
+            self._interpolate = interpolator_wrapper(fs_from, fs_to, reverse=False)
 
     def forward(self, x):
         """Forward pass
@@ -119,7 +156,10 @@ class Encoder(torch.nn.Module):
 
         :arg x: input tensor
         """
-        return self._forward(x)
+        if self.assemble:
+            return torch.matmul(x, self.a_sparse)
+        else:
+            return self._forward(x)
 
     def _forward(self, x):
         """Recursively apply forward pass
@@ -142,16 +182,23 @@ class Decoder(torch.nn.Module):
     adjoint of the Encoder operation.
     """
 
-    def __init__(self, fs_from, fs_to):
+    def __init__(self, fs_from, fs_to, assemble=True):
         """Initialise new instance
 
         :arg fs_from: original function space that we want to interpolate from
         :arg fs_to: target function space to which we want to interpolate
+        :arg assemble: assemble sparse torch matrix of interpolation
         """
         super().__init__()
         self.in_features = int(fs_to.dof_count)
         self.out_features = int(fs_from.dof_count)
-        self._adjoint_interpolate = interpolator_wrapper(fs_from, fs_to, reverse=True)
+        self.assemble = assemble
+        if self.assemble:
+            self.a_sparse = torch_interpolation_tensor(fs_from, fs_to, transpose=False)
+        else:
+            self._adjoint_interpolate = interpolator_wrapper(
+                fs_from, fs_to, reverse=True
+            )
 
     def forward(self, x):
         """Forward pass.
@@ -161,7 +208,10 @@ class Decoder(torch.nn.Module):
 
         :arg x: input tensor
         """
-        return self._forward(x)
+        if self.assemble:
+            return torch.matmul(x, self.a_sparse)
+        else:
+            return self._forward(x)
 
     def _forward(self, x):
         """Recursively apply forward pass
