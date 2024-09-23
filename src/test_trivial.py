@@ -10,6 +10,7 @@ from neural_pde.spherical_patch_covering import SphericalPatchCovering
 from neural_pde.patch_encoder import PatchEncoder
 from neural_pde.patch_decoder import PatchDecoder
 from neural_pde.data_generator import AdvectionDataset
+from intergrid import Encoder, Decoder
 
 spherical_patch_covering = SphericalPatchCovering(0, 2)
 
@@ -84,16 +85,10 @@ def test_trivial():
         )
     
     train_example = AdvectionDataset(V1, 1, 1, 4).__getitem__(0)
-    print(train_example)
-    X, _ = train_example
 
-    #X = torch.randn(32, 4, V1.dim()).double()
+    X, _ = train_example
     Y = model(X)
 
-    print(Y.shape)
-    print(X.shape)
-    #print(X[:, 0,:])
-    #print(Y[:, 0,:])
     print(torch.allclose(X[0,:], Y[0,:]))
     return torch.allclose(X[0,:], Y[0,:])
 test_trivial()
@@ -116,4 +111,4 @@ def test_trivial2():
     PXTY = torch.matmul(PTXT, Y)
     PX2 = torch.matmul(torch.transpose(Y, 0, 1), Y)
 
-    return torch.allclose(PXTY, PX2)
+    assert torch.allclose(PXTY, PX2)
