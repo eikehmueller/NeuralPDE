@@ -4,6 +4,8 @@ from firedrake.adjoint import *
 import torch
 from firedrake.ml.pytorch import fem_operator
 
+
+
 def rough_L2_error(y_pred, yb):
     # area of an element in a unit icosahedral mesh
     # This should be at a maximum 2 * h_squared (calculated from a gamma distribution)
@@ -32,7 +34,7 @@ def firedrake_loss(y_pred, yb):
     loss = 0
     for i in range(len(y_pred)):
         loss += G(y_pred[i], yb[i])
-        
+
     avg_loss = loss/len(y_pred)
 
     return avg_loss

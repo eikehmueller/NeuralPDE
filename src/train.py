@@ -32,20 +32,20 @@ args, _ = parser.parse_known_args()
 path_to_output  = args.path_to_output_folder
 
 ##### HYPERPARAMETERS #####
-test_number = "9"
+test_number = "12"
 n_radial = 2             # number of radial points on each patch
 n_ref = 2                # number of refinements of the icosahedral mesh
 latent_dynamic_dim = 7   # dimension of dynamic latent space
 latent_ancillary_dim = 3 # dimension of ancillary latent space
 phi = 0.1                # rotation angle of the data
 degree = 4               # degree of the polynomials on the dataset
-n_train_samples = 100    # number of samples in the training dataset
+n_train_samples = 400    # number of samples in the training dataset
 n_valid_samples = 32     # needs to be larger than the batch size!!
 batchsize = 32           # number of samples to use in each batch
 nt = 1                   # number of timesteps
 dt = 1                   # size of the timesteps
 lr = 0.0006              # learning rate of the optimizer
-nepoch = 10              # number of epochs
+nepoch = 400             # number of epochs
 ##### HYPERPARAMETERS #####
 
 #from torch.utils.tensorboard import SummaryWriter
@@ -225,7 +225,6 @@ with PETSc.Log.Event("VTK_writer2"):
 end = timer()
 print(f'Runtime: {timedelta(seconds=end-start)}')
 
-print(training_loss)
 with PETSc.Log.Event("matplotlib"):
     training_iterations = np.arange(0.0, len(training_loss), 1)
     epoch_iterations = np.arange(0.0, len(training_loss_per_epoch), 1)
