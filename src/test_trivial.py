@@ -9,6 +9,7 @@ from neural_pde.neural_solver import Katies_NeuralSolver, NeuralSolver
 from neural_pde.spherical_patch_covering import SphericalPatchCovering
 from neural_pde.patch_encoder import PatchEncoder
 from neural_pde.patch_decoder import PatchDecoder
+from neural_pde.data_generator import AdvectionDataset
 
 spherical_patch_covering = SphericalPatchCovering(0, 2)
 
@@ -30,6 +31,7 @@ def test_trivial():
     """This model tests the trivial case where there are no timesteps in the NeuralSolver
     We choose a random tensor X of shape [32, 4, ndofs] and find Y = model (X)
     and assert that X == Y."""
+
     interaction_model = torch.nn.Sequential(
         torch.nn.Flatten(start_dim=-2, end_dim=-1),
         torch.nn.Linear(
@@ -80,16 +82,20 @@ def test_trivial():
                             stepsize=0),
         PatchDecoder(V1, spherical_patch_covering, decoder_model),
         )
+    
+    train_example = AdvectionDataset(V1, 1, 1, 4).__getitem__(0)
+    print(train_example)
+    X, _ = train_example
 
-    X = torch.randn(32, 4, V1.dim()).double()
+    #X = torch.randn(32, 4, V1.dim()).double()
     Y = model(X)
 
-    print(X.shape)
     print(Y.shape)
-    print(X)
-    print(Y)
-    print(torch.allclose(X[:,0,:], Y))
-    return torch.allclose(X[:,0,:], Y)
+    print(X.shape)
+    #print(X[:, 0,:])
+    #print(Y[:, 0,:])
+    print(torch.allclose(X[0,:], Y[0,:]))
+    return torch.allclose(X[0,:], Y[0,:])
 test_trivial()
 
 def test_trivial2():
