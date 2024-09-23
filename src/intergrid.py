@@ -144,7 +144,9 @@ class Encoder(torch.nn.Module):
         self.out_features = int(fs_to.dof_count)
         self.assemble = assemble
         if self.assemble:
-            self.a_sparse = torch_interpolation_tensor(fs_from, fs_to, transpose=True)
+            self.register_buffer(
+                "a_sparse", torch_interpolation_tensor(fs_from, fs_to, transpose=True)
+            )
         else:
             self._interpolate = interpolator_wrapper(fs_from, fs_to, reverse=False)
 
@@ -194,7 +196,9 @@ class Decoder(torch.nn.Module):
         self.out_features = int(fs_from.dof_count)
         self.assemble = assemble
         if self.assemble:
-            self.a_sparse = torch_interpolation_tensor(fs_from, fs_to, transpose=False)
+            self.register_buffer(
+                "a_sparse", torch_interpolation_tensor(fs_from, fs_to, transpose=False)
+            )
         else:
             self._adjoint_interpolate = interpolator_wrapper(
                 fs_from, fs_to, reverse=True
