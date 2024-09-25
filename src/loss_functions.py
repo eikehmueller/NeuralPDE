@@ -17,7 +17,7 @@ def normalised_L2_error(y_pred, yb):
     # length of an edge in a unit icosahedral mesh
     loss = torch.mean(
         torch.sum(torch.sum((y_pred - yb)**2, dim=(1, 2))) 
-        / torch.sum(torch.sum((np.sqrt(2) * yb)**2, dim=(1, 2)))
+        / torch.sum(torch.sum((yb)**2, dim=(1, 2)))
         )
     return loss
 

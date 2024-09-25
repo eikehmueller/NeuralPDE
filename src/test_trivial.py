@@ -51,8 +51,7 @@ def test_trivial():
 
     # ancillary encoder model: map ancillary fields to ancillary space
     ancillary_encoder_model = torch.nn.Sequential(
-        torch.nn.Flatten(start_dim=-2, end_dim=-1), # since we have 2 inputs, this is the same as flattening at 0
-        # and this will lead to a completely flatarray
+        torch.nn.Flatten(start_dim=-2, end_dim=-1), 
         torch.nn.Linear(
             in_features=n_ancillary * spherical_patch_covering.patch_size,
             out_features=latent_ancillary_dim,
