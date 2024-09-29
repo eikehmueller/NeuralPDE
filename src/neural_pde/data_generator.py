@@ -91,12 +91,14 @@ class AdvectionDataset(SphericalFunctionSpaceDataset):
         self._n_func_target = 1
 
         self._degree = degree
-        self._rng = np.random.default_rng(seed) # removing the seed seems to make it slower
+        self._rng = np.random.default_rng(
+            seed
+        )  # removing the seed seems to make it slower
 
         # generate data
         self._data = []
+        x, y, z = SpatialCoordinate(self._fs.mesh())
         for _ in range(self._nsamples):
-            x, y, z = SpatialCoordinate(self._fs.mesh())
             expr_in = 0
             expr_target = 0
             coeff = self._rng.normal(size=(self._degree, self._degree, self._degree))
@@ -123,7 +125,7 @@ class AdvectionDataset(SphericalFunctionSpaceDataset):
                 dtype=torch.float64,
             )
             self._u.project(expr_target)
-            y = torch.tensor(
+            y_target = torch.tensor(
                 np.asarray(
                     [
                         self._u.dat.data,
@@ -131,7 +133,7 @@ class AdvectionDataset(SphericalFunctionSpaceDataset):
                 ),
                 dtype=torch.float64,
             )
-            self._data.append((X, y))
+            self._data.append((X, y_target))
 
     def __getitem__(self, idx):
         """Return a single sample (X,y)
@@ -139,6 +141,7 @@ class AdvectionDataset(SphericalFunctionSpaceDataset):
         :arg idx: index of sample
         """
         return self._data[idx]
+
 
 #######################################################################
 # M A I N
@@ -148,12 +151,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     default_path = "/home/katie795/internship/NeuralPDE/output"
     parser.add_argument(
-    "--path_to_output_folder",
-    type=str,
-    action="store",
-    default=default_path,
-    help="path to output folder",
-)
+        "--path_to_output_folder",
+        type=str,
+        action="store",
+        default=default_path,
+        help="path to output folder",
+    )
     args = parser.parse_args()
     path_to_output = args.path_to_output_folder
 
