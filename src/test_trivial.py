@@ -1,7 +1,7 @@
 import pytest
 from firedrake import *
 import torch
-from intergrid import Encoder, Decoder
+from intergrid import torch_interpolation_tensor
 from firedrake.ml.pytorch import to_torch
 
 from neural_pde.neural_solver import Katies_NeuralSolver, NeuralSolver
@@ -9,6 +9,8 @@ from neural_pde.neural_solver import Katies_NeuralSolver, NeuralSolver
 from neural_pde.spherical_patch_covering import SphericalPatchCovering
 from neural_pde.patch_encoder import PatchEncoder
 from neural_pde.patch_decoder import PatchDecoder
+from neural_pde.data_generator import AdvectionDataset
+from intergrid import Encoder, Decoder
 
 spherical_patch_covering = SphericalPatchCovering(0, 2)
 
@@ -19,17 +21,18 @@ latent_dynamic_dim = 7 # picked to hopefully capture the behaviour wanted
 latent_ancillary_dim = 3 # also picked to hopefully resolve the behaviour
 n_output = 1
 
-num_ref = 2
-mesh = UnitIcosahedralSphereMesh(num_ref) # create the mesh
-V = FunctionSpace(mesh, "CG", 1) # define the function space
-h = 1 / (np.sin(2 * np.pi / 5))# from firedrake documentation
-u = Function(V)
-n_dofs = len(u.dat.data)
+num_ref1 = 2
+num_ref2 = 3
+mesh1 = UnitIcosahedralSphereMesh(num_ref1) # create the mesh
+mesh2 = UnitIcosahedralSphereMesh(num_ref2)
+V1 = FunctionSpace(mesh1, "CG", 1) # define the function space
+V2 = FunctionSpace(mesh2, "CG", 1) # define the function space
 
 def test_trivial():
     """This model tests the trivial case where there are no timesteps in the NeuralSolver
     We choose a random tensor X of shape [32, 4, ndofs] and find Y = model (X)
     and assert that X == Y."""
+
     interaction_model = torch.nn.Sequential(
         torch.nn.Flatten(start_dim=-2, end_dim=-1),
         torch.nn.Linear(
@@ -48,8 +51,7 @@ def test_trivial():
 
     # ancillary encoder model: map ancillary fields to ancillary space
     ancillary_encoder_model = torch.nn.Sequential(
-        torch.nn.Flatten(start_dim=-2, end_dim=-1), # since we have 2 inputs, this is the same as flattening at 0
-        # and this will lead to a completely flatarray
+        torch.nn.Flatten(start_dim=-2, end_dim=-1), 
         torch.nn.Linear(
             in_features=n_ancillary * spherical_patch_covering.patch_size,
             out_features=latent_ancillary_dim,
@@ -68,7 +70,7 @@ def test_trivial():
 
     model = torch.nn.Sequential(
         PatchEncoder(
-            V,
+            V1,
             spherical_patch_covering,
             dynamic_encoder_model,
             ancillary_encoder_model,
@@ -78,15 +80,17 @@ def test_trivial():
                             interaction_model,
                             nsteps=0, 
                             stepsize=0),
-        PatchDecoder(V, spherical_patch_covering, decoder_model),
+        PatchDecoder(V1, spherical_patch_covering, decoder_model),
         )
+    
+    train_example = AdvectionDataset(V1, 1, 1, 4).__getitem__(0)
 
-    X = torch.randn(32, 4, n_dofs).double()
-    print(X.shape)
-
+    X, _ = train_example
     Y = model(X)
-    assert torch.allclose(X, Y)
 
+    print(torch.allclose(X[0,:], Y[0,:]))
+    return torch.allclose(X[0,:], Y[0,:])
+test_trivial()
 
 def test_trivial2():
     """This tests whether the projection is correct
@@ -94,41 +98,16 @@ def test_trivial2():
     PatchEncoder is our projection P. It projects onto the latent space. 
     If the PatchDecoder is the Transpose of P, then we must have
     
-    X^TY = XP^TPX = |Px|^2
+    y^T(xP) = (xP)^T(xP) = P^Tx^TY
     
     and this is what we check."""
 
-    X = torch.randn(32, 4, n_dofs).double()
+    P = torch_interpolation_tensor(fs_from=V1, fs_to=V2, transpose=True)
+    X = torch.randn(4, V1.dim()).double()
+    Y = torch.matmul(X, P)
 
-    dynamic_encoder_model = torch.nn.Sequential(
-        torch.nn.Flatten(start_dim=-2, end_dim=-1),
-        torch.nn.Linear(
-            in_features=(n_dynamic + n_ancillary) * spherical_patch_covering.patch_size, # size of each input sample
-            out_features=latent_dynamic_dim, # size of each output sample
-        ),
-    ).double() # double means to cast to double precision (float128)
+    PTXT = torch.matmul(torch.transpose(P, 0,1), torch.transpose(X, 0, 1))
+    PXTY = torch.matmul(PTXT, Y)
+    PX2 = torch.matmul(torch.transpose(Y, 0, 1), Y)
 
-    # ancillary encoder model: map ancillary fields to ancillary space
-    ancillary_encoder_model = torch.nn.Sequential(
-        torch.nn.Flatten(start_dim=-2, end_dim=-1), # since we have 2 inputs, this is the same as flattening at 0
-        # and this will lead to a completely flatarray
-        torch.nn.Linear(
-            in_features=n_ancillary * spherical_patch_covering.patch_size,
-            out_features=latent_ancillary_dim,
-        ),
-    ).double()
-    
-    projection = PatchEncoder(V,
-            spherical_patch_covering,
-            dynamic_encoder_model,
-            ancillary_encoder_model,
-            n_dynamic
-            )
-    Y = projection(X)
-
-    print(X.shape)
-    print(Y.shape)
-
-    print(torch.matmul(torch.transpose(X, 1, 2), Y))
-
-test_trivial2()
+    assert torch.allclose(PXTY, PX2)
