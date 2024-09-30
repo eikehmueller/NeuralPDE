@@ -206,6 +206,8 @@ for epoch in range(nepoch):
     model.eval()
     with torch.no_grad():
         for Xv, yv in valid_dl:
+            Xv = Xv.to(device)
+            yv = yv.to(device)
             yv_pred = model(Xv)
             avg_vloss = loss(yv_pred, yv)
 

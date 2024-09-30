@@ -104,4 +104,5 @@ class Decoder(torch.nn.Module):
 
         :arg x: input tensor
         """
+
         return torch.matmul(x, self.a_sparse)

@@ -4,7 +4,7 @@ import torch
 from intergrid import torch_interpolation_tensor
 from firedrake.ml.pytorch import to_torch
 
-from neural_pde.neural_solver import Katies_NeuralSolver, NeuralSolver
+from neural_pde.neural_solver import NeuralSolver
 
 from neural_pde.spherical_patch_covering import SphericalPatchCovering
 from neural_pde.patch_encoder import PatchEncoder
@@ -28,69 +28,42 @@ mesh2 = UnitIcosahedralSphereMesh(num_ref2)
 V1 = FunctionSpace(mesh1, "CG", 1) # define the function space
 V2 = FunctionSpace(mesh2, "CG", 1) # define the function space
 
-def test_trivial():
-    """This model tests the trivial case where there are no timesteps in the NeuralSolver
-    We choose a random tensor X of shape [32, 4, ndofs] and find Y = model (X)
-    and assert that X == Y."""
+### Neural Networks ###
+dynamic_encoder_model = torch.nn.Sequential(
+    torch.nn.Flatten(start_dim=-2, end_dim=-1),
+    torch.nn.Linear(
+        in_features=(n_dynamic + n_ancillary) * spherical_patch_covering.patch_size, # size of each input sample
+        out_features=latent_dynamic_dim, # size of each output sample
+    ),
+).double() # double means to cast to double precision (float128)
 
-    interaction_model = torch.nn.Sequential(
-        torch.nn.Flatten(start_dim=-2, end_dim=-1),
-        torch.nn.Linear(
-            in_features=4 * (latent_dynamic_dim + latent_ancillary_dim), # do we use a linear model here?? Or do we need a nonlinear part
-            out_features=latent_dynamic_dim,
-        ),
-    ).double()
+# ancillary encoder model: map ancillary fields to ancillary space
+ancillary_encoder_model = torch.nn.Sequential(
+    torch.nn.Flatten(start_dim=-2, end_dim=-1), 
+    torch.nn.Linear(
+        in_features=n_ancillary * spherical_patch_covering.patch_size,
+        out_features=latent_ancillary_dim,
+    ),
+).double()
 
-    dynamic_encoder_model = torch.nn.Sequential(
-        torch.nn.Flatten(start_dim=-2, end_dim=-1),
-        torch.nn.Linear(
-            in_features=(n_dynamic + n_ancillary) * spherical_patch_covering.patch_size, # size of each input sample
-            out_features=latent_dynamic_dim, # size of each output sample
-        ),
-    ).double() # double means to cast to double precision (float128)
+decoder_model = torch.nn.Sequential(
+    torch.nn.Linear(
+        in_features=latent_dynamic_dim + latent_ancillary_dim,
+        out_features=n_output * spherical_patch_covering.patch_size,
+    ),
+    torch.nn.Unflatten(
+        dim=-1, unflattened_size=(n_output, spherical_patch_covering.patch_size)
+    ),
+).double()
 
-    # ancillary encoder model: map ancillary fields to ancillary space
-    ancillary_encoder_model = torch.nn.Sequential(
-        torch.nn.Flatten(start_dim=-2, end_dim=-1), 
-        torch.nn.Linear(
-            in_features=n_ancillary * spherical_patch_covering.patch_size,
-            out_features=latent_ancillary_dim,
-        ),
-    ).double()
+interaction_model = torch.nn.Sequential(
+    torch.nn.Flatten(start_dim=-2, end_dim=-1),
+    torch.nn.Linear(
+        in_features=4 * (latent_dynamic_dim + latent_ancillary_dim), # do we use a linear model here?? Or do we need a nonlinear part
+        out_features=latent_dynamic_dim,
+    ),
+).double()
 
-    decoder_model = torch.nn.Sequential(
-        torch.nn.Linear(
-            in_features=latent_dynamic_dim + latent_ancillary_dim,
-            out_features=n_output * spherical_patch_covering.patch_size,
-        ),
-        torch.nn.Unflatten(
-            dim=-1, unflattened_size=(n_output, spherical_patch_covering.patch_size)
-        ),
-    ).double()
-
-    model = torch.nn.Sequential(
-        PatchEncoder(
-            V1,
-            spherical_patch_covering,
-            dynamic_encoder_model,
-            ancillary_encoder_model,
-            n_dynamic
-            ),
-        NeuralSolver(spherical_patch_covering, 
-                            interaction_model,
-                            nsteps=0, 
-                            stepsize=0),
-        PatchDecoder(V1, spherical_patch_covering, decoder_model),
-        )
-    
-    train_example = AdvectionDataset(V1, 1, 1, 4).__getitem__(0)
-
-    X, _ = train_example
-    Y = model(X)
-
-    print(torch.allclose(X[0,:], Y[0,:]))
-    return torch.allclose(X[0,:], Y[0,:])
-test_trivial()
 
 def test_trivial2():
     """This tests whether the projection is correct
@@ -111,3 +84,108 @@ def test_trivial2():
     PX2 = torch.matmul(torch.transpose(Y, 0, 1), Y)
 
     assert torch.allclose(PXTY, PX2)
+
+
+def test_trivial3():
+
+    encoder = PatchEncoder(
+            V1,
+            spherical_patch_covering,
+            dynamic_encoder_model,
+            ancillary_encoder_model,
+            n_dynamic
+            )
+    decoder = PatchDecoder(V1, spherical_patch_covering, decoder_model)
+
+    model = torch.nn.Sequential(
+        encoder,
+        decoder,
+        )
+    
+    train_example = AdvectionDataset(V1, 1, 1, 4).__getitem__(0)
+
+    X_old, _ = train_example
+
+    #X_old = torch.randn(4, V1.dim()).double()
+    Y = model(X_old)
+
+    X = X_old[0,:]
+    Y = Y[0,:]
+    
+    XtY = torch.dot(X, Y)
+    XtY = XtY.detach().numpy()
+    print(XtY)
+    #Ax_L2 = torch.linalg.norm(Ax)**2
+    Ax = encoder(X_old)
+    Ax = Ax[0, :]
+    Ax_L2 = torch.dot(Ax, Ax)
+    #Ax_L2 = torch.linalg.norm(Ax)**2
+    Ax_L2 = Ax_L2.detach().numpy()
+
+    print(Ax_L2**2)
+    return np.isclose(XtY, Ax_L2**2)
+
+test_trivial3()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def test_trivial4():
+
+    model = torch.nn.Sequential(
+        PatchEncoder(
+            V1,
+            spherical_patch_covering,
+            dynamic_encoder_model,
+            ancillary_encoder_model,
+            n_dynamic
+            ),
+            NeuralSolver(spherical_patch_covering, 
+                        interaction_model,
+                        nsteps=1, 
+                        stepsize=1),
+        PatchDecoder(V1, spherical_patch_covering, decoder_model),
+        )
+    
+    encoder_model = PatchEncoder(
+            V1,
+            spherical_patch_covering,
+            dynamic_encoder_model,
+            ancillary_encoder_model,
+            n_dynamic
+            )
+
+    
+    train_example = AdvectionDataset(V1, 1, 1, 4).__getitem__(0)
+
+    X_old, _ = train_example
+
+    #X_old = torch.randn(4, V1.dim()).double()
+    Y = model(X_old)
+
+    X = X_old[0,:]
+    Y = Y[0,:]
+    
+    XtY = torch.dot(X, Y)
+    XtY = XtY.detach().numpy()
+    print(XtY)
+    #Ax_L2 = torch.linalg.norm(Ax)**2
+    Ax = encoder_model(X_old)
+    Ax = Ax[0, :]
+    Ax_L2 = torch.dot(Ax, Ax)
+    #Ax_L2 = torch.linalg.norm(Ax)**2
+    Ax_L2 = Ax_L2.detach().numpy()
+
+    print(Ax_L2**2)
+    return np.isclose(XtY, Ax_L2**2)
