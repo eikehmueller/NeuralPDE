@@ -67,11 +67,11 @@ class NeuralSolver(torch.nn.Module):
 
         :arg inputs: tensor of shape (B,n_patch,d_{latent}+d_{ancillary}) or (B,n_patch,d_{latent}+d_{ancillary})
         """
-
+        device = x.device
         if x.dim() == 2 or x.shape[0] == 1:
             x = x.squeeze(0)
             index = (
-                torch.tensor(self._neighbour_list)
+                torch.tensor(self._neighbour_list, device=device)
                 .unsqueeze(-1) 
                 .expand((-1, -1, x.shape[-1])) 
                 )
@@ -111,7 +111,7 @@ class NeuralSolver(torch.nn.Module):
             return x
         else:
             index = (
-                torch.tensor(self._neighbour_list)
+                torch.tensor(self._neighbour_list, device=device)
                 .unsqueeze(0) 
                 .unsqueeze(-1) 
                 .expand((x.shape[0], -1, -1, x.shape[-1])) 
