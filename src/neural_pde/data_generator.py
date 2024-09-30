@@ -96,9 +96,11 @@ class AdvectionDataset(SphericalFunctionSpaceDataset):
         )  # removing the seed seems to make it slower
 
         # generate data
-        self._data = []
+        self._data = np.empty(
+            (self._nsamples, self._n_func_in + self._n_func_target, self._fs.dof_count)
+        )
         x, y, z = SpatialCoordinate(self._fs.mesh())
-        for _ in range(self._nsamples):
+        for j in range(self._nsamples):
             expr_in = 0
             expr_target = 0
             coeff = self._rng.normal(size=(self._degree, self._degree, self._degree))
@@ -113,34 +115,21 @@ class AdvectionDataset(SphericalFunctionSpaceDataset):
                     * z**jz
                 )
             self._u.project(expr_in)
-            X = torch.tensor(
-                np.asarray(
-                    [
-                        self._u.dat.data,
-                        self._u_x.dat.data,
-                        self._u_y.dat.data,
-                        self._u_z.dat.data,
-                    ]
-                ),
-                dtype=torch.float64,
-            )
+            self._data[j, 0, :] = self._u.dat.data
+            self._data[j, 1, :] = self._u_x.dat.data
+            self._data[j, 2, :] = self._u_y.dat.data
+            self._data[j, 3, :] = self._u_z.dat.data
             self._u.project(expr_target)
-            y_target = torch.tensor(
-                np.asarray(
-                    [
-                        self._u.dat.data,
-                    ]
-                ),
-                dtype=torch.float64,
-            )
-            self._data.append((X, y_target))
+            self._data[j, 4, :] = self._u.dat.data
 
     def __getitem__(self, idx):
         """Return a single sample (X,y)
 
         :arg idx: index of sample
         """
-        return self._data[idx]
+        X = torch.tensor(self._data[idx, : self._n_func_in], dtype=torch.float64)
+        y = torch.tensor(self._data[idx, self._n_func_in :], dtype=torch.float64)
+        return (X, y)
 
 
 #######################################################################
