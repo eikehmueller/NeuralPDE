@@ -132,12 +132,12 @@ class AdvectionDataset(SphericalFunctionSpaceDataset):
                     * (x * np.sin(self._phi) + y * np.cos(self._phi)) ** jy
                     * z**jz
                 )
-            self._u.project(expr_in)
+            self._u.interpolate(expr_in)
             self._data[j, 0, :] = self._u.dat.data
             self._data[j, 1, :] = self._u_x.dat.data
             self._data[j, 2, :] = self._u_y.dat.data
             self._data[j, 3, :] = self._u_z.dat.data
-            self._u.project(expr_target)
+            self._u.interpolate(expr_target)
             self._data[j, 4, :] = self._u.dat.data
 
     def __getitem__(self, idx):
