@@ -20,14 +20,18 @@ parser.add_argument(
     action="store",
     default=default_path,
     help="path to output folder",
+    required=True
 )
 
 args, _ = parser.parse_known_args()
 path_to_output  = args.path_to_output_folder
 
+clear_output(path_to_output)
+
 print(torch.cuda.is_available())
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(device)
+
 ##### HYPERPARAMETERS #####
 test_number = "12"
 n_radial = 2             # number of radial points on each patch
@@ -117,8 +121,18 @@ interaction_model = torch.nn.Sequential(
     ),
 ).double()
 
+import os
+filename = "train_data.npy"
 train_ds = AdvectionDataset(V, n_train_samples, phi, degree)
+if os.path.exists(filename):
+    train_ds.load(filename)
+else:
+    train_ds.generate()
+    train_ds.save(filename)
+
+
 valid_ds = AdvectionDataset(V, n_valid_samples, phi, degree, seed=123456)  
+valid_ds.generate()
 train_dl = DataLoader(train_ds, batch_size=batchsize, shuffle=True, drop_last=True)
 valid_dl = DataLoader(valid_ds, batch_size=batchsize , drop_last=True)
 
@@ -183,6 +197,9 @@ for epoch in range(nepoch):
         train_x = epoch * len(train_dl) + i + 1
         training_loss.append(avg_loss.cpu().detach().numpy())
         i += 1 
+        del Xb
+        del yb
+        torch.cuda.empty_cache()
     
     training_loss_per_epoch.append(avg_loss.cpu().detach().numpy())
 
