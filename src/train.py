@@ -13,12 +13,11 @@ import matplotlib.pyplot as plt
 import argparse
 
 parser = argparse.ArgumentParser()
-default_path = "/home/katie795/internship/NeuralPDE/output"
+
 parser.add_argument(
     "--path_to_output_folder",
     type=str,
     action="store",
-    default=default_path,
     help="path to output folder",
     required=True
 )
