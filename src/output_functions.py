@@ -29,10 +29,8 @@ def move_files_and_directories(wsl_folder, windows_folder):
         shutil.move(wsl_path, windows_path)
         print(f'Moved: {wsl_path} -> {windows_path}')
 
-def clear_output():
-    folder = '/home/katie795/internship/NeuralPDE/output'
-    #folder = '~/katies_code/output'
-    #folder = 'output'
+def clear_output(folder):
+
     for filename in os.listdir(folder):
         file_path = os.path.join(folder, filename)
         try:

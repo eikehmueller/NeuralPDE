@@ -7,29 +7,29 @@ from torch.utils.data import DataLoader
 from output_functions import clear_output
 from firedrake import *
 from firedrake.adjoint import *
-import matplotlib.pyplot as plt
-from firedrake.petsc import PETSc
 from loss_functions import normalised_L2_error as loss
+import matplotlib.pyplot as plt
 
-import numpy as np
 import argparse
 
-continue_annotation()
-clear_output()
-
-
 parser = argparse.ArgumentParser()
-default_path = "/home/katie795/internship/NeuralPDE/output"
+
 parser.add_argument(
     "--path_to_output_folder",
     type=str,
     action="store",
-    default=default_path,
     help="path to output folder",
+    required=True
 )
 
 args, _ = parser.parse_known_args()
 path_to_output  = args.path_to_output_folder
+
+clear_output(path_to_output)
+
+print(torch.cuda.is_available())
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print(device)
 
 ##### HYPERPARAMETERS #####
 test_number = "12"
@@ -55,13 +55,13 @@ from neural_pde.spherical_patch_covering import SphericalPatchCovering
 from neural_pde.patch_encoder import PatchEncoder
 from neural_pde.patch_decoder import PatchDecoder
 from neural_pde.data_generator import AdvectionDataset
-from neural_pde.neural_solver import Katies_NeuralSolver, NeuralSolver
+from neural_pde.neural_solver import NeuralSolver
 
 # construct spherical patch covering with
 # arg1: number of refinements of the icosahedral sphere
 # arg2: number of radial points on each patch
-with PETSc.Log.Event("create_sphericalpatchcovering"):
-    spherical_patch_covering = SphericalPatchCovering(0, n_radial)
+
+spherical_patch_covering = SphericalPatchCovering(0, n_radial)
 
 print(f"number of patches               = {spherical_patch_covering.n_patches}")
 print(f"patchsize                       = {spherical_patch_covering.patch_size}")
@@ -120,11 +120,20 @@ interaction_model = torch.nn.Sequential(
     ),
 ).double()
 
-with PETSc.Log.Event("data_generation"):
-    train_ds = AdvectionDataset(V, n_train_samples, phi, degree)
-    valid_ds = AdvectionDataset(V, n_valid_samples, phi, degree, seed=123456)  
-    train_dl = DataLoader(train_ds, batch_size=batchsize, shuffle=True, drop_last=True)
-    valid_dl = DataLoader(valid_ds, batch_size=batchsize , drop_last=True)
+import os
+filename = "train_data.npy"
+train_ds = AdvectionDataset(V, n_train_samples, phi, degree)
+if os.path.exists(filename):
+    train_ds.load(filename)
+else:
+    train_ds.generate()
+    train_ds.save(filename)
+
+
+valid_ds = AdvectionDataset(V, n_valid_samples, phi, degree, seed=123456)  
+valid_ds.generate()
+train_dl = DataLoader(train_ds, batch_size=batchsize, shuffle=True, drop_last=True)
+valid_dl = DataLoader(valid_ds, batch_size=batchsize , drop_last=True)
 
 assert_testing = {
     "batchsize" : batchsize,
@@ -134,13 +143,12 @@ assert_testing = {
 }
 
 # visualise the first object in the training dataset 
-with PETSc.Log.Event("VTK_writer1"):
-    u_in = Function(V, name="input")
-    u_in.dat.data[:] = train_ds[0][0][0].numpy()
-    u_target = Function(V, name="target")
-    u_target.dat.data[:] = train_ds[0][1].numpy()
-    file = VTKFile(f"{path_to_output}/training_example{test_number}.pvd")
-    file.write(u_in, u_target) # u_target is rotated phi degees CLOCKWISE from u_in
+u_in = Function(V, name="input")
+u_in.dat.data[:] = train_ds[0][0][0].numpy()
+u_target = Function(V, name="target")
+u_target.dat.data[:] = train_ds[0][1].numpy()
+file = VTKFile(f"{path_to_output}/training_example{test_number}.pvd")
+file.write(u_in, u_target) # u_target is rotated phi degees CLOCKWISE from u_in
 
 
 # Full model: encoder + processor + decoder
@@ -160,6 +168,9 @@ model = torch.nn.Sequential(
     PatchDecoder(V, spherical_patch_covering, decoder_model),
 )
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+model = model.to(device)
+
 opt = torch.optim.Adam(model.parameters(), lr=lr) 
 
 training_loss = []
@@ -167,95 +178,86 @@ training_loss_per_epoch = []
 validation_loss_per_epoch = []
 
 # main training loop
-with PETSc.Log.Event("training_loop"):
-    for epoch in range(nepoch):
+for epoch in range(nepoch):
 
-        # training loop
-        model.train(True)
-        i = 0 
-        for Xb, yb in train_dl:
-            opt.zero_grad() # resets all of the gradients to zero, otherwise the gradients are accumulated
-            with PETSc.Log.Event("Solve Y=model(X)"):
-                y_pred = model(Xb)
-            avg_loss = loss(y_pred, yb)  # only if dataloader drops last
-            avg_loss.backward() 
-            opt.step() # adjust the parameters by the gradient collected in the backwards pass
-            zero_loss = loss(torch.zeros_like(y_pred), y_pred)
+    # training loop
+    model.train(True)
+    i = 0 
+    for Xb, yb in train_dl:
+        Xb = Xb.to(device)
+        yb = yb.to(device)
+        opt.zero_grad() # resets all of the gradients to zero, otherwise the gradients are accumulated
+        y_pred = model(Xb)
+        avg_loss = loss(y_pred, yb)  # only if dataloader drops last
+        avg_loss.backward() 
+        opt.step() # adjust the parameters by the gradient collected in the backwards pass
+        zero_loss = loss(torch.zeros_like(y_pred), y_pred)
 
-            train_x = epoch * len(train_dl) + i + 1
-            #writer.add_scalar("Loss/train", avg_loss, train_x)
-            training_loss.append(avg_loss.detach().numpy())
-            i += 1 
-        
-        training_loss_per_epoch.append(avg_loss.detach().numpy())
+        train_x = epoch * len(train_dl) + i + 1
+        training_loss.append(avg_loss.cpu().detach().numpy())
+        i += 1 
+        del Xb
+        del yb
+        torch.cuda.empty_cache()
+    
+    training_loss_per_epoch.append(avg_loss.cpu().detach().numpy())
 
-        # validation loop
-        model.eval()
-        with torch.no_grad():
-            for Xv, yv in valid_dl:
-                with PETSc.Log.Event("Solve Yv=model(Xv)"):
-                    yv_pred = model(Xv)
-                avg_vloss = loss(yv_pred, yv)
+    # validation loop
+    model.eval()
+    with torch.no_grad():
+        for Xv, yv in valid_dl:
+            yv_pred = model(Xv)
+            avg_vloss = loss(yv_pred, yv)
 
-        print(f'Epoch {epoch}: Training loss: {avg_loss}, Validation loss: {avg_vloss}')
-        #writer.add_scalars('Training vs. Validation Loss',
-        #                { 'Training loss' : avg_loss, 'Validation loss' : avg_vloss },
-        #                epoch + 1)
-        #writer.flush()
-        validation_loss_per_epoch.append(avg_vloss.detach().numpy())
+    print(f'Epoch {epoch}: Training loss: {avg_loss}, Validation loss: {avg_vloss}')
+    validation_loss_per_epoch.append(avg_vloss.cpu().detach().numpy())
 
 # visualise the first object in the training dataset 
-with PETSc.Log.Event("VTK_writer2"):
-    u_in = Function(V, name="input")
-    u_in.dat.data[:] = valid_ds[1][0][0].numpy()
-    u_target = Function(V, name="target")
-    u_target.dat.data[:] = valid_ds[1][1].numpy()
-    u_predicted_values = model(valid_ds[1][0]).squeeze()
-    u_predicted = Function(V, name="predicted")
-    u_predicted.dat.data[:] = u_predicted_values.detach().numpy()
-    file = VTKFile(f"{path_to_output}/validation_example{test_number}.pvd")
-    file.write(u_in, u_target, u_predicted) 
+host_model = model.cpu()
 
-#tensorboard session
-#dataiter = iter(train_dl)
-#X, y = next(dataiter)
-#writer.add_graph(model, X)
-#writer.close()
+u_in = Function(V, name="input")
+u_in.dat.data[:] = valid_ds[1][0][0].numpy()
+u_target = Function(V, name="target")
+u_target.dat.data[:] = valid_ds[1][1].numpy()
+u_predicted_values = host_model(valid_ds[1][0]).squeeze()
+u_predicted = Function(V, name="predicted")
+u_predicted.dat.data[:] = u_predicted_values.detach().numpy()
+file = VTKFile(f"{path_to_output}/validation_example{test_number}.pvd")
+file.write(u_in, u_target, u_predicted) 
 
 end = timer()
 print(f'Runtime: {timedelta(seconds=end-start)}')
 
-with PETSc.Log.Event("matplotlib"):
-    training_iterations = np.arange(0.0, len(training_loss), 1)
-    epoch_iterations = np.arange(0.0, len(training_loss_per_epoch), 1)
+training_iterations = np.arange(0.0, len(training_loss), 1)
+epoch_iterations = np.arange(0.0, len(training_loss_per_epoch), 1)
 
-    fig1, ax1 = plt.subplots()
-    ax1.plot(training_iterations, np.array(training_loss))
-    ax1.set(xlabel='Number of training iterations', ylabel=r'Normalized $L^2$ loss',
-            title='Training loss')
-    ax1.grid()
-    fig1.savefig(f'{path_to_output}/training_loss_test{test_number}.png')
+fig1, ax1 = plt.subplots()
+ax1.plot(training_iterations, np.array(training_loss))
+ax1.set(xlabel='Number of training iterations', ylabel=r'Normalized $L^2$ loss',
+        title='Training loss')
+ax1.grid()
+fig1.savefig(f'{path_to_output}/training_loss_test{test_number}.png')
 
 
-    fig2, ax2 = plt.subplots()
-    ax2.plot(epoch_iterations, np.array(training_loss_per_epoch), label='Training loss', marker='o')
-    ax2.plot(epoch_iterations, np.array(validation_loss_per_epoch), label='Validation loss', linestyle='dashed',
-            marker='v')
-    ax2.set(xlabel='Number of epochs', ylabel=r'Normalized $L^2$ loss',
-            title='Training and validation loss per epoch')
-    ax2.legend()
-    ax2.grid()
-    fig2.savefig(f'{path_to_output}/validation_loss_test{test_number}.png')
+fig2, ax2 = plt.subplots()
+ax2.plot(epoch_iterations, np.array(training_loss_per_epoch), label='Training loss', marker='o')
+ax2.plot(epoch_iterations, np.array(validation_loss_per_epoch), label='Validation loss', linestyle='dashed',
+        marker='v')
+ax2.set(xlabel='Number of epochs', ylabel=r'Normalized $L^2$ loss',
+        title='Training and validation loss per epoch')
+ax2.legend()
+ax2.grid()
+fig2.savefig(f'{path_to_output}/validation_loss_test{test_number}.png')
 
-    fig3, ax3 = plt.subplots()
-    ax3.set_yscale('log')
-    ax3.plot(epoch_iterations, np.array(training_loss_per_epoch), label='Training loss', marker='o')
-    ax3.plot(epoch_iterations, np.array(validation_loss_per_epoch), label='Validation loss', linestyle='dashed',
-            marker='v')
-    ax3.set(xlabel='Number of epochs', ylabel=r'Normalized $L^2$ loss',
-            title='Log of training and validation loss per epoch')
-    ax3.legend()
-    ax3.grid()
-    fig3.savefig(f'{path_to_output}/log_loss{test_number}.png')
-    #plt.show()
-    plt.close()
+fig3, ax3 = plt.subplots()
+ax3.set_yscale('log')
+ax3.plot(epoch_iterations, np.array(training_loss_per_epoch), label='Training loss', marker='o')
+ax3.plot(epoch_iterations, np.array(validation_loss_per_epoch), label='Validation loss', linestyle='dashed',
+        marker='v')
+ax3.set(xlabel='Number of epochs', ylabel=r'Normalized $L^2$ loss',
+        title='Log of training and validation loss per epoch')
+ax3.legend()
+ax3.grid()
+fig3.savefig(f'{path_to_output}/log_loss{test_number}.png')
+#plt.show()
+plt.close()

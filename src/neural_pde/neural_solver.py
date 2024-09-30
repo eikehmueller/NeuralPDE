@@ -67,11 +67,11 @@ class NeuralSolver(torch.nn.Module):
 
         :arg inputs: tensor of shape (B,n_patch,d_{latent}+d_{ancillary}) or (B,n_patch,d_{latent}+d_{ancillary})
         """
-
+        device = x.device
         if x.dim() == 2 or x.shape[0] == 1:
             x = x.squeeze(0)
             index = (
-                torch.tensor(self._neighbour_list)
+                torch.tensor(self._neighbour_list, device=device)
                 .unsqueeze(-1) 
                 .expand((-1, -1, x.shape[-1])) 
                 )
@@ -111,7 +111,7 @@ class NeuralSolver(torch.nn.Module):
             return x
         else:
             index = (
-                torch.tensor(self._neighbour_list)
+                torch.tensor(self._neighbour_list, device=device)
                 .unsqueeze(0) 
                 .unsqueeze(-1) 
                 .expand((x.shape[0], -1, -1, x.shape[-1])) 
@@ -151,114 +151,3 @@ class NeuralSolver(torch.nn.Module):
                 x += self.stepsize * dx
 
             return x
-
-class Katies_NeuralSolver(torch.nn.Module):
-    """This is Katie's attempt at replicating the Neural solver. This is to see if
-    they do the same thing - I will try to do this without referencing Eike's one.
-
-    This is a learnable function that that goes from
-    R^{4, d_{lat}} -> R^{d_{lat}^{dyn}}
-
-    Things that we take as arguments are
-    
-    spherical_patch_covering - this is where the red patches on the VOM are defined on the dual mesh
-    interaction_model - the structure of the neural network that goes here 
-                        this is of shape (4 * latent_dimension) (because we want 4 nodes )
-                        output is of shape latent_dynamic_dim ???
-    nsteps=1,  number of steps in the neural solver
-    stepsize=1
-
-    The previous layer of the neural network spits out a tensor of shape
-
-    (B,n_{patches},d_{lat})
-
-    which will be our input shape, and the next layer of the neural netowrk takes a tensor of shape
-
-    (B,n_{patches},d_{lat}).
-
-    So theoretically there should not really be any tensors changing shape.
-
-    Also, the neighbour list is an ordered list, where,
-    node[0] has neighbours neighbour_list[0]
-
-    """
-
-    # start by initializing the class
-    def __init__(self, spherical_patch_covering, interaction_model, nsteps=1, stepsize=1, assert_testing=None):
-        super().__init__()
-        self.spherical_patch_covering = spherical_patch_covering
-        self.interaction_model = interaction_model
-        self.nsteps = nsteps
-        self.stepsize = stepsize
-
-        # neighbours list here
-        self.neighbour_list = self.spherical_patch_covering.neighbour_list
-
-        self.assert_testing = assert_testing
-
-    def forward(self, z_old):
-        if z_old.dim() == 2 or z_old.shape[0] == 1:
-            for _ in range(self.nsteps):
-                z_old = z_old.squeeze(0)
-                # STEP 1: Create tensor of shape (n_patch, d_lat, 4)
-                z_unsqueezed = z_old.unsqueeze(2)
-                z_mid = z_unsqueezed.expand(-1, -1, 4)
-
-                if self.assert_testing is not None:
-                    assert z_mid.shape[0] == self.assert_testing["n_patches"], "z_mid[1] is not equal to n_patches"
-                    assert z_mid.shape[1] == self.assert_testing["d_lat"],     "z_mid[2] is not equal to d_lat"
-                    assert z_mid.shape[2] == 4,                                "z_mid[3] is not equal to 4"
-
-                # STEP 2: Populate the tensor with data from neighbouring vertices
-                for n_patch in range(z_mid.shape[0]):
-                    for d_lat in range(z_mid.shape[1]):
-                        for beta in range(3):
-                            neighbour_position = self.neighbour_list[n_patch][beta]
-                            z_mid[n_patch][d_lat][beta + 1] = z_old[neighbour_position][d_lat]
-                
-                # STEP 3: Define and apply the interaction model
-                # #input (B, n_patches, d_latent, 4) output (B, npatches, d_dyn)
-                F_theta = self.interaction_model(z_mid)
-
-                if self.assert_testing is not None:
-                    assert F_theta.shape[0] == self.assert_testing["n_patches"], "F_theta[0] is not equal to n_patches"
-                    assert F_theta.shape[1] == self.assert_testing["d_dyn"],     "F_theta[1] is not equal to d_dyn"
-                
-                # STEP 4: Update the dynamic latent variables in z_old
-                num_dyn = F_theta.shape[1]
-                z_old[:, :num_dyn] += self.stepsize * F_theta
-        else:
-            for _ in range(self.nsteps):
-                # First, z_old is of shape (B, n_patch, d_lat)
-                # STEP 1: Create tensor of shape (B, n_patch, d_lat, 4)
-                z_unsqueezed = z_old.unsqueeze(3).double()
-                z_mid = z_unsqueezed.expand(-1, -1, -1, 4)
-
-                if self.assert_testing is not None:
-                    assert z_mid.shape[0] == self.assert_testing["batchsize"], "z_mid[0] is not equal to batch size"
-                    assert z_mid.shape[1] == self.assert_testing["n_patches"], "z_mid[1] is not equal to n_patches"
-                    assert z_mid.shape[2] == self.assert_testing["d_lat"],     "z_mid[2] is not equal to d_lat"
-                    assert z_mid.shape[3] == 4,                                "z_mid[3] is not equal to 4"
-
-                # STEP 2: Populate the tensor with data from neighbouring vertices
-                for batch in range(z_mid.shape[0]):
-                    for n_patch in range(z_mid.shape[1]):
-                        for d_lat in range(z_mid.shape[2]):
-                            for beta in range(3):
-                                neighbour_position = self.neighbour_list[n_patch][beta]
-                                z_mid[batch][n_patch][d_lat][beta + 1] = z_old[batch][neighbour_position][d_lat]
-                
-                # STEP 3: Define and apply the interaction model
-                # #input (B, n_patches, d_latent, 4) output (B, npatches, d_dyn)
-                F_theta = self.interaction_model(z_mid)
-
-                if self.assert_testing is not None:
-                    assert F_theta.shape[0] == self.assert_testing["batchsize"], "F_theta[0] is not equal to batch size"
-                    assert F_theta.shape[1] == self.assert_testing["n_patches"], "F_theta[1] is not equal to n_patches"
-                    assert F_theta.shape[2] == self.assert_testing["d_dyn"],     "F_theta[2] is not equal to d_dyn"
-
-                num_dyn = F_theta.shape[2]
-                # STEP 4: Update the dynamic latent variables in z_old
-                z_old[:, :, :num_dyn] += self.stepsize * F_theta
-
-        return z_old
