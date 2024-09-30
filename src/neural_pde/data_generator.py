@@ -33,6 +33,10 @@ class SphericalFunctionSpaceDataset(ABC, Dataset):
         """
         self._fs = fs
         self._nsamples = nsamples
+        self._data = np.empty(
+            (self._nsamples, self.n_func_in + self.n_func_target, self._fs.dof_count),
+            dtype=np.float64,
+        )
 
     @property
     def n_dof(self):
@@ -61,6 +65,23 @@ class SphericalFunctionSpaceDataset(ABC, Dataset):
         """Return numnber of samples"""
         return self._nsamples
 
+    def save(self, filename):
+        """Save the dataset to disk
+
+        :arg filename: name of file to save to"""
+        np.save(filename, self._data)
+
+    def load(self, filename):
+        """Load the dataset from disk
+
+        :arg filename: name of file to load from"""
+        self._data = np.load(filename)
+        assert self._data.shape == (
+            self._nsamples,
+            self.n_func_in + self.n_func_target,
+            self._fs.dof_count,
+        )
+
 
 class AdvectionDataset(SphericalFunctionSpaceDataset):
     """Data set for advection
@@ -78,6 +99,8 @@ class AdvectionDataset(SphericalFunctionSpaceDataset):
         :arg phi: rotation angle phi
         :arg degree: polynomial degree used for generating random fields
         """
+        self._n_func_in = 4
+        self._n_func_target = 1
         super().__init__(fs, nsamples)
         mesh = self._fs.mesh()
         x, y, z = SpatialCoordinate(mesh)
@@ -86,19 +109,14 @@ class AdvectionDataset(SphericalFunctionSpaceDataset):
         self._u_z = Function(self._fs).interpolate(z)
         self._u = Function(self._fs)
         self._phi = phi
-
-        self._n_func_in = 4
-        self._n_func_target = 1
-
         self._degree = degree
         self._rng = np.random.default_rng(
             seed
         )  # removing the seed seems to make it slower
 
+    def generate(self):
+        """Generate the data"""
         # generate data
-        self._data = np.empty(
-            (self._nsamples, self._n_func_in + self._n_func_target, self._fs.dof_count)
-        )
         x, y, z = SpatialCoordinate(self._fs.mesh())
         for j in range(self._nsamples):
             expr_in = 0
