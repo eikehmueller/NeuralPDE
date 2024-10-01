@@ -1,12 +1,13 @@
 """Patch decoder. Decodes information from latent space back to a function on the sphere"""
 
-
 from firedrake import *
-#from firedrake.ml.pytorch import fem_operator
-#from pyadjoint import ReducedFunctional, Control
+
+# from firedrake.ml.pytorch import fem_operator
+# from pyadjoint import ReducedFunctional, Control
 from firedrake.adjoint import *
 import torch
-from intergrid import Decoder
+from neural_pde.intergrid import Decoder
+
 
 class PatchDecoder(torch.nn.Module):
     """Collective decoding from latent space
@@ -115,4 +116,3 @@ class PatchDecoder(torch.nn.Module):
                 ]
             )
             return x
-

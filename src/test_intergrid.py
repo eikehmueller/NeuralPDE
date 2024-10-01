@@ -4,7 +4,7 @@ to a set of points"""
 import pytest
 from firedrake import *
 import torch
-from intergrid import Encoder, Decoder
+from neural_pde.intergrid import Encoder, Decoder
 from firedrake.ml.pytorch import to_torch
 
 

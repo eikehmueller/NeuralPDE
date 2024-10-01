@@ -1,10 +1,10 @@
 """Patch encoder. Encodes the field information into the latent space"""
 
-
 from firedrake import *
 from firedrake.adjoint import *
 import torch
-from intergrid import Encoder
+from neural_pde.intergrid import Encoder
+
 
 class PatchEncoder(torch.nn.Module):
     """
@@ -32,7 +32,7 @@ class PatchEncoder(torch.nn.Module):
 
         (B,n_{patches},n_{func},n_{dof per patch})
 
-    where n_{patches} and n_{dof per patch} depend on the SphericalPatchCovering. This is then 
+    where n_{patches} and n_{dof per patch} depend on the SphericalPatchCovering. This is then
     mapped to latent space with a learnable embedding.
 
     This embedding has block-structure in the sense that
@@ -75,14 +75,18 @@ class PatchEncoder(torch.nn.Module):
         self._dynamic_encoder_model = dynamic_encoder_model
         self._ancillary_encoder_model = ancillary_encoder_model
 
-        mesh = fs.mesh() # extract the mesh from the functionspace
+        mesh = fs.mesh()  # extract the mesh from the functionspace
         points = spherical_patch_covering.points.reshape(
             (spherical_patch_covering.n_points, 3)
-        ) # extract the points from the spherical_patch_covering
-        self._npatches = spherical_patch_covering.n_patches # number of patches
-        self._patchsize = spherical_patch_covering.patch_size # number of points per patch
+        )  # extract the points from the spherical_patch_covering
+        self._npatches = spherical_patch_covering.n_patches  # number of patches
+        self._patchsize = (
+            spherical_patch_covering.patch_size
+        )  # number of points per patch
         vertex_only_mesh = VertexOnlyMesh(mesh, points)
-        vertex_only_fs = FunctionSpace(vertex_only_mesh, "DG", 0) # we can only use DG0 for a vom.
+        vertex_only_fs = FunctionSpace(
+            vertex_only_mesh, "DG", 0
+        )  # we can only use DG0 for a vom.
 
         continue_annotation()
         with set_working_tape() as _:
@@ -97,16 +101,16 @@ class PatchEncoder(torch.nn.Module):
         :arg x: input
         """
         # Part I: interpolation to VOM
-        # input is a (n_func, ndof) tensor 
+        # input is a (n_func, ndof) tensor
 
         if x.dim() == 2:
-            x = torch.stack( 
+            x = torch.stack(
                 [
-                    torch.reshape( 
+                    torch.reshape(
                         self._function_to_patch.forward(z),
-                        (self._npatches, self._patchsize), 
+                        (self._npatches, self._patchsize),
                     )
-                    for z in torch.unbind(x) 
+                    for z in torch.unbind(x)
                 ]
             )
 
@@ -114,8 +118,8 @@ class PatchEncoder(torch.nn.Module):
             x = torch.permute(x, (1, 0, 2))
 
             # Part II: encoding on patches
-            x_ancillary = self._ancillary_encoder_model(x[..., self._n_dynamic :, :]) 
-            # start slicing from index n_dynamic. Assumes that n_func is of shape [dyn, anc, anc anc] 
+            x_ancillary = self._ancillary_encoder_model(x[..., self._n_dynamic :, :])
+            # start slicing from index n_dynamic. Assumes that n_func is of shape [dyn, anc, anc anc]
             x_dynamic = self._dynamic_encoder_model(x)
             x = torch.cat((x_dynamic, x_ancillary), dim=-1)
 
@@ -126,14 +130,14 @@ class PatchEncoder(torch.nn.Module):
                 [
                     torch.stack(
                         [
-                            torch.reshape( # input, shape
+                            torch.reshape(  # input, shape
                                 self._function_to_patch.forward(z),
-                                (self._npatches, self._patchsize), 
+                                (self._npatches, self._patchsize),
                             )
-                            for z in torch.unbind(y) 
+                            for z in torch.unbind(y)
                         ]
                     )
-                    for y in torch.unbind(x) 
+                    for y in torch.unbind(x)
                 ]
             )
 
@@ -141,8 +145,8 @@ class PatchEncoder(torch.nn.Module):
             x = torch.permute(x, (0, 2, 1, 3))
 
             # Part II: encoding on patches
-            x_ancillary = self._ancillary_encoder_model(x[..., self._n_dynamic :, :]) 
-            # start slicing from index n_dynamic. Assumes that n_func is of shape [dyn, anc, anc anc] 
+            x_ancillary = self._ancillary_encoder_model(x[..., self._n_dynamic :, :])
+            # start slicing from index n_dynamic. Assumes that n_func is of shape [dyn, anc, anc anc]
             x_dynamic = self._dynamic_encoder_model(x)
             x = torch.cat((x_dynamic, x_ancillary), dim=-1)
 
