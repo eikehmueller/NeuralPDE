@@ -12,7 +12,9 @@ from neural_pde.patch_decoder import PatchDecoder
 from neural_pde.data_generator import AdvectionDataset
 from neural_pde.intergrid import Encoder, Decoder
 
-spherical_patch_covering = SphericalPatchCovering(0, 2)
+spherical_patch_covering = SphericalPatchCovering(0, 0)
+
+print(spherical_patch_covering.patch_size)
 
 # number of dynamic fields: scalar tracer
 n_dynamic = 1
@@ -21,41 +23,56 @@ latent_dynamic_dim = 7  # picked to hopefully capture the behaviour wanted
 latent_ancillary_dim = 3  # also picked to hopefully resolve the behaviour
 n_output = 1
 
-num_ref1 = 2
-num_ref2 = 3
+num_ref1 = 1
+num_ref2 = 2
 mesh1 = UnitIcosahedralSphereMesh(num_ref1)  # create the mesh
 mesh2 = UnitIcosahedralSphereMesh(num_ref2)
 V1 = FunctionSpace(mesh1, "CG", 1)  # define the function space
 V2 = FunctionSpace(mesh2, "CG", 1)  # define the function space
 
+print(V1.dim())
+n_id = 54
+print(spherical_patch_covering.n_points)
+
 ### Neural Networks ###
+dynamic_linear = torch.nn.Linear(
+        in_features=72,  
+        out_features=72,  
+        bias=False)
+
+ancillary_linear = torch.nn.Linear(
+        in_features=n_id,
+        out_features=n_id,
+        bias=False)
+
+decoder_linear = torch.nn.Linear(
+        in_features=126,
+        out_features=126,
+        bias=False)
+
+with torch.no_grad():
+    dynamic_linear.weight = torch.nn.Parameter(torch.eye(72))
+    ancillary_linear.weight = torch.nn.Parameter(torch.eye(n_id))
+    decoder_linear.weight = torch.nn.Parameter(torch.eye(126))
+
+
 dynamic_encoder_model = torch.nn.Sequential(
     torch.nn.Flatten(start_dim=-2, end_dim=-1),
-    torch.nn.Linear(
-        in_features=(n_dynamic + n_ancillary)
-        * spherical_patch_covering.patch_size,  # size of each input sample
-        out_features=latent_dynamic_dim,  # size of each output sample
-    ),
-).double()  # double means to cast to double precision (float128)
+    dynamic_linear,
+    ).double()  # double means to cast to double precision (float128)
 
-# ancillary encoder model: map ancillary fields to ancillary space
 ancillary_encoder_model = torch.nn.Sequential(
     torch.nn.Flatten(start_dim=-2, end_dim=-1),
-    torch.nn.Linear(
-        in_features=n_ancillary * spherical_patch_covering.patch_size,
-        out_features=latent_ancillary_dim,
-    ),
+    ancillary_linear
 ).double()
 
 decoder_model = torch.nn.Sequential(
-    torch.nn.Linear(
-        in_features=latent_dynamic_dim + latent_ancillary_dim,
-        out_features=n_output * spherical_patch_covering.patch_size,
-    ),
-    torch.nn.Unflatten(
-        dim=-1, unflattened_size=(n_output, spherical_patch_covering.patch_size)
-    ),
+    decoder_linear,
+    torch.nn.Unflatten(dim=-1, unflattened_size=(1,126))
 ).double()
+
+
+
 
 interaction_model = torch.nn.Sequential(
     torch.nn.Flatten(start_dim=-2, end_dim=-1),
@@ -106,11 +123,10 @@ def test_trivial3():
         decoder,
     )
 
-    train_example = AdvectionDataset(V1, 1, 1, 4).__getitem__(0)
+    #train_example = AdvectionDataset(V1, 1, 1, 4).__getitem__(0)
+    train_example = torch.randn(4, V1.dim()).double()
+    X_old = train_example
 
-    X_old, _ = train_example
-
-    # X_old = torch.randn(4, V1.dim()).double()
     Y = model(X_old)
 
     X = X_old[0, :]
@@ -128,7 +144,6 @@ def test_trivial3():
 
     print(Ax_L2**2)
     return np.isclose(XtY, Ax_L2**2)
-
 
 test_trivial3()
 

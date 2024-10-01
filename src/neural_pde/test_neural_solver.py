@@ -4,12 +4,7 @@
 # 2: checking that input and output have shape (n_patches, d_lat) for NeuralSolver
 # 2: checking that input and output have shape (1, n_patches, d_lat) for NeuralSolver
 # 2: checking that input and output have shape (batchsize, n_patches, d_lat) for NeuralSolver
-# 2: checking that input and output have shape (n_patches, d_lat) for Katies_NeuralSolver
-# 2: checking that input and output have shape (1, n_patches, d_lat) for Katies_NeuralSolver
-# 2: checking that input and output have shape (batchsize, n_patches, d_lat) for Katies_NeuralSolver
 # 3: checking for an averaging function NeuralSolver returns the expected result
-# 3: checking for an averaging function Katies_NeuralSolver returns the expected result
-# 3: checking that NeuralSolver and Katies_NeuralSolver give (near) identical results
 
 
 from spherical_patch_covering import SphericalPatchCovering
@@ -122,58 +117,11 @@ def test_sample3():
 
     assert y.shape == sample3.shape
 
-def test_sample1_katie():
-    """Check whether the input and output are the same shape"""
-    model = Katies_NeuralSolver(spherical_patch_covering,
-        interaction_model,
-        nsteps=1,
-        stepsize=1.0,
-    )
-    y = model(sample1)
-
-    assert y.shape == sample1.shape
-
-def test_sample2_katie():
-    """Check whether the input and output are the same shape"""
-    model = Katies_NeuralSolver(spherical_patch_covering,
-        interaction_model,
-        nsteps=1,
-        stepsize=1.0,
-    )
-    y = model(sample2).unsqueeze(0)
-
-    assert y.shape == sample2.shape
-
-def test_sample3_katie():
-    """Check whether the input and output are the same shape"""
-    model = Katies_NeuralSolver(spherical_patch_covering,
-        interaction_model,
-        nsteps=1,
-        stepsize=1.0,
-    )
-    y = model(sample3)
-
-    assert y.shape == sample3.shape
 
 def test_average():
     """Check whether the model returns the expected result from an averaging function"""
 
     model = NeuralSolver(spherical_patch_covering,
-        average_model,
-        nsteps=1,
-        stepsize=1.0,
-    )
-
-    y1 = model(sample3)
-    y2 = sample3 
-
-    y2[:, :, :d_dyn] += average_neighbours(sample3, neighbour_list)[:, :, :d_dyn]
-    assert torch.allclose(y1, y2)
-
-def test_average_katie():
-    """Check whether the model returns the expected result from an averaging function"""
-
-    model = Katies_NeuralSolver(spherical_patch_covering,
         average_model,
         nsteps=1,
         stepsize=1.0,
