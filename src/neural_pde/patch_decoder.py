@@ -78,6 +78,7 @@ class PatchDecoder(torch.nn.Module):
 
         :arg x: input
         """
+        device = x.device
 
         if x.dim() == 2:
             # Part I: encoding on patches
@@ -89,7 +90,7 @@ class PatchDecoder(torch.nn.Module):
                     torch.flatten(
                         self._patch_to_function.forward(
                             torch.flatten(z, start_dim=-2, end_dim=-1)
-                        )
+                        ).to(device)
                     )
                     for z in torch.unbind(x)
                 ]
@@ -107,7 +108,7 @@ class PatchDecoder(torch.nn.Module):
                             torch.flatten(
                                 self._patch_to_function.forward(
                                     torch.flatten(z, start_dim=-2, end_dim=-1)
-                                )
+                                ).to(device)
                             )
                             for z in torch.unbind(y)
                         ]

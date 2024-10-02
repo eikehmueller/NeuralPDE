@@ -12,22 +12,31 @@ from neural_pde.patch_decoder import PatchDecoder
 from neural_pde.data_generator import AdvectionDataset
 from neural_pde.intergrid import Encoder, Decoder
 
-spherical_patch_covering = SphericalPatchCovering(0, 0)
+spherical_patch_covering = SphericalPatchCovering(0, 1)
 
-print(spherical_patch_covering.patch_size)
+print(f'Number of points per patch: {spherical_patch_covering.patch_size}')
+print(f'Number of patches: {spherical_patch_covering.n_patches}')
+print(f'Total number of points: {spherical_patch_covering.n_points}')
+
+
+n_dynamic = 1   # number of dynamic fields: scalar tracer
+n_ancillary = 3 # number of ancillary fields: x-, y- and z-coordinates
+n_output = 1    # number of output fields: scalar tracer
 
 num_ref1 = 1
-num_ref2 = 2
+num_ref2 = 1
+
 mesh1 = UnitIcosahedralSphereMesh(num_ref1)  # create the mesh
 mesh2 = UnitIcosahedralSphereMesh(num_ref2)
+
+
 V1 = FunctionSpace(mesh1, "CG", 1)  # define the function space
 V2 = FunctionSpace(mesh2, "CG", 1)  # define the function space
 
-print(V1.dim())
-n_id = 54
-print(spherical_patch_covering.n_points)
+print(f'Number of DOFs in V: {V1.dim()}')
 
 ### Neural Networks ###
+'''
 dynamic_linear = torch.nn.Linear(
         in_features=72,  
         out_features=72,  
@@ -47,36 +56,23 @@ with torch.no_grad():
     dynamic_linear.weight = torch.nn.Parameter(torch.eye(72))
     ancillary_linear.weight = torch.nn.Parameter(torch.eye(n_id))
     decoder_linear.weight = torch.nn.Parameter(torch.eye(126))
-
+'''
 
 dynamic_encoder_model = torch.nn.Sequential(
     torch.nn.Flatten(start_dim=-2, end_dim=-1),
-    dynamic_linear,
+#    dynamic_linear,
     ).double()  # double means to cast to double precision (float128)
 
 ancillary_encoder_model = torch.nn.Sequential(
     torch.nn.Flatten(start_dim=-2, end_dim=-1),
-    ancillary_linear
+#    ancillary_linear
 ).double()
 
 decoder_model = torch.nn.Sequential(
-    decoder_linear,
-    torch.nn.Unflatten(dim=-1, unflattened_size=(1,126))
+#    decoder_linear,
+    torch.nn.Unflatten(dim=-1, unflattened_size=(1, spherical_patch_covering.patch_size))
 ).double()
 
-
-
-
-interaction_model = torch.nn.Sequential(
-    torch.nn.Flatten(start_dim=-2, end_dim=-1),
-    torch.nn.Linear(
-        in_features=4
-        * (
-            latent_dynamic_dim + latent_ancillary_dim
-        ),  # do we use a linear model here?? Or do we need a nonlinear part
-        out_features=latent_dynamic_dim,
-    ),
-).double()
 
 
 def test_trivial2():
@@ -128,7 +124,7 @@ def test_trivial3():
     XtY = torch.dot(X, Y)
     XtY = XtY.detach().numpy()
     print(XtY)
-    # Ax_L2 = torch.linalg.norm(Ax)**2
+
     Ax = encoder(X_old)
     Ax = Ax[0, :]
     Ax_L2 = torch.dot(Ax, Ax)

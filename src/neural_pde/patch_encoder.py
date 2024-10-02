@@ -103,11 +103,13 @@ class PatchEncoder(torch.nn.Module):
         # Part I: interpolation to VOM
         # input is a (n_func, ndof) tensor
 
+        device = x.device
+
         if x.dim() == 2:
             x = torch.stack(
                 [
                     torch.reshape(
-                        self._function_to_patch.forward(z),
+                        self._function_to_patch.forward(z).to(device),
                         (self._npatches, self._patchsize),
                     )
                     for z in torch.unbind(x)
@@ -131,7 +133,7 @@ class PatchEncoder(torch.nn.Module):
                     torch.stack(
                         [
                             torch.reshape(  # input, shape
-                                self._function_to_patch.forward(z),
+                                self._function_to_patch.forward(z).to(device),
                                 (self._npatches, self._patchsize),
                             )
                             for z in torch.unbind(y)
