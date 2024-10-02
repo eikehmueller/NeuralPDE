@@ -7,7 +7,6 @@ n_{patches} x n_{point per patch}
 
 from collections import defaultdict
 import numpy as np
-#import plotly.graph_objects as go
 import scipy as sp
 from firedrake import UnitIcosahedralSphereMesh
 
@@ -149,7 +148,7 @@ class SphericalPatchCovering:
 
     @property
     def n_patches(self):
-        """Return the numner of vertices of the dual grid"""
+        """Return the number of vertices of the dual grid"""
         return len(self._patches)
 
     @property

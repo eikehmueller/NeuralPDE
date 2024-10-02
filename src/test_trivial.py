@@ -16,13 +16,6 @@ spherical_patch_covering = SphericalPatchCovering(0, 0)
 
 print(spherical_patch_covering.patch_size)
 
-# number of dynamic fields: scalar tracer
-n_dynamic = 1
-n_ancillary = 3
-latent_dynamic_dim = 7  # picked to hopefully capture the behaviour wanted
-latent_ancillary_dim = 3  # also picked to hopefully resolve the behaviour
-n_output = 1
-
 num_ref1 = 1
 num_ref2 = 2
 mesh1 = UnitIcosahedralSphereMesh(num_ref1)  # create the mesh
