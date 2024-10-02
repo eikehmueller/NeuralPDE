@@ -4,11 +4,12 @@ start = timer()
 
 import torch
 from torch.utils.data import DataLoader
-from output_functions import clear_output
+from output_functions import clear_output, write_to_vtk
 from firedrake import *
 from firedrake.adjoint import *
 from loss_functions import normalised_L2_error as loss
 import matplotlib.pyplot as plt
+from torch.profiler import profile, record_function, ProfilerActivity
 
 import argparse
 
@@ -27,9 +28,8 @@ path_to_output  = args.path_to_output_folder
 
 clear_output(path_to_output)
 
-print(torch.cuda.is_available())
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-print(device)
+print(f'Using the device {device}')
 
 ##### HYPERPARAMETERS #####
 test_number = "12"
@@ -39,13 +39,13 @@ latent_dynamic_dim = 7   # dimension of dynamic latent space
 latent_ancillary_dim = 3 # dimension of ancillary latent space
 phi = 0.1                # rotation angle of the data
 degree = 4               # degree of the polynomials on the dataset
-n_train_samples = 400    # number of samples in the training dataset
+n_train_samples = 100    # number of samples in the training dataset
 n_valid_samples = 32     # needs to be larger than the batch size!!
 batchsize = 32           # number of samples to use in each batch
 nt = 1                   # number of timesteps
 dt = 1                   # size of the timesteps
 lr = 0.0006              # learning rate of the optimizer
-nepoch = 400             # number of epochs
+nepoch = 10             # number of epochs
 ##### HYPERPARAMETERS #####
 
 #from torch.utils.tensorboard import SummaryWriter
@@ -143,13 +143,8 @@ assert_testing = {
 }
 
 # visualise the first object in the training dataset 
-u_in = Function(V, name="input")
-u_in.dat.data[:] = train_ds[0][0][0].numpy()
-u_target = Function(V, name="target")
-u_target.dat.data[:] = train_ds[0][1].numpy()
-file = VTKFile(f"{path_to_output}/training_example{test_number}.pvd")
-file.write(u_in, u_target) # u_target is rotated phi degees CLOCKWISE from u_in
-
+write_to_vtk(V, name="input_training", dof_values=train_ds[0][0][0].numpy(), path_to_output=path_to_output)
+write_to_vtk(V, name="target_training", dof_values=train_ds[0][1].numpy(), path_to_output=path_to_output)
 
 # Full model: encoder + processor + decoder
 model = torch.nn.Sequential(
@@ -176,6 +171,16 @@ opt = torch.optim.Adam(model.parameters(), lr=lr)
 training_loss = []
 training_loss_per_epoch = []
 validation_loss_per_epoch = []
+
+
+train_example = torch.randn(4, V.dim()).double()
+
+with profile(activities=[ProfilerActivity.CPU], record_shapes=True) as prof:
+    with record_function("model_inference"):
+        model(train_example)
+
+print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
+
 
 # main training loop
 for epoch in range(nepoch):
@@ -217,15 +222,9 @@ for epoch in range(nepoch):
 # visualise the first object in the training dataset 
 host_model = model.cpu()
 
-u_in = Function(V, name="input")
-u_in.dat.data[:] = valid_ds[1][0][0].numpy()
-u_target = Function(V, name="target")
-u_target.dat.data[:] = valid_ds[1][1].numpy()
-u_predicted_values = host_model(valid_ds[1][0]).squeeze()
-u_predicted = Function(V, name="predicted")
-u_predicted.dat.data[:] = u_predicted_values.detach().numpy()
-file = VTKFile(f"{path_to_output}/validation_example{test_number}.pvd")
-file.write(u_in, u_target, u_predicted) 
+write_to_vtk(V, name="input_validation", dof_values=valid_ds[1][0][0].numpy(), path_to_output=path_to_output)
+write_to_vtk(V, name="target_validation", dof_values=valid_ds[1][1].numpy(), path_to_output=path_to_output)
+write_to_vtk(V, name="predicted_validation", dof_values=host_model(valid_ds[1][0]).squeeze().detach().numpy(), path_to_output=path_to_output)
 
 end = timer()
 print(f'Runtime: {timedelta(seconds=end-start)}')

@@ -5,6 +5,7 @@ Paraview for windows can be used instead of Paraview for Linux (which is buggy).
 
 import os
 import shutil
+from firedrake import *
 
 # Define your WSL and Windows folders
 wsl_folder = '/home/katie795/internship/NeuralPDE/output'
@@ -13,6 +14,7 @@ windows_folder = 'C:\\Users\\kathe\\OneDrive\\Documents\\summer_internship\\para
 
 
 def move_files_and_directories(wsl_folder, windows_folder):
+    """Only to be used on the laptop. Moves from WSL folder to a specified windows folder"""
     # Convert the Windows folder path to a format that WSL understands
     windows_folder_in_wsl = f'/mnt/{windows_folder[0].lower()}' + windows_folder[2:].replace('\\', '/')
     
@@ -30,6 +32,7 @@ def move_files_and_directories(wsl_folder, windows_folder):
         print(f'Moved: {wsl_path} -> {windows_path}')
 
 def clear_output(folder):
+    """Clears the contents of the output folder."""
 
     for filename in os.listdir(folder):
         file_path = os.path.join(folder, filename)
@@ -41,6 +44,17 @@ def clear_output(folder):
         except Exception as e:
             print('Failed to delete %s. Reason: %s' % (file_path, e))
     return
+
+def write_to_vtk(V, name, dof_values, path_to_output, time=None):
+    """Given an tensor, writes it to a vtk file"""
+    u = Function(V, name=name)
+    u.dat.data[:] = dof_values
+    file = VTKFile(f"{path_to_output}/{name}.pvd")
+    file.write(u, time=time) 
+
+
+
+
 
 # Call the function
 #######################################################################
