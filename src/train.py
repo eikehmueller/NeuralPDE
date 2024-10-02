@@ -4,12 +4,15 @@ start = timer()
 
 import torch
 from torch.utils.data import DataLoader
-from output_functions import clear_output, write_to_vtk
+from torch.profiler import profile, record_function, ProfilerActivity
 from firedrake import *
 from firedrake.adjoint import *
-from loss_functions import normalised_L2_error as loss
 import matplotlib.pyplot as plt
-from torch.profiler import profile, record_function, ProfilerActivity
+import numpy as np
+import os
+
+from output_functions import clear_output, write_to_vtk
+from loss_functions import normalised_L2_error as loss
 
 import argparse
 
@@ -48,13 +51,10 @@ lr = 0.0006              # learning rate of the optimizer
 nepoch = 500             # number of epochs
 ##### HYPERPARAMETERS #####
 
-#from torch.utils.tensorboard import SummaryWriter
-#writer = SummaryWriter(f"{path_to_output}/tensorboard_logs/solid_body_rotation_experiment_{test_number}")
-
 from neural_pde.spherical_patch_covering import SphericalPatchCovering
 from neural_pde.patch_encoder import PatchEncoder
 from neural_pde.patch_decoder import PatchDecoder
-from neural_pde.data_generator import AdvectionDataset
+from neural_pde.data_classes import AdvectionDataset
 from neural_pde.neural_solver import NeuralSolver
 
 # construct spherical patch covering with
@@ -120,18 +120,20 @@ interaction_model = torch.nn.Sequential(
     ),
 ).double()
 
-import os
-filename = "train_data.npy"
+train_data = f"data_{n_train_samples}_{n_ref}_{phi}.npy"
+valid_data = f"data_{n_valid_samples}_{n_ref}_{phi}.npy"
+
+if not os.path.exists(f"data/{train_data}"):
+    print("Data requested does not exist, run data_producer.py to generate the data")
+if not os.path.exists(f"data/{valid_data}"):
+    print("Data requested does not exist, run data_producer.py to generate the data")
+
+
 train_ds = AdvectionDataset(V, n_train_samples, phi, degree)
-if os.path.exists(filename):
-    train_ds.load(filename)
-else:
-    train_ds.generate()
-    train_ds.save(filename)
+valid_ds = AdvectionDataset(V, n_valid_samples, phi, degree)
+train_ds.load(f"data/{train_data}")
+valid_ds.load(f"data/{valid_data}")
 
-
-valid_ds = AdvectionDataset(V, n_valid_samples, phi, degree, seed=123456)  
-valid_ds.generate()
 train_dl = DataLoader(train_ds, batch_size=batchsize, shuffle=True, drop_last=True)
 valid_dl = DataLoader(valid_ds, batch_size=batchsize , drop_last=True)
 
@@ -143,8 +145,8 @@ assert_testing = {
 }
 
 # visualise the first object in the training dataset 
-write_to_vtk(V, name="input_training", dof_values=train_ds[0][0][0].numpy(), path_to_output=path_to_output)
-write_to_vtk(V, name="target_training", dof_values=train_ds[0][1].numpy(), path_to_output=path_to_output)
+#write_to_vtk(V, name="input_training", dof_values=train_ds[0][0][0].numpy(), path_to_output=path_to_output)
+#write_to_vtk(V, name="target_training", dof_values=train_ds[0][1].numpy(), path_to_output=path_to_output)
 
 # Full model: encoder + processor + decoder
 model = torch.nn.Sequential(
@@ -197,7 +199,6 @@ for epoch in range(nepoch):
         avg_loss.backward() 
         opt.step() # adjust the parameters by the gradient collected in the backwards pass
         zero_loss = loss(torch.zeros_like(y_pred), y_pred)
-
         train_x = epoch * len(train_dl) + i + 1
         training_loss.append(avg_loss.cpu().detach().numpy())
         i += 1 
@@ -222,9 +223,9 @@ for epoch in range(nepoch):
 # visualise the first object in the training dataset 
 host_model = model.cpu()
 
-write_to_vtk(V, name="input_validation", dof_values=valid_ds[1][0][0].numpy(), path_to_output=path_to_output)
-write_to_vtk(V, name="target_validation", dof_values=valid_ds[1][1].numpy(), path_to_output=path_to_output)
-write_to_vtk(V, name="predicted_validation", dof_values=host_model(valid_ds[1][0]).squeeze().detach().numpy(), path_to_output=path_to_output)
+#write_to_vtk(V, name="input_validation", dof_values=valid_ds[1][0][0].numpy(), path_to_output=path_to_output)
+#write_to_vtk(V, name="target_validation", dof_values=valid_ds[1][1].numpy(), path_to_output=path_to_output)
+#write_to_vtk(V, name="predicted_validation", dof_values=host_model(valid_ds[1][0]).squeeze().detach().numpy(), path_to_output=path_to_output)
 
 end = timer()
 print(f'Runtime: {timedelta(seconds=end-start)}')
