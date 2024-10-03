@@ -193,6 +193,7 @@ for epoch in range(nepoch):
     for Xb, yb in train_dl:
         Xb = Xb.to(device)
         yb = yb.to(device)
+        print(f'Xb has shape {Xb.shape}')
         opt.zero_grad() # resets all of the gradients to zero, otherwise the gradients are accumulated
         y_pred = model(Xb)
         avg_loss = loss(y_pred, yb)  # only if dataloader drops last
