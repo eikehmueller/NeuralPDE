@@ -41,7 +41,7 @@ decoder_model = torch.nn.Unflatten(dim=-1, unflattened_size=(1, 1)).double()
 
 
 
-def test_trivial2():
+def test_trivial1():
     """This tests whether the projection is correct
 
     PatchEncoder is our projection P. It projects onto the latent space.
@@ -62,7 +62,7 @@ def test_trivial2():
     assert torch.allclose(PXTY, PX2)
 
 
-def test_trivial3():
+def test_trivial2():
 
     encoder = PatchEncoder(
         V1,
@@ -78,7 +78,6 @@ def test_trivial3():
         decoder,
     )
 
-    # Here we let 
     train_example = torch.randn(1, V1.dim()).double()
     X_old = train_example
 
@@ -89,60 +88,12 @@ def test_trivial3():
 
     XtY = torch.dot(X, Y)
     XtY = XtY.detach().numpy()
-    print(XtY)
+    print(f'XtY is {XtY}')
 
     Ax = encoder(X_old)
     Ax = Ax[0, :]
     Ax_L2 = torch.dot(Ax, Ax)
     Ax_L2 = Ax_L2.detach().numpy()
 
-    print(Ax_L2**2)
-    return np.isclose(XtY, Ax_L2**2)
-
-test_trivial3()
-
-
-def test_trivial4():
-
-    model = torch.nn.Sequential(
-        PatchEncoder(
-            V1,
-            spherical_patch_covering,
-            dynamic_encoder_model,
-            ancillary_encoder_model,
-            n_dynamic,
-        ),
-        NeuralSolver(spherical_patch_covering, interaction_model, nsteps=1, stepsize=1),
-        PatchDecoder(V1, spherical_patch_covering, decoder_model),
-    )
-
-    encoder_model = PatchEncoder(
-        V1,
-        spherical_patch_covering,
-        dynamic_encoder_model,
-        ancillary_encoder_model,
-        n_dynamic,
-    )
-
-    train_example = AdvectionDataset(V1, 1, 1, 4).__getitem__(0)
-
-    X_old, _ = train_example
-
-    # X_old = torch.randn(4, V1.dim()).double()
-    Y = model(X_old)
-
-    X = X_old[0, :]
-    Y = Y[0, :]
-
-    XtY = torch.dot(X, Y)
-    XtY = XtY.detach().numpy()
-    print(XtY)
-    # Ax_L2 = torch.linalg.norm(Ax)**2
-    Ax = encoder_model(X_old)
-    Ax = Ax[0, :]
-    Ax_L2 = torch.dot(Ax, Ax)
-    # Ax_L2 = torch.linalg.norm(Ax)**2
-    Ax_L2 = Ax_L2.detach().numpy()
-
-    print(Ax_L2**2)
-    return np.isclose(XtY, Ax_L2**2)
+    print(f'Ax_L^2**2 is {Ax_L2**2}')
+    assert np.isclose(XtY, Ax_L2**2)
