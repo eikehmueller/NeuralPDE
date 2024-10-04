@@ -99,7 +99,7 @@ class PatchDecoder(torch.nn.Module):
             return x
         else:
             # Part I: encoding on patches
-            #print(f'After applying decoding model, x should have size [32, 1, 20, 6]')
+            #print(f'After applying decoding model, x should have size [32, 20, 1, 6]')
             #print(f'However, 20 and 6 do not multiply to give 42')
             x = self._decoder_model(x)
             print(f'After applying decoding model, x has size {x.size()}')
