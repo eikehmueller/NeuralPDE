@@ -1,20 +1,14 @@
 from firedrake import *
 import torch
 from neural_pde.intergrid import torch_interpolation_tensor
+
+
 from firedrake.ml.pytorch import to_torch
-
-
 from neural_pde.spherical_patch_covering import SphericalPatchCovering
 from neural_pde.patch_encoder import PatchEncoder
 from neural_pde.patch_decoder import PatchDecoder
-from neural_pde.data_classes import AdvectionDataset
-from neural_pde.intergrid import Encoder, Decoder
 
 spherical_patch_covering = SphericalPatchCovering(0, 0)
-
-print(f"Number of points per patch: {spherical_patch_covering.patch_size}")
-print(f"Number of patches: {spherical_patch_covering.n_patches}")
-print(f"Total number of DOFs in V_vom: {spherical_patch_covering.n_points}")
 
 
 n_dynamic = 1  # number of dynamic fields: scalar tracer
@@ -31,7 +25,6 @@ mesh2 = UnitIcosahedralSphereMesh(num_ref2)
 V1 = FunctionSpace(mesh1, "CG", 1)  # define the function space
 V2 = FunctionSpace(mesh2, "CG", 1)  # define the function space
 
-print(f"Number of DOFs in V: {V1.dim()}")
 
 dynamic_encoder_model = torch.nn.Flatten(start_dim=-2, end_dim=-1).double()
 ancillary_encoder_model = torch.nn.Flatten(start_dim=-2, end_dim=-1).double()
@@ -50,8 +43,9 @@ def test_trivial1():
 
     and this is what we check."""
 
+    batchsize = 4
     P = torch_interpolation_tensor(fs_from=V1, fs_to=V2, transpose=True)
-    X = torch.randn(4, V1.dim()).double()
+    X = torch.randn(batchsize, V1.dim()).double()
     Y = torch.matmul(X, P)
 
     PTXT = torch.matmul(torch.transpose(P, 0, 1), torch.transpose(X, 0, 1))
@@ -62,43 +56,12 @@ def test_trivial1():
 
 
 def test_trivial2():
+    """Check that trivial model gives results that are consistent with it
+    being a composition of a trivial encoder and decoder.
 
-    encoder = PatchEncoder(
-        V1,
-        spherical_patch_covering,
-        dynamic_encoder_model,
-        ancillary_encoder_model,
-        n_dynamic,
-    )
-    decoder = PatchDecoder(V1, spherical_patch_covering, decoder_model)
-
-    model = torch.nn.Sequential(
-        encoder,
-        decoder,
-    )
-
-    train_example = torch.randn(1, V1.dim()).double()
-    X_old = train_example
-
-    Y = model(X_old)
-
-    X = X_old[0, :]
-    Y = Y[0, :]
-
-    XtY = torch.dot(X, Y)
-    XtY = XtY.detach().numpy()
-    print(f"XtY is {XtY}")
-
-    Ax = encoder(X_old)
-    Ax = Ax[0, :]
-    Ax_L2 = torch.dot(Ax, Ax)
-    Ax_L2 = Ax_L2.detach().numpy()
-
-    print(f"Ax_L^2**2 is {Ax_L2**2}")
-    assert np.isclose(XtY, Ax_L2**2)
-
-
-def test_trivial2():
+    For random input X compute Y = model(X) and Ax = encoder(X). Then check that
+    the dot-product X^T.Y is identical to the squared ell2 norm of Ax, i.e. ||Ax||_2^2 = Ax^T.Ax.
+    """
 
     encoder = PatchEncoder(
         V1,

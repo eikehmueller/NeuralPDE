@@ -79,8 +79,6 @@ class PatchDecoder(torch.nn.Module):
         """
         device = x.device
 
-        print(f'Input for decoder has size {x.size()}')
-
         if x.dim() == 2:
             # Part I: encoding on patches
             x = self._decoder_model(x)
@@ -99,14 +97,9 @@ class PatchDecoder(torch.nn.Module):
             return x
         else:
             # Part I: encoding on patches
-            #print(f'After applying decoding model, x should have size [32, 20, 1, 6]')
-            #print(f'However, 20 and 6 do not multiply to give 42')
             x = self._decoder_model(x)
-            print(f'After applying decoding model, x has size {x.size()}')
             x = torch.permute(x, (0, 2, 1, 3))
             # Part II: (adjoint) interpolation from VOM to spherical function space
-            print(f'After permutation, x has size {x.size()}')
-            print(f'After permutation, x should have size [32, 1, 20, 6]')
             x = torch.stack(
                 [
                     torch.stack(
@@ -122,5 +115,4 @@ class PatchDecoder(torch.nn.Module):
                     for y in torch.unbind(x)
                 ]
             )
-            print(f'After applying patchtofunction, x has size {x.size()}')
             return x

@@ -104,7 +104,6 @@ class PatchEncoder(torch.nn.Module):
         # input is a (n_func, ndof) tensor
 
         device = x.device
-        print(f'Input for encoder has size {x.size()}')
 
         if x.dim() == 2:
             x = torch.stack(
@@ -127,7 +126,6 @@ class PatchEncoder(torch.nn.Module):
             x = torch.cat((x_dynamic, x_ancillary), dim=-1)
 
             # x has shape (npatch, dim (ancilliary + dynamic))
-            print(f'After encoding, x has size {x.size()}')
             return x
         else:
             x = torch.stack(
@@ -144,20 +142,14 @@ class PatchEncoder(torch.nn.Module):
                     for y in torch.unbind(x)
                 ]
             )
-            print(f'Applying functiontopatch, x has size {x.size()}')
 
             # permute axes to obtain tensor or shape (B,n_{patches},n_{func},n_{dof per patch})
             x = torch.permute(x, (0, 2, 1, 3))
-            print(f'After permuting, x has size {x.size()}')
 
             # Part II: encoding on patches
             x_ancillary = self._ancillary_encoder_model(x[..., self._n_dynamic :, :])
-            print(f'Applying flattening to acilliary gives size {x_ancillary.size()}')
             # start slicing from index n_dynamic. Assumes that n_func is of shape [dyn, anc, anc anc]
             x_dynamic = self._dynamic_encoder_model(x)
-            print(f'Applying flattening to dynamic gives size {x_dynamic.size()}')
             x = torch.cat((x_dynamic, x_ancillary), dim=-1)
-
             # x has shape (B, npatch, dim (ancilliary + dynamic))
-            print(f'After concatonation, x has size {x.size()}')
             return x
