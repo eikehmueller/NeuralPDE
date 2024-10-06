@@ -1,10 +1,8 @@
-import pytest
 from firedrake import *
 import torch
 from neural_pde.intergrid import torch_interpolation_tensor
 from firedrake.ml.pytorch import to_torch
 
-from neural_pde.neural_solver import NeuralSolver
 
 from neural_pde.spherical_patch_covering import SphericalPatchCovering
 from neural_pde.patch_encoder import PatchEncoder
@@ -14,14 +12,14 @@ from neural_pde.intergrid import Encoder, Decoder
 
 spherical_patch_covering = SphericalPatchCovering(0, 0)
 
-print(f'Number of points per patch: {spherical_patch_covering.patch_size}')
-print(f'Number of patches: {spherical_patch_covering.n_patches}')
-print(f'Total number of DOFs in V_vom: {spherical_patch_covering.n_points}')
+print(f"Number of points per patch: {spherical_patch_covering.patch_size}")
+print(f"Number of patches: {spherical_patch_covering.n_patches}")
+print(f"Total number of DOFs in V_vom: {spherical_patch_covering.n_points}")
 
 
-n_dynamic = 1   # number of dynamic fields: scalar tracer
-n_ancillary = 0 # number of ancillary fields: x-, y- and z-coordinates
-n_output = 1    # number of output fields: scalar tracer
+n_dynamic = 1  # number of dynamic fields: scalar tracer
+n_ancillary = 0  # number of ancillary fields: x-, y- and z-coordinates
+n_output = 1  # number of output fields: scalar tracer
 
 num_ref1 = 1
 num_ref2 = 1
@@ -33,12 +31,13 @@ mesh2 = UnitIcosahedralSphereMesh(num_ref2)
 V1 = FunctionSpace(mesh1, "CG", 1)  # define the function space
 V2 = FunctionSpace(mesh2, "CG", 1)  # define the function space
 
-print(f'Number of DOFs in V: {V1.dim()}')
+print(f"Number of DOFs in V: {V1.dim()}")
 
-dynamic_encoder_model = torch.nn.Flatten(start_dim=-2, end_dim=-1).double() 
+dynamic_encoder_model = torch.nn.Flatten(start_dim=-2, end_dim=-1).double()
 ancillary_encoder_model = torch.nn.Flatten(start_dim=-2, end_dim=-1).double()
-decoder_model = torch.nn.Unflatten(dim=-1, unflattened_size=(1, 1)).double()
-
+decoder_model = torch.nn.Unflatten(
+    dim=-1, unflattened_size=(n_output, spherical_patch_covering.patch_size)
+).double()
 
 
 def test_trivial1():
@@ -88,12 +87,41 @@ def test_trivial2():
 
     XtY = torch.dot(X, Y)
     XtY = XtY.detach().numpy()
-    print(f'XtY is {XtY}')
+    print(f"XtY is {XtY}")
 
     Ax = encoder(X_old)
     Ax = Ax[0, :]
     Ax_L2 = torch.dot(Ax, Ax)
     Ax_L2 = Ax_L2.detach().numpy()
 
-    print(f'Ax_L^2**2 is {Ax_L2**2}')
+    print(f"Ax_L^2**2 is {Ax_L2**2}")
     assert np.isclose(XtY, Ax_L2**2)
+
+
+def test_trivial2():
+
+    encoder = PatchEncoder(
+        V1,
+        spherical_patch_covering,
+        dynamic_encoder_model,
+        ancillary_encoder_model,
+        n_dynamic,
+    )
+    decoder = PatchDecoder(V1, spherical_patch_covering, decoder_model)
+
+    model = torch.nn.Sequential(
+        encoder,
+        decoder,
+    )
+
+    batchsize = 4
+    X = torch.randn(batchsize, n_dynamic + n_ancillary, V1.dim()).double()
+    Y = model(X)
+    XtY = torch.einsum("bij,bij->bi", X, Y)
+    XtY = XtY.detach().numpy()
+
+    Ax = encoder(X)
+    Ax_L2 = torch.einsum("bpi,bpi->bi", Ax, Ax)
+    Ax_L2 = Ax_L2.detach().numpy()
+
+    assert np.all(np.isclose(XtY, Ax_L2))
