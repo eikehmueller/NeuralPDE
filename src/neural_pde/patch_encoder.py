@@ -151,6 +151,5 @@ class PatchEncoder(torch.nn.Module):
             # start slicing from index n_dynamic. Assumes that n_func is of shape [dyn, anc, anc anc]
             x_dynamic = self._dynamic_encoder_model(x)
             x = torch.cat((x_dynamic, x_ancillary), dim=-1)
-
             # x has shape (B, npatch, dim (ancilliary + dynamic))
             return x

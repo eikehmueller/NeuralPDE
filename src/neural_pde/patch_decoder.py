@@ -58,7 +58,6 @@ class PatchDecoder(torch.nn.Module):
         """
         super().__init__()
         self._decoder_model = decoder_model
-        self._ancillary_encoder_model = decoder_model
 
         mesh = fs.mesh()
         points = spherical_patch_covering.points.reshape(
