@@ -10,7 +10,7 @@ import os
 if not os.path.exists("data"):
     os.makedirs("data")
 
-phi = 1                  # rotation angle of the data
+phi = 0.7854             # rotation angle of the data
 degree = 4               # degree of the polynomials on the dataset
 batchsize = 1024         # batchsize
 n_ref = 2                # number of refinements in the icosahedral mesh
@@ -26,4 +26,3 @@ train_ds.save(f"data/data_{batchsize}_{n_ref}_{phi}.npy")
 valid_ds = AdvectionDataset(V, 32, phi, degree, seed=123)  
 valid_ds.generate()
 valid_ds.save(f"data/data_{valid_batchsize}_{n_ref}_{phi}.npy")
-
