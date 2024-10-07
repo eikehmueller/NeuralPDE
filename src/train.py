@@ -35,7 +35,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f'Using the device {device}')
 
 ##### HYPERPARAMETERS #####
-test_number = "24"
+test_number = "29"
 n_radial = 2             # number of radial points on each patch
 n_ref = 2                # number of refinements of the icosahedral mesh
 latent_dynamic_dim = 7   # dimension of dynamic latent space
@@ -45,8 +45,8 @@ degree = 4               # degree of the polynomials on the dataset
 n_train_samples = 512    # number of samples in the training dataset
 n_valid_samples = 32     # needs to be larger than the batch size!!
 batchsize = 32           # number of samples to use in each batch
-nt = 1                  # number of timesteps
-dt = 1                 # size of the timesteps
+nt = 16                   # number of timesteps
+dt = 0.0625                # size of the timesteps
 lr = 0.0006              # learning rate of the optimizer
 nepoch = 1000            # number of epochs
 ##### HYPERPARAMETERS #####
@@ -215,10 +215,10 @@ for epoch in range(nepoch):
             Xv = Xv.to(device)
             yv = yv.to(device)
             yv_pred = model(Xv)
-            
+
             avg_vloss = loss(yv_pred, yv)
 
-    print(f'Epoch {epoch}: Training loss: {avg_loss}, Validation loss: {avg_vloss}')
+    print(f'Epoch {epoch + 1}: Training loss: {avg_loss}, Validation loss: {avg_vloss}')
     validation_loss_per_epoch.append(avg_vloss.cpu().detach().numpy())
 
 # visualise the first object in the training dataset 
@@ -235,6 +235,7 @@ training_iterations = np.arange(0.0, len(training_loss), 1)
 epoch_iterations = np.arange(0.0, len(training_loss_per_epoch), 1)
 
 fig1, ax1 = plt.subplots()
+ax1.set_ylim([0, 1.1])
 ax1.plot(training_iterations, np.array(training_loss))
 ax1.set(xlabel='Number of training iterations', ylabel=r'Normalized $L^2$ loss',
         title='Training loss')
@@ -243,6 +244,7 @@ fig1.savefig(f'{path_to_output}/training_loss_test{test_number}.png')
 
 
 fig2, ax2 = plt.subplots()
+ax2.set_ylim([0, 1.1])
 ax2.plot(epoch_iterations, np.array(training_loss_per_epoch), label='Training loss', marker='o')
 ax2.plot(epoch_iterations, np.array(validation_loss_per_epoch), label='Validation loss', linestyle='dashed',
         marker='v')
@@ -253,6 +255,7 @@ ax2.grid()
 fig2.savefig(f'{path_to_output}/validation_loss_test{test_number}.png')
 
 fig3, ax3 = plt.subplots()
+ax1.set_ylim([0, 1.1])
 ax3.set_yscale('log')
 ax3.plot(epoch_iterations, np.array(training_loss_per_epoch), label='Training loss', marker='o')
 ax3.plot(epoch_iterations, np.array(validation_loss_per_epoch), label='Validation loss', linestyle='dashed',
