@@ -184,3 +184,4 @@ if __name__ == "__main__":
         u_target.dat.data[:] = batched_sample[1][0].numpy()
         file = VTKFile(f"{path_to_output}/sample.pvd")
         file.write(u_in, u_target)
+
