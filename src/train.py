@@ -183,8 +183,6 @@ train_example = torch.randn(4, V.dim()).double()
 
 #print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
 
-print('Just before the training loop')
-
 # main training loop
 for epoch in range(nepoch):
 
