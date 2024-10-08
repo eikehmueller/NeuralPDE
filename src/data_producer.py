@@ -19,10 +19,10 @@ valid_batchsize = 64     # batchsize for validation group
 mesh = UnitIcosahedralSphereMesh(n_ref) # create the mesh
 V = FunctionSpace(mesh, "CG", 1) # define the function space
 
-train_ds = AdvectionDataset(V, batchsize, phi, degree, seed=12344)
-train_ds.generate()
-train_ds.save(f"data/data_{batchsize}_{n_ref}_{phi}.npy")
+#train_ds = AdvectionDataset(V, batchsize, phi, degree, seed=12344)
+#train_ds.generate()
+#train_ds.save(f"data/data_{batchsize}_{n_ref}_{phi}.npy")
 
-valid_ds = AdvectionDataset(V, 32, phi, degree, seed=1237)  
+valid_ds = AdvectionDataset(V, valid_batchsize, phi, degree, seed=1237)  
 valid_ds.generate()
 valid_ds.save(f"data/data_{valid_batchsize}_{n_ref}_{phi}.npy")

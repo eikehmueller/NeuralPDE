@@ -35,19 +35,19 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f'Using the device {device}')
 
 ##### HYPERPARAMETERS #####
-test_number = "31"
+test_number = "34"
 n_radial = 2             # number of radial points on each patch
 n_ref = 2                # number of refinements of the icosahedral mesh
 latent_dynamic_dim = 7   # dimension of dynamic latent space
 latent_ancillary_dim = 3 # dimension of ancillary latent space
 phi = 0.7854             # approx pi/4
 degree = 4               # degree of the polynomials on the dataset
-n_train_samples = 1024    # number of samples in the training dataset
-n_valid_samples = 64     # needs to be larger than the batch size!!
-batchsize = 64           # number of samples to use in each batch
+n_train_samples = 512    # number of samples in the training dataset
+n_valid_samples = 32     # needs to be larger than the batch size!!
+batchsize = 32           # number of samples to use in each batch
 nt = 4                   # number of timesteps
 dt = 0.25                # size of the timesteps
-lr = 0.0006              # learning rate of the optimizer
+lr = 0.0008              # learning rate of the optimizer
 nepoch = 1000            # number of epochs
 ##### HYPERPARAMETERS #####
 
@@ -183,6 +183,7 @@ train_example = torch.randn(4, V.dim()).double()
 
 #print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
 
+print('Just before the training loop')
 
 # main training loop
 for epoch in range(nepoch):
