@@ -10,6 +10,7 @@ from firedrake.adjoint import *
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import gc
 
 from output_functions import clear_output, write_to_vtk
 from loss_functions import normalised_L2_error as loss
@@ -35,19 +36,20 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f'Using the device {device}')
 
 ##### HYPERPARAMETERS #####
-test_number = "34"
+test_number = "32"
 n_radial = 2             # number of radial points on each patch
 n_ref = 2                # number of refinements of the icosahedral mesh
 latent_dynamic_dim = 7   # dimension of dynamic latent space
 latent_ancillary_dim = 3 # dimension of ancillary latent space
 phi = 0.7854             # approx pi/4
 degree = 4               # degree of the polynomials on the dataset
-n_train_samples = 512    # number of samples in the training dataset
-n_valid_samples = 32     # needs to be larger than the batch size!!
-batchsize = 32           # number of samples to use in each batch
+n_train_samples = 1024    # number of samples in the training dataset
+n_valid_samples = 64     # needs to be larger than the batch size!!
+batchsize = 64           # number of samples to use in each batch
+accum = 2                # gradient accumulation for larger batchsizes - ASSERT TESTING DOES NOT WORK IF ACCUM /= 1
 nt = 4                   # number of timesteps
 dt = 0.25                # size of the timesteps
-lr = 0.0008              # learning rate of the optimizer
+lr = 0.0006              # learning rate of the optimizer
 nepoch = 1000            # number of epochs
 ##### HYPERPARAMETERS #####
 
@@ -128,13 +130,14 @@ if not os.path.exists(f"data/{train_data}"):
 if not os.path.exists(f"data/{valid_data}"):
     print("Data requested does not exist, run data_producer.py to generate the data")
 
+accum = 2 ## Used to
 
 train_ds = AdvectionDataset(V, n_train_samples, phi, degree)
 valid_ds = AdvectionDataset(V, n_valid_samples, phi, degree)
 train_ds.load(f"data/{train_data}")
 valid_ds.load(f"data/{valid_data}")
 
-train_dl = DataLoader(train_ds, batch_size=batchsize, shuffle=True, drop_last=True)
+train_dl = DataLoader(train_ds, batch_size=batchsize//accum, shuffle=True, drop_last=True)
 valid_dl = DataLoader(valid_ds, batch_size=batchsize , drop_last=True)
 
 assert_testing = {
@@ -161,9 +164,11 @@ model = torch.nn.Sequential(
                         interaction_model,
                         nsteps=nt, 
                         stepsize=dt,
-                        assert_testing=assert_testing),
+                        assert_testing=None),
     PatchDecoder(V, spherical_patch_covering, decoder_model),
 )
+
+
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
@@ -183,26 +188,34 @@ train_example = torch.randn(4, V.dim()).double()
 
 #print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
 
+print('Starting training loop')
 # main training loop
 for epoch in range(nepoch):
-
-    # training loop
     model.train(True)
     i = 0 
+    count = 0  # track count of items since last weight update
     for Xb, yb in train_dl:
+        count += len(Xb)
         Xb = Xb.to(device)
         yb = yb.to(device)
-        opt.zero_grad() # resets all of the gradients to zero, otherwise the gradients are accumulated
         y_pred = model(Xb)
         avg_loss = loss(y_pred, yb)  # only if dataloader drops last
         avg_loss.backward() 
-        opt.step() # adjust the parameters by the gradient collected in the backwards pass
+
+        if count >= batchsize:  # count is greater than accumulation target, so we do a weight update
+            opt.step()          # adjust the parameters by the gradient collected in the backwards pass
+            opt.zero_grad()     # resets all of the gradients to zero, otherwise the gradients are accumulated
+            count = 0
+        
+        # data collection for the model
         zero_loss = loss(torch.zeros_like(y_pred), y_pred)
         train_x = epoch * len(train_dl) + i + 1
         training_loss.append(avg_loss.cpu().detach().numpy())
         i += 1 
-        del Xb
+
+        del Xb # clearing the cache
         del yb
+        gc.collect()
         torch.cuda.empty_cache()
     
     training_loss_per_epoch.append(avg_loss.cpu().detach().numpy())
