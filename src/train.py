@@ -36,21 +36,22 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f'Using the device {device}')
 
 ##### HYPERPARAMETERS #####
-test_number = "32"
+test_number = "39"
+dual_ref = 0             # refinement of the dual mesh
 n_radial = 2             # number of radial points on each patch
 n_ref = 2                # number of refinements of the icosahedral mesh
 latent_dynamic_dim = 7   # dimension of dynamic latent space
 latent_ancillary_dim = 3 # dimension of ancillary latent space
 phi = 0.7854             # approx pi/4
 degree = 4               # degree of the polynomials on the dataset
-n_train_samples = 1024    # number of samples in the training dataset
-n_valid_samples = 64     # needs to be larger than the batch size!!
-batchsize = 64           # number of samples to use in each batch
-accum = 2                # gradient accumulation for larger batchsizes - ASSERT TESTING DOES NOT WORK IF ACCUM /= 1
+n_train_samples = 512    # number of samples in the training dataset
+n_valid_samples = 32     # needs to be larger than the batch size!!
+batchsize = 32           # number of samples to use in each batch
+accum = 1                # gradient accumulation for larger batchsizes - ASSERT TESTING DOES NOT WORK IF ACCUM /= 1
 nt = 4                   # number of timesteps
 dt = 0.25                # size of the timesteps
 lr = 0.0006              # learning rate of the optimizer
-nepoch = 1000            # number of epochs
+nepoch = 1            # number of epochs
 ##### HYPERPARAMETERS #####
 
 from neural_pde.spherical_patch_covering import SphericalPatchCovering
@@ -63,7 +64,7 @@ from neural_pde.neural_solver import NeuralSolver
 # arg1: number of refinements of the icosahedral sphere
 # arg2: number of radial points on each patch
 
-spherical_patch_covering = SphericalPatchCovering(0, n_radial)
+spherical_patch_covering = SphericalPatchCovering(dual_ref, n_radial)
 print(f"Running test {test_number}")
 print(f"number of patches               = {spherical_patch_covering.n_patches}")
 print(f"patchsize                       = {spherical_patch_covering.patch_size}")
@@ -180,13 +181,41 @@ training_loss_per_epoch = []
 validation_loss_per_epoch = []
 
 
-train_example = torch.randn(4, V.dim()).double()
+# Profiling the code
 
-#with profile(activities=[ProfilerActivity.CPU], record_shapes=True) as prof:
-#    with record_function("model_inference"):
-#        model(train_example)
+train_example = torch.randn(4, V.dim()).double().to(device)
 
-#print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
+with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True) as prof:
+    with record_function("model_inference"):
+        model(train_example)
+print('Data for execution time')
+print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=10))
+
+with profile(activities=[ProfilerActivity.CUDA],
+        profile_memory=True, record_shapes=True) as prof:
+    model(train_example)
+
+print('Data for memory usage')
+print(prof.key_averages().table(sort_by="self_cuda_memory_usage", row_limit=10))
+
+
+with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA]) as prof:
+    model(train_example)
+
+prof.export_chrome_trace("trace.json")
+
+print('Data for stack tracing')
+with profile(
+    activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
+    with_stack=True,
+) as prof:
+    model(train_example)
+
+
+# Print aggregated stats
+print(prof.key_averages(group_by_stack_n=5).table(sort_by="self_cuda_time_total", row_limit=2))
+
+
 
 print('Starting training loop')
 # main training loop
