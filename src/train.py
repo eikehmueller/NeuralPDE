@@ -256,7 +256,7 @@ for epoch in range(nepoch):
             yv_pred = model(Xv)
             if time % 5 == 0:
                 print(f'Time is {time//5}')
-                write_to_vtk(V, name=f"anim{time//5}", dof_values=yv_pred[0][0].cpu().squeeze().numpy(), path_to_output=path_to_output)
+                write_to_vtk(V, name=f"anim", dof_values=yv_pred[0][0].cpu().squeeze().numpy(), path_to_output=path_to_output, time=time//5)
 
             avg_vloss = loss(yv_pred, yv)
 
