@@ -1,6 +1,4 @@
 *.pyc
 __pycache__/
 *.egg-info/
-*.pvd
-*.vtu
 tb_logs/
