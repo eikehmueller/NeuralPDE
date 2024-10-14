@@ -256,10 +256,11 @@ for epoch in range(nepoch):
             yv_pred = model(Xv)
 
             avg_vloss = loss(yv_pred, yv)
-    
+    #print(f'yvpred shape is {yv_pred[0][0].shape}')
+    #print(f'yvpred is {yv_pred[0][0]}')
     if time % 5 == 0:
         print(f'Time is {time//5}')
-        write_to_vtk(V, name=f"vtk_animation{time//5}", dof_values=yv_pred[0][0].cpu().numpy(), path_to_output=path_to_output)
+        write_to_vtk(V, name=f"animate{time//5}", dof_values=yv_pred[0][0].cpu().squeeze().numpy(), path_to_output=path_to_output)
 
     print(f'Epoch {epoch + 1}: Training loss: {avg_loss}, Validation loss: {avg_vloss}')
     validation_loss_per_epoch.append(avg_vloss.cpu().detach().numpy())
