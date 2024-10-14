@@ -259,7 +259,7 @@ for epoch in range(nepoch):
     
     if time % 5 == 0:
         print(f'Time is {time//5}')
-        write_to_vtk(V, name=f"vtk_animation{time//5}", dof_values=yv_pred[1][0].cpu().numpy(), path_to_output=path_to_output)
+        write_to_vtk(V, name=f"vtk_animation{time//5}", dof_values=yv_pred[0][0].cpu().numpy(), path_to_output=path_to_output)
 
     print(f'Epoch {epoch + 1}: Training loss: {avg_loss}, Validation loss: {avg_vloss}')
     validation_loss_per_epoch.append(avg_vloss.cpu().detach().numpy())
@@ -270,7 +270,7 @@ for epoch in range(nepoch):
 host_model = model.cpu()
 
 #write_to_vtk(V, name="input_validation", dof_values=valid_ds[1][0][0].numpy(), path_to_output=path_to_output)
-write_to_vtk(V, name="target_validation", dof_values=valid_ds[1][1].numpy(), path_to_output=path_to_output)
+write_to_vtk(V, name="target_validation", dof_values=valid_ds[1][0].numpy(), path_to_output=path_to_output)
 #write_to_vtk(V, name="predicted_validation", dof_values=host_model(valid_ds[1][0]).squeeze().detach().numpy(), path_to_output=path_to_output)
 
 end = timer()
