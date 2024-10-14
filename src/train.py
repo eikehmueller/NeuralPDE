@@ -254,13 +254,12 @@ for epoch in range(nepoch):
             Xv = Xv.to(device)
             yv = yv.to(device)
             yv_pred = model(Xv)
+            if time % 5 == 0:
+                print(f'Time is {time//5}')
+                write_to_vtk(V, name=f"anim{time//5}", dof_values=yv_pred[0][0].cpu().squeeze().numpy(), path_to_output=path_to_output)
 
             avg_vloss = loss(yv_pred, yv)
-    #print(f'yvpred shape is {yv_pred[0][0].shape}')
-    #print(f'yvpred is {yv_pred[0][0]}')
-    if time % 5 == 0:
-        print(f'Time is {time//5}')
-        write_to_vtk(V, name=f"animate{time//5}", dof_values=yv_pred[0][0].cpu().squeeze().numpy(), path_to_output=path_to_output)
+
 
     print(f'Epoch {epoch + 1}: Training loss: {avg_loss}, Validation loss: {avg_vloss}')
     validation_loss_per_epoch.append(avg_vloss.cpu().detach().numpy())
