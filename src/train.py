@@ -36,11 +36,11 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f'Using the device {device}')
 
 ##### HYPERPARAMETERS #####
-test_number = "39"
+test_number = "45"
 dual_ref = 0             # refinement of the dual mesh
-n_radial = 2             # number of radial points on each patch
+n_radial = 3             # number of radial points on each patch
 n_ref = 2                # number of refinements of the icosahedral mesh
-latent_dynamic_dim = 7   # dimension of dynamic latent space
+latent_dynamic_dim = 14   # dimension of dynamic latent space
 latent_ancillary_dim = 3 # dimension of ancillary latent space
 phi = 0.7854             # approx pi/4
 degree = 4               # degree of the polynomials on the dataset
@@ -51,7 +51,7 @@ accum = 1                # gradient accumulation for larger batchsizes - ASSERT 
 nt = 4                   # number of timesteps
 dt = 0.25                # size of the timesteps
 lr = 0.0006              # learning rate of the optimizer
-nepoch = 1            # number of epochs
+nepoch = 1000            # number of epochs
 ##### HYPERPARAMETERS #####
 
 from neural_pde.spherical_patch_covering import SphericalPatchCovering
@@ -131,8 +131,6 @@ if not os.path.exists(f"data/{train_data}"):
 if not os.path.exists(f"data/{valid_data}"):
     print("Data requested does not exist, run data_producer.py to generate the data")
 
-accum = 2 ## Used to
-
 train_ds = AdvectionDataset(V, n_train_samples, phi, degree)
 valid_ds = AdvectionDataset(V, n_valid_samples, phi, degree)
 train_ds.load(f"data/{train_data}")
@@ -182,7 +180,7 @@ validation_loss_per_epoch = []
 
 
 # Profiling the code
-
+'''
 train_example = torch.randn(4, V.dim()).double().to(device)
 
 with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True) as prof:
@@ -215,8 +213,8 @@ with profile(
 # Print aggregated stats
 print(prof.key_averages(group_by_stack_n=5).table(sort_by="self_cuda_time_total", row_limit=2))
 
-
-
+'''
+time = 0
 print('Starting training loop')
 # main training loop
 for epoch in range(nepoch):
@@ -258,15 +256,20 @@ for epoch in range(nepoch):
             yv_pred = model(Xv)
 
             avg_vloss = loss(yv_pred, yv)
+    
+    if time % 5 == 0:
+        write_to_vtk(V, name="vtk_animation", dof_values=yv_pred[1][0].cpu().numpy(), path_to_output=path_to_output, time=time//5)
 
     print(f'Epoch {epoch + 1}: Training loss: {avg_loss}, Validation loss: {avg_vloss}')
     validation_loss_per_epoch.append(avg_vloss.cpu().detach().numpy())
+    time += 1
+
 
 # visualise the first object in the training dataset 
 host_model = model.cpu()
 
 #write_to_vtk(V, name="input_validation", dof_values=valid_ds[1][0][0].numpy(), path_to_output=path_to_output)
-#write_to_vtk(V, name="target_validation", dof_values=valid_ds[1][1].numpy(), path_to_output=path_to_output)
+write_to_vtk(V, name="target_validation", dof_values=valid_ds[1][1].numpy(), path_to_output=path_to_output)
 #write_to_vtk(V, name="predicted_validation", dof_values=host_model(valid_ds[1][0]).squeeze().detach().numpy(), path_to_output=path_to_output)
 
 end = timer()
