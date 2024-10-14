@@ -51,7 +51,7 @@ accum = 1                # gradient accumulation for larger batchsizes - ASSERT 
 nt = 4                   # number of timesteps
 dt = 0.25                # size of the timesteps
 lr = 0.0006              # learning rate of the optimizer
-nepoch = 1000            # number of epochs
+nepoch = 100            # number of epochs
 ##### HYPERPARAMETERS #####
 
 from neural_pde.spherical_patch_covering import SphericalPatchCovering
@@ -258,6 +258,7 @@ for epoch in range(nepoch):
             avg_vloss = loss(yv_pred, yv)
     
     if time % 5 == 0:
+        print(f'Time is {time//5}')
         write_to_vtk(V, name="vtk_animation", dof_values=yv_pred[1][0].cpu().numpy(), path_to_output=path_to_output, time=time//5)
 
     print(f'Epoch {epoch + 1}: Training loss: {avg_loss}, Validation loss: {avg_vloss}')
