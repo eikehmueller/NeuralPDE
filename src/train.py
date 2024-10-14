@@ -216,6 +216,8 @@ print(prof.key_averages(group_by_stack_n=5).table(sort_by="self_cuda_time_total"
 '''
 time = 0
 print('Starting training loop')
+file = VTKFile(f"{path_to_output}/animate.pvd")
+u = Function(V)
 # main training loop
 for epoch in range(nepoch):
     model.train(True)
@@ -256,8 +258,10 @@ for epoch in range(nepoch):
             yv_pred = model(Xv)
             if time % 5 == 0:
                 print(f'Time is {time//5}')
-                write_to_vtk(V, name=f"anim", dof_values=yv_pred[0][0].cpu().squeeze().numpy(), path_to_output=path_to_output, time=time//5)
-
+                #write_to_vtk(V, name=f"anim", dof_values=yv_pred[0][0].cpu().squeeze().numpy(), path_to_output=path_to_output, time=time//5)
+                
+                u.dat.data[:] = yv_pred[0][0].cpu().squeeze().numpy()
+                file.write(u, time=time) 
             avg_vloss = loss(yv_pred, yv)
 
 

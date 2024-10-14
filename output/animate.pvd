@@ -1,0 +1,15 @@
+<?xml version="1.0" ?>
+<VTKFile type="Collection" version="0.1" byte_order="LittleEndian">
+<Collection>
+<DataSet timestep="0" file="animate/animate_0.vtu" />
+<DataSet timestep="5" file="animate/animate_1.vtu" />
+<DataSet timestep="10" file="animate/animate_2.vtu" />
+<DataSet timestep="15" file="animate/animate_3.vtu" />
+<DataSet timestep="20" file="animate/animate_4.vtu" />
+<DataSet timestep="25" file="animate/animate_5.vtu" />
+<DataSet timestep="30" file="animate/animate_6.vtu" />
+<DataSet timestep="35" file="animate/animate_7.vtu" />
+<DataSet timestep="40" file="animate/animate_8.vtu" />
+<DataSet timestep="45" file="animate/animate_9.vtu" />
+</Collection>
+</VTKFile>
