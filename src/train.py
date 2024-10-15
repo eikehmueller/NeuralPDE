@@ -51,7 +51,7 @@ accum = 1                # gradient accumulation for larger batchsizes - ASSERT 
 nt = 4                   # number of timesteps
 dt = 0.25                # size of the timesteps
 lr = 0.0006              # learning rate of the optimizer
-nepoch = 50            # number of epochs
+nepoch = 200            # number of epochs
 ##### HYPERPARAMETERS #####
 
 from neural_pde.spherical_patch_covering import SphericalPatchCovering
@@ -178,42 +178,6 @@ training_loss = []
 training_loss_per_epoch = []
 validation_loss_per_epoch = []
 
-
-# Profiling the code
-'''
-train_example = torch.randn(4, V.dim()).double().to(device)
-
-with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True) as prof:
-    with record_function("model_inference"):
-        model(train_example)
-print('Data for execution time')
-print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=10))
-
-with profile(activities=[ProfilerActivity.CUDA],
-        profile_memory=True, record_shapes=True) as prof:
-    model(train_example)
-
-print('Data for memory usage')
-print(prof.key_averages().table(sort_by="self_cuda_memory_usage", row_limit=10))
-
-
-with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA]) as prof:
-    model(train_example)
-
-prof.export_chrome_trace("trace.json")
-
-print('Data for stack tracing')
-with profile(
-    activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
-    with_stack=True,
-) as prof:
-    model(train_example)
-
-
-# Print aggregated stats
-print(prof.key_averages(group_by_stack_n=5).table(sort_by="self_cuda_time_total", row_limit=2))
-
-'''
 time = 0
 print('Starting training loop')
 file = VTKFile(f"{path_to_output}/animate.pvd")
@@ -256,12 +220,8 @@ for epoch in range(nepoch):
             Xv = Xv.to(device)
             yv = yv.to(device)
             yv_pred = model(Xv)
-            if time % 5 == 0:
-                print(f'Time is {time//5}')
-                #write_to_vtk(V, name=f"anim", dof_values=yv_pred[0][0].cpu().squeeze().numpy(), path_to_output=path_to_output, time=time//5)
-                
-                u.dat.data[:] = yv_pred[0][0].cpu().squeeze().numpy()
-                file.write(u, time=time) 
+            u.dat.data[:] = yv_pred[0][0].cpu().squeeze().numpy()
+            file.write(u, time=time) 
             avg_vloss = loss(yv_pred, yv)
 
 
@@ -274,8 +234,8 @@ for epoch in range(nepoch):
 host_model = model.cpu()
 
 #write_to_vtk(V, name="input_validation", dof_values=valid_ds[1][0][0].numpy(), path_to_output=path_to_output)
-write_to_vtk(V, name="target_validation", dof_values=valid_ds[1][0].numpy(), path_to_output=path_to_output)
-#write_to_vtk(V, name="predicted_validation", dof_values=host_model(valid_ds[1][0]).squeeze().detach().numpy(), path_to_output=path_to_output)
+write_to_vtk(V, name="target_validation", dof_values=valid_ds[0][1].squeeze().cpu().numpy(), path_to_output=path_to_output)
+#write_to_vtk(V, name="predicted_validation", dof_values=host_model(valid_ds[0][1]).squeeze().detach().numpy(), path_to_output=path_to_output)
 
 end = timer()
 print(f'Runtime: {timedelta(seconds=end-start)}')
