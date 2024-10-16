@@ -36,22 +36,22 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f'Using the device {device}')
 
 ##### HYPERPARAMETERS #####
-test_number = "45"
+test_number = "46"
 dual_ref = 0             # refinement of the dual mesh
-n_radial = 3             # number of radial points on each patch
+n_radial = 4             # number of radial points on each patch
 n_ref = 2                # number of refinements of the icosahedral mesh
-latent_dynamic_dim = 14   # dimension of dynamic latent space
+latent_dynamic_dim = 18   # dimension of dynamic latent space
 latent_ancillary_dim = 3 # dimension of ancillary latent space
 phi = 0.7854             # approx pi/4
 degree = 4               # degree of the polynomials on the dataset
 n_train_samples = 512    # number of samples in the training dataset
 n_valid_samples = 32     # needs to be larger than the batch size!!
 batchsize = 32           # number of samples to use in each batch
-accum = 1                # gradient accumulation for larger batchsizes - ASSERT TESTING DOES NOT WORK IF ACCUM /= 1
+accum = 2                # gradient accumulation for larger batchsizes - ASSERT TESTING DOES NOT WORK IF ACCUM /= 1
 nt = 4                   # number of timesteps
 dt = 0.25                # size of the timesteps
 lr = 0.0006              # learning rate of the optimizer
-nepoch = 200            # number of epochs
+nepoch = 1            # number of epochs
 ##### HYPERPARAMETERS #####
 
 from neural_pde.spherical_patch_covering import SphericalPatchCovering
@@ -180,8 +180,8 @@ validation_loss_per_epoch = []
 
 time = 0
 print('Starting training loop')
-file = VTKFile(f"{path_to_output}/animate.pvd")
-u = Function(V)
+#file = VTKFile(f"{path_to_output}/animate.pvd")
+#u = Function(V)
 # main training loop
 for epoch in range(nepoch):
     model.train(True)
@@ -220,8 +220,8 @@ for epoch in range(nepoch):
             Xv = Xv.to(device)
             yv = yv.to(device)
             yv_pred = model(Xv)
-            u.dat.data[:] = yv_pred[0][0].cpu().squeeze().numpy()
-            file.write(u, time=time) 
+            #u.dat.data[:] = yv_pred[0][0].cpu().squeeze().numpy()
+            #file.write(u, time=time) 
             avg_vloss = loss(yv_pred, yv)
 
 
@@ -235,7 +235,7 @@ host_model = model.cpu()
 
 #write_to_vtk(V, name="input_validation", dof_values=valid_ds[1][0][0].numpy(), path_to_output=path_to_output)
 write_to_vtk(V, name="target_validation", dof_values=valid_ds[0][1].squeeze().cpu().numpy(), path_to_output=path_to_output)
-#write_to_vtk(V, name="predicted_validation", dof_values=host_model(valid_ds[0][1]).squeeze().detach().numpy(), path_to_output=path_to_output)
+write_to_vtk(V, name="predicted_validation", dof_values=host_model(valid_ds[0][0]).squeeze().detach().numpy(), path_to_output=path_to_output)
 
 end = timer()
 print(f'Runtime: {timedelta(seconds=end-start)}')
