@@ -2,3 +2,6 @@
 __pycache__/
 *.egg-info/
 tb_logs/
+*.png
+*.vtk
+*.pvd

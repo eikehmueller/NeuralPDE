@@ -1,3 +1,5 @@
+# module to draw plots found in the report and the presentations. Data is taken from the excel sheet Numerical Tests.
+
 import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime
@@ -5,6 +7,7 @@ import matplotlib as mpl
 import matplotlib.dates as mdates
 
 import matplotlib.ticker as ticker 
+
 path_to_output = '../output'
 
 # timesteps data
@@ -26,9 +29,7 @@ time_r = ['00:28:35', '00:48:42', '00:45:00']
 time_ry = [datetime.strptime(item, '%H:%M:%S') for item in time_r]
 
 # barchart data
-
-
-labels = ['Base case', r'2$\times$ nt', r'0.5$\times$ nt', r'2 $\times$ batchsize', '+3 dyn', '+3 ancil', '+0.0002 lr', '+1 mesh ref', r'+1 mesh ref, 2 $\times$ nt', '+1 radial ref', '+1 dual ref']
+labels = ['Original', r'2 $\times \ nt$', r'0.5 $\times \ nt$', r'2 $\times \ batchsize$', r'+3 $n_{dyn}$', r'+3 $n_{ancil}$', '+0.0002 $lr$', r'+1 $n_{ref}$', r'+1 $n_{ref}, \  2 \times nt$', r'more $n_{points}$', r'+1 $n_{dual-ref}$']
 parameter_data = {
     'L2 error': (0.158571830313516, 0.155529167118429, 0.17499162599994, 0.158144524372999, 0.106692006212527, 0.162846121462574, 0.151727263336801, 0.476709717655648, 0.473258504935402, 0.106020766214592, 0.308887728538425),
     'Runtime': (28.42, 51.43, 17.13, 72.38, 48.25, 50.88, 28.56 , 28.92, 51.46, 48.7, 193.35),
@@ -53,58 +54,6 @@ error_relative = list(error_values - 0.158571830313516)
 
 #time_relative = ['00:00:00', '00:22:51', '00:11:27', '00:43:48', '00:19:40', '00:22:18', '00:28:34', '00:00:01', '00:22:53', '00:20:07', '02:44:46']
 
-# barchart changing hyperparameters, error and runtime
-fig5, ax5a = plt.subplots(figsize=(14,7))#
-ax5b = ax5a.twinx()
-
-for attribute, measurement in parameter_data.items():
-    if attribute == 'L2 error':
-        offset = width * multiplier
-        rects1 = ax5a.bar(x + offset, measurement, width=0.4, label='L2 error', align='edge', color='tab:blue')
-        ax5a.bar_label(rects1, padding=3)
-        multiplier += 1
-    else:
-        offset = width * multiplier
-        rects2 = ax5b.bar(x + 2 * offset, measurement, width=-0.4, label='Runtime', align='edge', color='tab:red')
-        ax5b.bar_label(rects2, padding=3)
-        multiplier += 1
-ax5a.tick_params(axis='x', labelrotation=45, pad=10)
-ax5a.set_ylabel('L2 error', color='tab:blue')
-ax5b.set_ylabel('Runtime (minutes)', color='tab:red')
-ax5a.set_xticks(x + width, labels)
-ax5a.tick_params(axis='y', labelcolor='tab:blue')
-ax5b.tick_params(axis='y', labelcolor='tab:red')
-ax5a.set_title('Hyperparameters')
-ax5a.legend((rects1, rects2), (rects1.get_label(), rects2.get_label()), loc='upper left')
-fig5.tight_layout()
-fig5.savefig(f'{path_to_output}/bar_chart_hyperparams.png')
-
-
-
-
-
-
-'''
-fig5b, ax5b = plt.subplots(figsize=(14,7))
-bar_container1b = ax5b.bar(labels, time_values, align='center', label='Runtime')
-ax5b.bar_label(bar_container1b)
-ax5b.set_ylabel('Runtime (minutes)')
-ax5b.xaxis.set_major_locator(mpl.ticker.MultipleLocator(1))
-ax5b.tick_params(axis='y')
-ax5a.set_title('Change in hyperparameters')
-
-fig5b.tight_layout()
-fig5b.savefig(f'{path_to_output}/bar_chart_hyperparams_runtime.png')
-
-
-
-
-
-
-
-
-
-
 # timesteps vs error
 fig1, ax1 = plt.subplots()
 ax1.set_ylim([0, 0.2])
@@ -125,6 +74,8 @@ ax2.set(xlabel='Number of timesteps', ylabel='Runtime',
 ax2.grid()
 fig2.tight_layout()
 fig2.savefig(f'{path_to_output}/runtime.png')
+
+
 
 # dynamic variables vs error
 fig3, ax3 = plt.subplots()
@@ -147,49 +98,68 @@ ax4.grid()
 fig4.tight_layout()
 fig4.savefig(f'{path_to_output}/dynamic_runtime.png')
 
-
-
-
-
-
-
-fig6, ax6 = plt.subplots(figsize=(14,7))
-bar_container2 = ax6.bar(labels, error_relative, label='Change in error')
-ax6.tick_params(axis='x', labelrotation=45, pad=10)
-ax6.set_title('Change in hyperparameters')
-ax6.set_ylabel('Change in L2 error')
-ax6.bar_label(bar_container2)
-fig6.tight_layout()
-fig6.savefig(f'{path_to_output}/bar_chart_adjusted_hyperparams.png')
-
-
-
-
-
-
-# radial points variables vs error
-fig7, ax7 = plt.subplots()
-ax7.set_ylim([0, 0.2])
-ax7.plot(n_rad, error_r, marker='o')
-ax7.set(xlabel='Number of points on radius', ylabel=r'Normalized $L^2$ loss',
+# points in patch vs error
+fig5, ax5 = plt.subplots()
+ax5.set_ylim([0, 0.2])
+ax5.plot(n_rad, error_r, marker='o')
+ax5.set(xlabel='Number of points on radius', ylabel=r'Normalized $L^2$ loss',
         title='Error after 1000 epochs')
-ax7.grid()
-fig7.tight_layout()
-fig7.savefig(f'{path_to_output}/radial.png')
+ax5.grid()
+fig5.tight_layout()
+fig5.savefig(f'{path_to_output}/radial.png')
 
-# radial points variables vs runtime
-fig8, ax8 = plt.subplots()
-ax8.plot(n_rad, time_ry, marker='o')
-ax8.yaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S',))
-ax8.xaxis.set_major_locator(mpl.ticker.MultipleLocator(1))
-ax8.set(xlabel='Number of points on radius', ylabel='Runtime',
+# points in patch vs runtime
+fig6, ax6 = plt.subplots()
+ax6.plot(n_rad, time_ry, marker='o')
+ax6.yaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S',))
+ax6.xaxis.set_major_locator(mpl.ticker.MultipleLocator(1))
+ax6.set(xlabel='Number of points on radius', ylabel='Runtime',
         title='Runtime for 1000 epochs')
-ax8.xaxis.set_major_locator(ticker.AutoLocator())
-ax8.grid()
-fig8.tight_layout()
-fig8.savefig(f'{path_to_output}/radial_runtime.png')
+ax6.xaxis.set_major_locator(ticker.AutoLocator())
+ax6.grid()
+fig6.tight_layout()
+fig6.savefig(f'{path_to_output}/radial_runtime.png')
 
-'''
+
+
+# barchart changing hyperparameters, error and runtime
+fig7, ax7a = plt.subplots(figsize=(14,7))#
+ax7b = ax7a.twinx()
+
+for attribute, measurement in parameter_data.items():
+    if attribute == 'L2 error':
+        offset = width * multiplier
+        rects1 = ax7a.bar(x + offset, measurement, width=0.4, label='L2 error', align='edge', color='tab:blue')
+        ax7a.bar_label(rects1, padding=3)
+        multiplier += 1
+    else:
+        offset = width * multiplier
+        rects2 = ax7b.bar(x + 2 * offset, measurement, width=-0.4, label='Runtime', align='edge', color='tab:red')
+        ax7b.bar_label(rects2, padding=3)
+        multiplier += 1
+ax7a.tick_params(axis='x', labelrotation=45, pad=10)
+ax7a.set_ylabel('L2 error', color='tab:blue')
+ax7b.set_ylabel('Runtime (minutes)', color='tab:red')
+ax7a.set_xticks(x + width, labels)
+ax7a.tick_params(axis='y', labelcolor='tab:blue')
+ax7b.tick_params(axis='y', labelcolor='tab:red')
+ax7a.set_title('Hyperparameters')
+ax7a.legend((rects1, rects2), (rects1.get_label(), rects2.get_label()), loc='upper left')
+fig7.tight_layout()
+fig7.savefig(f'{path_to_output}/bar_chart_hyperparams.png')
+
+
+#fig5b, ax5b = plt.subplots(figsize=(14,7))
+#bar_container1b = ax5b.bar(labels, time_values, align='center', label='Runtime')
+#ax5b.bar_label(bar_container1b)
+#ax5b.set_ylabel('Runtime (minutes)')
+#ax5b.xaxis.set_major_locator(mpl.ticker.MultipleLocator(1))
+#ax5b.tick_params(axis='y')
+#ax5a.set_title('Change in hyperparameters')
+
+#fig5b.tight_layout()
+#fig5b.savefig(f'{path_to_output}/bar_chart_hyperparams_runtime.png')
+
 
 
 plt.close()
