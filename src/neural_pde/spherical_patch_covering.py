@@ -171,7 +171,7 @@ class SphericalPatchCovering:
     def neighbour_list(self):
         """return neighbour list"""
         return list(self._neighbours)
-    '''
+    
     def visualise(self, data=None):
         """Visualise spherical patch covering
 
@@ -231,8 +231,8 @@ class SphericalPatchCovering:
                 marker_size=2,
             )
         )
-        '''
-        #fig.show()
+        
+        fig.show()
 
 
 ############################################################################
@@ -244,4 +244,4 @@ if __name__ == "__main__":
     print(f"patchsize                       = {spherical_patch_covering.patch_size}")
     print(f"number of points in all patches = {spherical_patch_covering.n_points}")
     print(spherical_patch_covering.points.shape)
-    #spherical_patch_covering.visualise()
+    spherical_patch_covering.visualise()

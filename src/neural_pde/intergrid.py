@@ -3,7 +3,6 @@
 import torch
 from firedrake import *
 from firedrake.__future__ import interpolate
-from firedrake.ml.pytorch import from_torch, to_torch
 
 __all__ = ["Encoder", "Decoder"]
 

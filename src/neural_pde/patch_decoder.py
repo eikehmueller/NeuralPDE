@@ -1,9 +1,6 @@
 """Patch decoder. Decodes information from latent space back to a function on the sphere"""
 
 from firedrake import *
-
-# from firedrake.ml.pytorch import fem_operator
-# from pyadjoint import ReducedFunctional, Control
 from firedrake.adjoint import *
 import torch
 from neural_pde.intergrid import Decoder

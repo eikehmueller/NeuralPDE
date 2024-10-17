@@ -10,9 +10,9 @@ import os
 if not os.path.exists("data"):
     os.makedirs("data")
 
-phi = 0.1963             # rotation angle of the data
+phi = 0.1963             # rotation angle of the data (radians)
 degree = 4               # degree of the polynomials on the dataset
-batchsize = 512         # batchsize
+batchsize = 512          # batchsize
 n_ref = 2                # number of refinements in the icosahedral mesh
 valid_batchsize = 32     # batchsize for validation group
 
