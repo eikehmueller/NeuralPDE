@@ -32,9 +32,9 @@ path_to_output  = args.path_to_output_folder
 clear_output(path_to_output) # clear the output folder of previous works
 
 ##### HYPERPARAMETERS #####
-test_number = "1"
+test_number = "39"
 dual_ref = 0             # refinement of the dual mesh
-n_radial = 2             # number of radial points on each patch
+n_radial = 3             # number of radial points on each patch
 n_ref = 2                # number of refinements of the icosahedral mesh
 latent_dynamic_dim = 7   # dimension of dynamic latent space
 latent_ancillary_dim = 3 # dimension of ancillary latent space
@@ -47,7 +47,7 @@ accum = 1                # gradient accumulation for larger batchsizes - ASSERT 
 nt = 4                   # number of timesteps
 dt = 0.25                # size of the timesteps
 lr = 0.0006              # learning rate of the optimizer
-nepoch = 10            # number of epochs
+nepoch = 1000            # number of epochs
 ##### HYPERPARAMETERS #####
 
 from neural_pde.spherical_patch_covering import SphericalPatchCovering
@@ -61,10 +61,10 @@ from neural_pde.neural_solver import NeuralSolver
 # arg2: number of radial points on each patch
 spherical_patch_covering = SphericalPatchCovering(dual_ref, n_radial)
 print('')
-print(f"running test number               {test_number}")
+print(f"running test number {test_number}")
 print('')
 
-f = open(f"{path_to_output}/hyperparameters.txt", "w")
+f = open(f"{path_to_output}/hyperparameters_test{test_number}.txt", "w")
 f.write(f'dual mesh refinements           = {dual_ref}\n')
 f.write(f'radial points per patch         = {n_radial}\n')
 f.write(f"total points per patch          = {spherical_patch_covering.patch_size}\n")
@@ -84,7 +84,7 @@ f.write(f'size of timesteps               = {dt}\n')
 f.write(f'learning rate                   = {lr}\n')
 f.write(f'number of epochs                = {nepoch}\n')
 
-f = open(f"{path_to_output}/hyperparameters.txt", "r")
+f = open(f"{path_to_output}/hyperparameters_test{test_number}.txt", "r")
 print(f.read())
 
 
@@ -233,6 +233,11 @@ for epoch in range(nepoch):
 
 end = timer()
 print(f'Runtime: {timedelta(seconds=end-start)}')
+
+f = open(f"{path_to_output}/results_test{test_number}.txt", "w")
+f.write(f'training_loss = {training_loss}\n')
+f.write(f'training_loss_per_epoch = {training_loss_per_epoch}\n')
+f.write(f'validation_loss_per_epoch = {validation_loss_per_epoch}')
 
 # visualise the first object in the training dataset 
 host_model = model.cpu()
