@@ -1,14 +1,14 @@
-# This module is for testing the Neural solver module. The tests here are 
+''' This module is for testing the Neural solver module. The tests here are 
 
-# 1: checking that the neighbouring cells have a shared edge
-# 2: checking that input and output have shape (n_patches, d_lat) for NeuralSolver
-# 2: checking that input and output have shape (1, n_patches, d_lat) for NeuralSolver
-# 2: checking that input and output have shape (batchsize, n_patches, d_lat) for NeuralSolver
-# 3: checking for an averaging function NeuralSolver returns the expected result
+1: check that the neighbouring cells have a shared edge
+2: check that input and output have shape (n_patches, d_lat) 
+3: check that input and output have shape (1, n_patches, d_lat) 
+4: check that input and output have shape (batchsize, n_patches, d_lat) 
+5: check that an averaging function returns the expected result
+'''
 
-
-from spherical_patch_covering import SphericalPatchCovering
-from neural_solver import NeuralSolver, Katies_NeuralSolver
+from neural_pde.spherical_patch_covering import SphericalPatchCovering
+from neural_pde.neural_solver import NeuralSolver
 import torch
 from firedrake import UnitIcosahedralSphereMesh
 
@@ -26,9 +26,9 @@ latent_ancillary_dim = 3
 d_lat = latent_dynamic_dim + latent_ancillary_dim
 d_dyn = latent_dynamic_dim
 
-sample1 = torch.rand(n_patches, d_lat).double() # A sample with shape (n_patches, d_lat)
-sample2 = torch.rand(1, n_patches, d_lat).double() # A sample with shape (1, n_patches, d_lat)
-sample3 = torch.rand(batchsize, n_patches, d_lat).double() # A sample with shape (batchsize, n_patches, d_lat)
+sample_2d = torch.rand(n_patches, d_lat).double() # A sample with shape (n_patches, d_lat)
+sample_3d_flat = torch.rand(1, n_patches, d_lat).double() # A sample with shape (1, n_patches, d_lat)
+sample_3d_full = torch.rand(batchsize, n_patches, d_lat).double() # A sample with shape (batchsize, n_patches, d_lat)
 
 neighbour_list = spherical_patch_covering.neighbour_list 
 
@@ -39,6 +39,7 @@ interaction_model = torch.nn.Sequential(
         out_features=latent_dynamic_dim,
     ),
 ).double()
+
 
 ###### functions for the tests #######
 
@@ -64,7 +65,6 @@ def average_neighbours(x, neighbour_list):
     return average
 
 
-
 ######## The tests #########
 
 def test_is_neighbour():
@@ -84,38 +84,38 @@ def test_is_neighbour():
 
     assert num_errors == 0
 
-def test_sample1():
+def test_sample_2d():
     """Check whether the input and output are the same shape"""
     model = NeuralSolver(spherical_patch_covering,
         interaction_model,
         nsteps=1,
         stepsize=1.0,
     )
-    y = model(sample1)
+    y = model(sample_2d)
 
-    assert y.shape == sample1.shape
+    assert y.shape == sample_2d.shape
 
-def test_sample2():
+def test_sample_3d_flat():
     """Check whether the input and output are the same shape"""
     model = NeuralSolver(spherical_patch_covering,
         interaction_model,
         nsteps=1,
         stepsize=1.0,
     )
-    y = model(sample2).unsqueeze(0)
+    y = model(sample_3d_flat).unsqueeze(0)
 
-    assert y.shape == sample2.shape
+    assert y.shape == sample_3d_flat.shape
 
-def test_sample3():
+def test_sample_3d_full():
     """Check whether the input and output are the same shape"""
     model = NeuralSolver(spherical_patch_covering,
         interaction_model,
         nsteps=1,
         stepsize=1.0,
     )
-    y = model(sample3)
+    y = model(sample_3d_full)
 
-    assert y.shape == sample3.shape
+    assert y.shape == sample_3d_full.shape
 
 
 def test_average():
@@ -127,30 +127,8 @@ def test_average():
         stepsize=1.0,
     )
 
-    y1 = model(sample3)
-    y2 = sample3 
+    y1 = model(sample_3d_full)
+    y2 = sample_3d_full
 
-    y2[:, :, :d_dyn] += average_neighbours(sample3, neighbour_list)[:, :, :d_dyn]
-    assert torch.allclose(y1, y2)
-
-def test_solvers_are_the_same():
-    """Check whether NeuralSolver and Katies_NeuralSolver produce the same result"""
-
-    model1 = NeuralSolver(
-        spherical_patch_covering,
-        interaction_model,
-        nsteps=1,
-        stepsize=1.0,
-    )
-
-    model2 = Katies_NeuralSolver(
-        spherical_patch_covering,
-        interaction_model,
-        nsteps=1,
-        stepsize=1.0,
-    )
-
-    y1 = model1(sample3)
-    y2 = model2(sample3)
-
+    y2[:, :, :d_dyn] += average_neighbours(sample_3d_full, neighbour_list)[:, :, :d_dyn]
     assert torch.allclose(y1, y2)

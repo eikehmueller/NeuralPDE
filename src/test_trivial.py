@@ -1,15 +1,17 @@
+'''This module tests the trivial cases where nt = 0. The tests here are
+
+1: check that the projection matrix satisfies trivial matrix permutations
+2: check that  model = decoder(encoder(.)) maps X to X.'''
+
+
 from firedrake import *
 import torch
 from neural_pde.intergrid import torch_interpolation_tensor
-
-
-from firedrake.ml.pytorch import to_torch
 from neural_pde.spherical_patch_covering import SphericalPatchCovering
 from neural_pde.patch_encoder import PatchEncoder
 from neural_pde.patch_decoder import PatchDecoder
 
 spherical_patch_covering = SphericalPatchCovering(0, 0)
-
 
 n_dynamic = 1  # number of dynamic fields: scalar tracer
 n_ancillary = 0  # number of ancillary fields: x-, y- and z-coordinates
@@ -33,21 +35,19 @@ decoder_model = torch.nn.Unflatten(
 ).double()
 
 
-def test_trivial1():
-    """This tests whether the projection is correct
+def test_trivial_projection():
+    """Check that the projection matrix satisfies trivial matrix operations
 
-    PatchEncoder is our projection P. It projects onto the latent space.
-    If the PatchDecoder is the Transpose of P, then we must have
-
-    y^T(xP) = (xP)^T(xP) = P^Tx^TY
-
-    and this is what we check."""
-
+    PatchEncoder is our projection P.  If the PatchDecoder is the Transpose of P, 
+    then y^T(xP) = (xP)^T(xP) = P^Tx^TY and this is what is checked."""
+    
+    # construct P, X and Y
     batchsize = 4
     P = torch_interpolation_tensor(fs_from=V1, fs_to=V2, transpose=True)
     X = torch.randn(batchsize, V1.dim()).double()
     Y = torch.matmul(X, P)
 
+    # calculate the transpose
     PTXT = torch.matmul(torch.transpose(P, 0, 1), torch.transpose(X, 0, 1))
     PXTY = torch.matmul(PTXT, Y)
     PX2 = torch.matmul(torch.transpose(Y, 0, 1), Y)
@@ -55,14 +55,14 @@ def test_trivial1():
     assert torch.allclose(PXTY, PX2)
 
 
-def test_trivial2():
-    """Check that trivial model gives results that are consistent with it
-    being a composition of a trivial encoder and decoder.
+def test_trivial_encoder():
+    """Check that model = decoder(encoder(.)) maps X to X
 
     For random input X compute Y = model(X) and Ax = encoder(X). Then check that
-    the dot-product X^T.Y is identical to the squared ell2 norm of Ax, i.e. ||Ax||_2^2 = Ax^T.Ax.
+    the dot-product X^T.Y is identical to the squared l2 norm of Ax, i.e. ||Ax||_2^2 = Ax^T.Ax.
     """
-
+    
+    # define the model
     encoder = PatchEncoder(
         V1,
         spherical_patch_covering,
@@ -80,9 +80,12 @@ def test_trivial2():
     batchsize = 4
     X = torch.randn(batchsize, n_dynamic + n_ancillary, V1.dim()).double()
     Y = model(X)
+
+    # calculate XtY
     XtY = torch.einsum("bij,bij->bi", X, Y)
     XtY = XtY.detach().numpy()
-
+    
+    # calculate l2 norm of Ax
     Ax = encoder(X)
     Ax_L2 = torch.einsum("bpi,bpi->bi", Ax, Ax)
     Ax_L2 = Ax_L2.detach().numpy()

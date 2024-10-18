@@ -5,3 +5,4 @@ tb_logs/
 *.png
 *.vtk
 *.pvd
+*.txt

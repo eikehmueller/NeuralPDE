@@ -60,10 +60,34 @@ from neural_pde.neural_solver import NeuralSolver
 # arg1: number of refinements of the icosahedral sphere
 # arg2: number of radial points on each patch
 spherical_patch_covering = SphericalPatchCovering(dual_ref, n_radial)
-print(f"Running test number {test_number}")
-print(f"number of patches               = {spherical_patch_covering.n_patches}")
-print(f"patchsize                       = {spherical_patch_covering.patch_size}")
-print(f"number of points in all patches = {spherical_patch_covering.n_points}")
+print('')
+print(f"running test number               {test_number}")
+print('')
+
+f = open(f"{path_to_output}/hyperparameters.txt", "w")
+f.write(f'dual mesh refinements           = {dual_ref}\n')
+f.write(f'radial points per patch         = {n_radial}\n')
+f.write(f"total points per patch          = {spherical_patch_covering.patch_size}\n")
+f.write(f"number of patches               = {spherical_patch_covering.n_patches}\n")
+f.write(f"number of points in all patches = {spherical_patch_covering.n_points}\n")
+f.write(f'n_ref of original mesh          = {n_ref}\n')
+f.write(f'dynamic latent variables        = {latent_dynamic_dim}\n')
+f.write(f'ancillary latent variables      = {latent_ancillary_dim}\n')
+f.write(f'solid body rotation angle (rad) = {phi}\n')
+f.write(f'degree of polynomial in dataset = {degree}\n')
+f.write(f'training samples                = {n_train_samples}\n')
+f.write(f'validation samples              = {n_valid_samples}\n')
+f.write(f'batchsize                       = {batchsize}\n')
+f.write(f'gradient accumulation number    = {accum}\n')
+f.write(f'number of timesteps             = {nt}\n')
+f.write(f'size of timesteps               = {dt}\n')
+f.write(f'learning rate                   = {lr}\n')
+f.write(f'number of epochs                = {nepoch}\n')
+
+f = open(f"{path_to_output}/hyperparameters.txt", "r")
+print(f.read())
+
+
 
 mesh = UnitIcosahedralSphereMesh(n_ref) # create the mesh
 V = FunctionSpace(mesh, "CG", 1) # define the function space

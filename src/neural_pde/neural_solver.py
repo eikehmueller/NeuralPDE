@@ -55,7 +55,6 @@ class NeuralSolver(torch.nn.Module):
         self.interaction_model = interaction_model
         self.nsteps = nsteps
         self.stepsize = stepsize
-        # list of neighbours, including the index itself, done from spherical_patch_coverine
         self._neighbour_list = [
             [j] + beta
             for j, beta in enumerate(self.spherical_patch_covering.neighbour_list)
@@ -120,7 +119,7 @@ class NeuralSolver(torch.nn.Module):
                 # ---- stage 1 ---- gather to tensor Z of shape
                 #                   (B,n_patch,4,d_{lat}^{dynamic}+d_{lat}^{ancillary})
 
-                z = torch.gather(# gathers values along a specific axis. Way to extract values from a tensor
+                z = torch.gather(
                     x.unsqueeze(-2).repeat((x.shape[0], x.shape[1], 4, x.shape[-1])),
                     1, 
                     index, 

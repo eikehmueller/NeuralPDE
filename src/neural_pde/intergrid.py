@@ -1,4 +1,6 @@
-"""Intergrid encoder and decoder"""
+"""Intergrid encoder and decoder. Contains classes that define
+differentiable interpolation functions from one function space
+to another."""
 
 import torch
 from firedrake import *

@@ -8,8 +8,6 @@ from neural_pde.intergrid import Encoder
 
 class PatchEncoder(torch.nn.Module):
     """
-    This class inherits from class torch.nn.Module
-
     Collective encoding to latent space
 
     The input X has shape
@@ -104,7 +102,6 @@ class PatchEncoder(torch.nn.Module):
         # input is a (n_func, ndof) tensor
 
         device = x.device
-
         if x.dim() == 2:
             x = torch.stack(
                 [
@@ -115,24 +112,19 @@ class PatchEncoder(torch.nn.Module):
                     for z in torch.unbind(x)
                 ]
             )
-
-            # permute axes to obtain tensor or shape (n_{patches},n_{func},n_{dof per patch})
             x = torch.permute(x, (1, 0, 2))
 
             # Part II: encoding on patches
             x_ancillary = self._ancillary_encoder_model(x[..., self._n_dynamic :, :])
-            # start slicing from index n_dynamic. Assumes that n_func is of shape [dyn, anc, anc anc]
             x_dynamic = self._dynamic_encoder_model(x)
             x = torch.cat((x_dynamic, x_ancillary), dim=-1)
-
-            # x has shape (npatch, dim (ancilliary + dynamic))
             return x
         else:
             x = torch.stack(
                 [
                     torch.stack(
                         [
-                            torch.reshape(  # input, shape
+                            torch.reshape(  
                                 self._function_to_patch.forward(z).to(device),
                                 (self._npatches, self._patchsize),
                             )
@@ -143,13 +135,10 @@ class PatchEncoder(torch.nn.Module):
                 ]
             )
 
-            # permute axes to obtain tensor or shape (B,n_{patches},n_{func},n_{dof per patch})
             x = torch.permute(x, (0, 2, 1, 3))
 
             # Part II: encoding on patches
             x_ancillary = self._ancillary_encoder_model(x[..., self._n_dynamic :, :])
-            # start slicing from index n_dynamic. Assumes that n_func is of shape [dyn, anc, anc anc]
             x_dynamic = self._dynamic_encoder_model(x)
             x = torch.cat((x_dynamic, x_ancillary), dim=-1)
-            # x has shape (B, npatch, dim (ancilliary + dynamic))
             return x

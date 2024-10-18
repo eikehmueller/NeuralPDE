@@ -156,7 +156,7 @@ class AdvectionDataset(SphericalFunctionSpaceDataset):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    default_path = "/home/katie795/internship/NeuralPDE/output"
+    default_path = "../output"
     parser.add_argument(
         "--path_to_output_folder",
         type=str,

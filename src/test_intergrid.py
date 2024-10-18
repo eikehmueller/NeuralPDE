@@ -1,5 +1,15 @@
-"""MWE to illustrate issue that occurs when wrapping Firedrake interpolation operations 
-to a set of points"""
+"""Pytest suite to test that the intergrid functions are working. The tests are
+
+1: check that the Jacobian of the encoder and decoder are correct
+2: check that the shape of the Jacobian is as expected
+3: check that the jacobian of the decoder is the adjoint of the jacobian of the encoder
+4: check that the encoder gives the same results as manual interpolation of the functions
+5: check that interpolation using Encoder is the same as manual interpolation
+    for an input tensor with the shape (n, n_in). 
+6: check that interpolation using Encoder is the same as manual interpolation
+    for an input tensor with the shape (batch_size, n, n_in). 
+
+"""
 
 import pytest
 from firedrake import *
