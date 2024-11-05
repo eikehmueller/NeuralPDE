@@ -221,10 +221,17 @@ decoder_model = torch.nn.Sequential(
 interaction_model = torch.nn.Sequential(
     torch.nn.Flatten(start_dim=-2, end_dim=-1),
     torch.nn.Linear(
-        in_features=4
-        * (
-            args.latent_dynamic_dim + args.latent_ancillary_dim
-        ),  # do we use a linear model here?? Or do we need a nonlinear part
+        in_features=4 * (args.latent_dynamic_dim + args.latent_ancillary_dim),
+        out_features=8,
+    ),
+    torch.nn.Softplus(),
+    torch.nn.Linear(
+        in_features=8,
+        out_features=8,
+    ),
+    torch.nn.Softplus(),
+    torch.nn.Linear(
+        in_features=8,
         out_features=args.latent_dynamic_dim,
     ),
 ).double()
@@ -244,12 +251,12 @@ model = torch.nn.Sequential(
         ancillary_encoder_model,
         train_ds.n_func_in_dynamic,
     ),
-    # NeuralSolver(
-    #    spherical_patch_covering,
-    #    interaction_model,
-    #    nsteps=args.nt,
-    #    stepsize=args.dt,
-    # ),
+    NeuralSolver(
+        spherical_patch_covering,
+        interaction_model,
+        nsteps=args.nt,
+        stepsize=args.dt,
+    ),
     PatchDecoder(V, spherical_patch_covering, decoder_model),
 )
 

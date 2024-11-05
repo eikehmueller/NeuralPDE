@@ -1,7 +1,7 @@
 #!/bin/bash
 NREF=2
 DEGREE=4
-PHI=0.0
+PHI=0.5
 
 python data_generator.py \
     --filename data/data_train.h5 \
