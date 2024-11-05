@@ -12,14 +12,13 @@ import tqdm
 import gc
 import argparse
 
-from output_functions import write_to_vtk
-
 from neural_pde.spherical_patch_covering import SphericalPatchCovering
 from neural_pde.patch_encoder import PatchEncoder
 from neural_pde.patch_decoder import PatchDecoder
 from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header
 from neural_pde.neural_solver import NeuralSolver
 from neural_pde.loss_functions import normalised_mse as loss_fn
+from neural_pde.auxilliary import write_to_vtk
 
 # Create argparse arguments
 parser = argparse.ArgumentParser()
