@@ -132,26 +132,6 @@ class SphericalFunctionSpaceDataset(Dataset):
             f.attrs["class"] = type(self).__name__
             metadata = group.create_dataset("metadata", data=json.dumps(self.metadata))
 
-    def load(self, filename):
-        """Load the dataset from disk
-
-        :arg filename: name of file to load from"""
-        with h5py.File(filename, "r") as f:
-            dset = f["base/data"]
-            assert f.attrs["n_func_in"] == self._n_func_in
-            assert f.attrs["n_func_target"] == self._n_func_target
-            assert f.attrs["n_ref"] == self.n_ref
-            assert f.attrs["n_samples"] == self.n_samples
-            assert f.attrs["class"] == type(self).__name__
-            metadata = json.loads(f["base/metadata"][()])
-            self._data = np.asarray(dset)
-            assert metadata == self.metadata
-            assert self._data.shape == (
-                self.n_samples,
-                self._n_func_in + self._n_func_target,
-                self._fs.dof_count,
-            )
-
 
 class AdvectionDataset(SphericalFunctionSpaceDataset):
     """Data set for advection
