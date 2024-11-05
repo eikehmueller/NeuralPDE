@@ -3,7 +3,7 @@
 from firedrake import *
 from firedrake.adjoint import *
 import torch
-from neural_pde.intergrid import Encoder
+from neural_pde.intergrid import Interpolator
 
 
 class PatchEncoder(torch.nn.Module):
@@ -88,7 +88,7 @@ class PatchEncoder(torch.nn.Module):
 
         continue_annotation()
         with set_working_tape() as _:
-            self._function_to_patch = Encoder(fs, vertex_only_fs)
+            self._function_to_patch = Interpolator(fs, vertex_only_fs)
         pause_annotation()
 
         self._n_dynamic = n_dynamic
@@ -124,7 +124,7 @@ class PatchEncoder(torch.nn.Module):
                 [
                     torch.stack(
                         [
-                            torch.reshape(  
+                            torch.reshape(
                                 self._function_to_patch.forward(z).to(device),
                                 (self._npatches, self._patchsize),
                             )

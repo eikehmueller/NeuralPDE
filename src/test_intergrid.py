@@ -14,7 +14,7 @@
 import pytest
 from firedrake import *
 import torch
-from neural_pde.intergrid import Encoder, Decoder
+from neural_pde.intergrid import Interpolator, AdjointInterpolator
 from firedrake.ml.pytorch import to_torch
 
 
@@ -32,7 +32,7 @@ def function_spaces():
     return fs, fs_vom
 
 
-@pytest.mark.parametrize("Operator", [Encoder, Decoder])
+@pytest.mark.parametrize("Operator", [Interpolator, AdjointInterpolator])
 def test_jacobian(function_spaces, Operator):
     """Check that the Jacobian of the encoder and decoder are correct"""
     # Sizes of function spaces
@@ -56,7 +56,7 @@ def test_jacobian(function_spaces, Operator):
     )
 
 
-@pytest.mark.parametrize("Operator", [Encoder, Decoder])
+@pytest.mark.parametrize("Operator", [Interpolator, AdjointInterpolator])
 def test_jacobian_shape(function_spaces, Operator):
     """Check that the shape of the Jacobian is as expected"""
     fs, fs_vom = function_spaces
@@ -72,8 +72,8 @@ def test_jacobians_are_adjoint(function_spaces):
     """Check that the jacobian of the decoder is the adjoint of the jacobian
     of the encoder"""
     fs, fs_vom = function_spaces
-    encoder = Encoder(fs, fs_vom).double()
-    decoder = Decoder(fs, fs_vom).double()
+    encoder = Interpolator(fs, fs_vom).double()
+    decoder = AdjointInterpolator(fs, fs_vom).double()
     n_in = encoder.in_features
     n_out = decoder.in_features
     x = torch.zeros(n_in, dtype=torch.float64)
@@ -99,7 +99,7 @@ def test_manual_interpolation(function_spaces):
     # dof vectors for u and v
     u_dofs = to_torch(u).flatten()
     v_dofs = to_torch(v).flatten()
-    encoder = Encoder(fs, fs_vom).double()
+    encoder = Interpolator(fs, fs_vom).double()
     w_dofs = np.asarray(encoder(u_dofs))
     assert np.all(np.isclose(v_dofs, w_dofs))
 
@@ -127,7 +127,7 @@ def test_manual_interpolation_4d(function_spaces):
                 v.interpolate(u)
                 with v.dat.vec_ro as v_vec:
                     v_dofs[i1, i2, i3, :] = v_vec[:]
-    encoder = Encoder(fs, fs_vom).double()
+    encoder = Interpolator(fs, fs_vom).double()
     w_dofs = np.asarray(encoder(torch.tensor(u_dofs)))
     assert np.all(np.isclose(v_dofs, w_dofs))
 
@@ -137,7 +137,7 @@ def test_two_dimensions(function_spaces):
     for an input tensor with the shape (n, n_in). Output should be of the shape
     (n, n_vom)"""
     fs, fs_vom = function_spaces
-    encoder = Encoder(fs, fs_vom).double()
+    encoder = Interpolator(fs, fs_vom).double()
     mesh = fs.mesh()
     u1 = Function(fs)
     u2 = Function(fs)
@@ -159,7 +159,7 @@ def test_three_dimensions(function_spaces):
     for an input tensor with the shape (batch_size, n, n_in). Output should be of the shape
     (batch_size, n, n_vom)"""
     fs, fs_vom = function_spaces
-    encoder = Encoder(fs, fs_vom).double()
+    encoder = Interpolator(fs, fs_vom).double()
     mesh = fs.mesh()
     u1 = Function(fs)
     u2 = Function(fs)

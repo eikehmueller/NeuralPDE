@@ -3,7 +3,7 @@
 from firedrake import *
 from firedrake.adjoint import *
 import torch
-from neural_pde.intergrid import Decoder
+from neural_pde.intergrid import AdjointInterpolator
 
 
 class PatchDecoder(torch.nn.Module):
@@ -66,7 +66,7 @@ class PatchDecoder(torch.nn.Module):
         vertex_only_fs = FunctionSpace(vertex_only_mesh, "DG", 0)
         continue_annotation()
         with set_working_tape() as _:
-            self._patch_to_function = Decoder(fs, vertex_only_fs)
+            self._patch_to_function = AdjointInterpolator(fs, vertex_only_fs)
         pause_annotation()
 
     def forward(self, x):

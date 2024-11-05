@@ -6,7 +6,7 @@ import torch
 from firedrake import *
 from firedrake.__future__ import interpolate
 
-__all__ = ["Encoder", "Decoder"]
+__all__ = ["Interpolator", "AdjointInterpolator"]
 
 
 def torch_interpolation_tensor(fs_from, fs_to, transpose=False):
@@ -41,7 +41,7 @@ def torch_interpolation_tensor(fs_from, fs_to, transpose=False):
     return a.to_sparse()
 
 
-class Encoder(torch.nn.Module):
+class Interpolator(torch.nn.Module):
     """Differentiable encoder which interpolates to a different function space
 
     This maps dof-vectors of functions u from one function space to
@@ -75,7 +75,7 @@ class Encoder(torch.nn.Module):
         return torch.matmul(x, self.a_sparse)
 
 
-class Decoder(torch.nn.Module):
+class AdjointInterpolator(torch.nn.Module):
     """Differentiable encoder which implements the adjoint interpolation to a function space
 
     Maps the dof-vectors of a dual function v* on the target function space
