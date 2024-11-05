@@ -1,4 +1,5 @@
 numpy
 scipy
-pytorch
-firedrake
+torch
+h5py
+tqdm

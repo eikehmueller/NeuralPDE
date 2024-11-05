@@ -1,23 +1,70 @@
 import torch
 import numpy as np
+import json
+import h5py
+import tqdm
 from torch.utils.data import Dataset, DataLoader
 
 import itertools
 
-from abc import ABC, abstractmethod
 
 from firedrake import (
-    UnitIcosahedralSphereMesh,
-    Function,
-    VTKFile,
     FunctionSpace,
+    Function,
     SpatialCoordinate,
+    UnitIcosahedralSphereMesh,
 )
 
-import argparse
+__all__ = [
+    "show_hdf5_header",
+    "load_hdf5_dataset",
+    "SphericalFunctionSpaceDataset",
+    "AdvectionDataset",
+]
 
 
-class SphericalFunctionSpaceDataset(ABC, Dataset):
+def load_hdf5_dataset(filename):
+    """Load the dataset from disk
+
+    :arg filename: name of file to load from"""
+    with h5py.File(filename, "r") as f:
+        data = f["base/data"]
+        metadata = json.loads(f["base/metadata"][()])
+        dataset = SphericalFunctionSpaceDataset(
+            f.attrs["n_func_in"],
+            f.attrs["n_func_target"],
+            f.attrs["n_ref"],
+            f.attrs["n_samples"],
+            data=np.asarray(data),
+            metadata=metadata,
+        )
+    return dataset
+
+
+def show_hdf5_header(filename):
+    """Show the header of a hdf5 file
+
+    :arg filename: name of file to inspect
+    """
+    print(f"header of {filename}")
+    with h5py.File(filename, "r") as f:
+        print("  attributes:")
+        item = "class"
+        print(f"    {item:20s} = {f.attrs[item]:20s}")
+        for item in [
+            "n_func_in",
+            "n_func_target",
+            "n_ref",
+            "n_samples",
+        ]:
+            print(f"    {item:20s} = {f.attrs[item]:8d}")
+        print("  metadata:")
+        metadata = json.loads(f["base/metadata"][()])
+        for key, value in metadata.items():
+            print(f"    {str(key):20s} = {str(value):20s}")
+
+
+class SphericalFunctionSpaceDataset(Dataset):
     """Abstract base class for data generation on a function space
     defined on a spherical mesh
 
@@ -26,61 +73,84 @@ class SphericalFunctionSpaceDataset(ABC, Dataset):
     of shape (n_func_target,n_dof).
     """
 
-    def __init__(self, fs, nsamples):
+    def __init__(
+        self, n_func_in, n_func_target, n_ref, nsamples, data=None, metadata=None
+    ):
         """Initialise new instance
 
-        :arg fs: function space
+        :arg n_func_in: number of input funtions
+        :arg n_func_target: number of output functions
+        :arg n_ref: number of mesh refinements
+        :arg nsamples: number of samples
+        :arg data: data to initialise with
+        :arg metadata: metadata to initialise with
         """
-        self._fs = fs
-        self._nsamples = nsamples
-        self._data = np.empty(
-            (self._nsamples, self.n_func_in + self.n_func_target, self._fs.dof_count),
-            dtype=np.float64,
+        self._n_func_in = n_func_in
+        self._n_func_target = n_func_target
+        self.n_ref = n_ref
+        mesh = UnitIcosahedralSphereMesh(n_ref)  # create the mesh
+        self._fs = FunctionSpace(mesh, "CG", 1)  # define the function space
+        self.n_samples = nsamples
+        self._data = (
+            np.empty(
+                (
+                    self.n_samples,
+                    self._n_func_in + self._n_func_target,
+                    self._fs.dof_count,
+                ),
+                dtype=np.float64,
+            )
+            if data is None
+            else data
         )
+        self.metadata = {} if metadata is None else metadata
 
-    @property
-    def n_dof(self):
-        """Number of unknowns"""
-        return len(Function(self._fs).dat.data)
-
-    @property
-    def n_func_in(self):
-        """Number of input functions (including auxilliary functions)"""
-        return self._n_func_in
-
-    @property
-    def n_func_target(self):
-        """Number of functions in the target"""
-        return self._n_func_target
-
-    @abstractmethod
     def __getitem__(self, idx):
         """Return a single sample (X,y)
 
         :arg idx: index of sample
         """
-        pass
+        X = torch.tensor(self._data[idx, : self._n_func_in], dtype=torch.float64)
+        y = torch.tensor(self._data[idx, self._n_func_in :], dtype=torch.float64)
+        return (X, y)
 
     def __len__(self):
         """Return numnber of samples"""
-        return self._nsamples
+        return self.n_samples
 
     def save(self, filename):
         """Save the dataset to disk
 
         :arg filename: name of file to save to"""
-        np.save(filename, self._data)
+        with h5py.File(filename, "w") as f:
+            group = f.create_group("base")
+            dset = group.create_dataset("data", data=self._data)
+            f.attrs["n_func_in"] = self._n_func_in
+            f.attrs["n_func_target"] = self._n_func_target
+            f.attrs["n_ref"] = self.n_ref
+            f.attrs["n_samples"] = self.n_samples
+            f.attrs["class"] = type(self).__name__
+            metadata = group.create_dataset("metadata", data=json.dumps(self.metadata))
 
     def load(self, filename):
         """Load the dataset from disk
 
         :arg filename: name of file to load from"""
-        self._data = np.load(filename)
-        assert self._data.shape == (
-            self._nsamples,
-            self.n_func_in + self.n_func_target,
-            self._fs.dof_count,
-        )
+        with h5py.File(filename, "r") as f:
+            dset = f["base/data"]
+            assert f.attrs["n_func_in"] == self._n_func_in
+            assert f.attrs["n_func_target"] == self._n_func_target
+            assert f.attrs["n_ref"] == self.n_ref
+            assert f.attrs["n_samples"] == self.n_samples
+            assert f.attrs["class"] == type(self).__name__
+            metadata = json.loads(f["base/metadata"][()])
+            self._data = np.asarray(dset)
+            assert metadata == self.metadata
+            assert self._data.shape == (
+                self.n_samples,
+                self._n_func_in + self._n_func_target,
+                self._fs.dof_count,
+            )
 
 
 class AdvectionDataset(SphericalFunctionSpaceDataset):
@@ -92,18 +162,20 @@ class AdvectionDataset(SphericalFunctionSpaceDataset):
 
     """
 
-    def __init__(self, fs, nsamples, phi, degree=4, seed=12345):
+    def __init__(self, nref, nsamples, phi, degree=4, seed=12345):
         """Initialise new instance
 
-        :arg fs: function space
+        :arg nref: number of mesh refinements
+        :arg nsamples: number of samples
         :arg phi: rotation angle phi
         :arg degree: polynomial degree used for generating random fields
+        :arg seed: seed of rng
         """
-        self._n_func_in = 4
-        self._n_func_target = 1
-        super().__init__(fs, nsamples)
-        mesh = self._fs.mesh()
-        x, y, z = SpatialCoordinate(mesh)
+        n_func_in = 4
+        n_func_target = 1
+        super().__init__(n_func_in, n_func_target, nref, nsamples)
+        self.metadata = {"phi": f"{phi:}", "degree": degree, "seed": seed}
+        x, y, z = SpatialCoordinate(self._fs.mesh())
         self._u_x = Function(self._fs).interpolate(x)
         self._u_y = Function(self._fs).interpolate(y)
         self._u_z = Function(self._fs).interpolate(z)
@@ -118,7 +190,7 @@ class AdvectionDataset(SphericalFunctionSpaceDataset):
         """Generate the data"""
         # generate data
         x, y, z = SpatialCoordinate(self._fs.mesh())
-        for j in range(self._nsamples):
+        for j in tqdm.tqdm(range(self.n_samples)):
             expr_in = 0
             expr_target = 0
             coeff = self._rng.normal(size=(self._degree, self._degree, self._degree))
@@ -139,49 +211,3 @@ class AdvectionDataset(SphericalFunctionSpaceDataset):
             self._data[j, 3, :] = self._u_z.dat.data
             self._u.interpolate(expr_target)
             self._data[j, 4, :] = self._u.dat.data
-
-    def __getitem__(self, idx):
-        """Return a single sample (X,y)
-
-        :arg idx: index of sample
-        """
-        X = torch.tensor(self._data[idx, : self._n_func_in], dtype=torch.float64)
-        y = torch.tensor(self._data[idx, self._n_func_in :], dtype=torch.float64)
-        return (X, y)
-
-
-#######################################################################
-# M A I N
-#######################################################################
-if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser()
-    default_path = "../output"
-    parser.add_argument(
-        "--path_to_output_folder",
-        type=str,
-        action="store",
-        default=default_path,
-        help="path to output folder",
-    )
-    args = parser.parse_args()
-    path_to_output = args.path_to_output_folder
-
-    mesh = UnitIcosahedralSphereMesh(3)
-    V = FunctionSpace(mesh, "CG", 1)
-    degree = 4
-    nsamples = 32
-    batchsize = 4
-
-    dataset = AdvectionDataset(V, nsamples, degree)
-
-    dataloader = DataLoader(dataset, batch_size=batchsize, shuffle=True)
-    for k, batched_sample in enumerate(iter(dataloader)):
-        print(k, batched_sample[0].shape, batched_sample[1].shape)
-        u_in = Function(V, name="input")
-        u_in.dat.data[:] = batched_sample[0][0, 0].numpy()
-        u_target = Function(V, name="target")
-        u_target.dat.data[:] = batched_sample[1][0].numpy()
-        file = VTKFile(f"{path_to_output}/sample.pvd")
-        file.write(u_in, u_target)
-
