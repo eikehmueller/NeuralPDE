@@ -85,8 +85,8 @@ class SphericalFunctionSpaceDataset(Dataset):
         :arg data: data to initialise with
         :arg metadata: metadata to initialise with
         """
-        self._n_func_in = n_func_in
-        self._n_func_target = n_func_target
+        self.n_func_in = n_func_in
+        self.n_func_target = n_func_target
         self.n_ref = n_ref
         mesh = UnitIcosahedralSphereMesh(n_ref)  # create the mesh
         self._fs = FunctionSpace(mesh, "CG", 1)  # define the function space
@@ -95,7 +95,7 @@ class SphericalFunctionSpaceDataset(Dataset):
             np.empty(
                 (
                     self.n_samples,
-                    self._n_func_in + self._n_func_target,
+                    self.n_func_in + self.n_func_target,
                     self._fs.dof_count,
                 ),
                 dtype=np.float64,
@@ -110,8 +110,8 @@ class SphericalFunctionSpaceDataset(Dataset):
 
         :arg idx: index of sample
         """
-        X = torch.tensor(self._data[idx, : self._n_func_in], dtype=torch.float64)
-        y = torch.tensor(self._data[idx, self._n_func_in :], dtype=torch.float64)
+        X = torch.tensor(self._data[idx, : self.n_func_in], dtype=torch.float64)
+        y = torch.tensor(self._data[idx, self.n_func_in :], dtype=torch.float64)
         return (X, y)
 
     def __len__(self):
@@ -125,8 +125,8 @@ class SphericalFunctionSpaceDataset(Dataset):
         with h5py.File(filename, "w") as f:
             group = f.create_group("base")
             dset = group.create_dataset("data", data=self._data)
-            f.attrs["n_func_in"] = int(self._n_func_in)
-            f.attrs["n_func_target"] = int(self._n_func_target)
+            f.attrs["n_func_in"] = int(self.n_func_in)
+            f.attrs["n_func_target"] = int(self.n_func_target)
             f.attrs["n_ref"] = int(self.n_ref)
             f.attrs["n_samples"] = int(self.n_samples)
             f.attrs["class"] = type(self).__name__

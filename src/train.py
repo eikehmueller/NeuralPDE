@@ -126,8 +126,8 @@ print()
 train_ds = load_hdf5_dataset(args.train_data)
 valid_ds = load_hdf5_dataset(args.valid_data)
 
-n_ancillary = train_ds._n_func_in - args.n_dynamic
-n_output = train_ds._n_func_target  # number of output fields: scalar tracer
+n_ancillary = train_ds.n_func_in - args.n_dynamic
+n_output = train_ds.n_func_target  # number of output fields: scalar tracer
 
 filename = f"{path_to_output}/hyperparameters.txt"
 with open(filename, "w", encoding="utf8") as f:
