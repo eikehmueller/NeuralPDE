@@ -31,7 +31,8 @@ def load_hdf5_dataset(filename):
         data = f["base/data"]
         metadata = json.loads(f["base/metadata"][()])
         dataset = SphericalFunctionSpaceDataset(
-            int(f.attrs["n_func_in"]),
+            int(f.attrs["n_func_in_dynamic"]),
+            int(f.attrs["n_func_in_ancillary"]),
             int(f.attrs["n_func_target"]),
             int(f.attrs["n_ref"]),
             int(f.attrs["n_samples"]),
@@ -52,7 +53,8 @@ def show_hdf5_header(filename):
         item = "class"
         print(f"    {item:20s} = {f.attrs[item]:20s}")
         for item in [
-            "n_func_in",
+            "n_func_in_dynamic",
+            "n_func_in_ancillary",
             "n_func_target",
             "n_ref",
             "n_samples",
@@ -74,18 +76,27 @@ class SphericalFunctionSpaceDataset(Dataset):
     """
 
     def __init__(
-        self, n_func_in, n_func_target, n_ref, nsamples, data=None, metadata=None
+        self,
+        n_func_in_dynamic,
+        n_func_in_ancillary,
+        n_func_target,
+        n_ref,
+        nsamples,
+        data=None,
+        metadata=None,
     ):
         """Initialise new instance
 
-        :arg n_func_in: number of input funtions
+        :arg n_func_in_dynamic: number of dynamic input funtions
+        :arg n_func_in_ancillary number of ancillary input functions
         :arg n_func_target: number of output functions
         :arg n_ref: number of mesh refinements
         :arg nsamples: number of samples
         :arg data: data to initialise with
         :arg metadata: metadata to initialise with
         """
-        self.n_func_in = n_func_in
+        self.n_func_in_dynamic = n_func_in_dynamic
+        self.n_func_in_ancillary = n_func_in_ancillary
         self.n_func_target = n_func_target
         self.n_ref = n_ref
         mesh = UnitIcosahedralSphereMesh(n_ref)  # create the mesh
@@ -95,7 +106,9 @@ class SphericalFunctionSpaceDataset(Dataset):
             np.empty(
                 (
                     self.n_samples,
-                    self.n_func_in + self.n_func_target,
+                    self.n_func_in_dynamic
+                    + self.n_func_in_ancillary
+                    + self.n_func_target,
                     self._fs.dof_count,
                 ),
                 dtype=np.float64,
@@ -110,8 +123,14 @@ class SphericalFunctionSpaceDataset(Dataset):
 
         :arg idx: index of sample
         """
-        X = torch.tensor(self._data[idx, : self.n_func_in], dtype=torch.float64)
-        y = torch.tensor(self._data[idx, self.n_func_in :], dtype=torch.float64)
+        X = torch.tensor(
+            self._data[idx, : self.n_func_in_dynamic + self.n_func_in_ancillary],
+            dtype=torch.float64,
+        )
+        y = torch.tensor(
+            self._data[idx, self.n_func_in_dynamic + self.n_func_in_ancillary :],
+            dtype=torch.float64,
+        )
         return (X, y)
 
     def __len__(self):
@@ -125,7 +144,8 @@ class SphericalFunctionSpaceDataset(Dataset):
         with h5py.File(filename, "w") as f:
             group = f.create_group("base")
             dset = group.create_dataset("data", data=self._data)
-            f.attrs["n_func_in"] = int(self.n_func_in)
+            f.attrs["n_func_in_dynamic"] = int(self.n_func_in_dynamic)
+            f.attrs["n_func_in_ancillary"] = int(self.n_func_in_ancillary)
             f.attrs["n_func_target"] = int(self.n_func_target)
             f.attrs["n_ref"] = int(self.n_ref)
             f.attrs["n_samples"] = int(self.n_samples)
@@ -151,9 +171,12 @@ class AdvectionDataset(SphericalFunctionSpaceDataset):
         :arg degree: polynomial degree used for generating random fields
         :arg seed: seed of rng
         """
-        n_func_in = 4
+        n_func_in_dynamic = 1
+        n_func_in_ancillary = 3
         n_func_target = 1
-        super().__init__(n_func_in, n_func_target, nref, nsamples)
+        super().__init__(
+            n_func_in_dynamic, n_func_in_ancillary, n_func_target, nref, nsamples
+        )
         self.metadata = {"phi": f"{phi:}", "degree": degree, "seed": seed}
         x, y, z = SpatialCoordinate(self._fs.mesh())
         self._u_x = Function(self._fs).interpolate(x)

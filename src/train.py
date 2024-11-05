@@ -12,7 +12,7 @@ import tqdm
 import gc
 import argparse
 
-from output_functions import clear_output, write_to_vtk
+from output_functions import write_to_vtk
 
 from neural_pde.spherical_patch_covering import SphericalPatchCovering
 from neural_pde.patch_encoder import PatchEncoder
@@ -126,8 +126,7 @@ print()
 train_ds = load_hdf5_dataset(args.train_data)
 valid_ds = load_hdf5_dataset(args.valid_data)
 
-n_ancillary = train_ds.n_func_in - args.n_dynamic
-n_output = train_ds.n_func_target  # number of output fields: scalar tracer
+n_func_target = train_ds.n_func_target  # number of output fields: scalar tracer
 
 filename = f"{path_to_output}/hyperparameters.txt"
 with open(filename, "w", encoding="utf8") as f:
@@ -170,7 +169,7 @@ V = FunctionSpace(mesh, "CG", 1)  # define the function space
 dynamic_encoder_model = torch.nn.Sequential(
     torch.nn.Flatten(start_dim=-2, end_dim=-1),
     torch.nn.Linear(
-        in_features=(args.n_dynamic + n_ancillary)
+        in_features=(train_ds.n_func_in_dynamic + train_ds.n_func_in_ancillary)
         * spherical_patch_covering.patch_size,  # size of each input sample
         out_features=args.latent_dynamic_dim,  # size of each output sample
     ),
@@ -182,7 +181,7 @@ dynamic_encoder_model = torch.nn.Sequential(
 ancillary_encoder_model = torch.nn.Sequential(
     torch.nn.Flatten(start_dim=-2, end_dim=-1),
     torch.nn.Linear(
-        in_features=n_ancillary * spherical_patch_covering.patch_size,
+        in_features=train_ds.n_func_in_ancillary * spherical_patch_covering.patch_size,
         out_features=args.latent_ancillary_dim,
     ),
 ).double()
@@ -193,10 +192,10 @@ ancillary_encoder_model = torch.nn.Sequential(
 decoder_model = torch.nn.Sequential(
     torch.nn.Linear(
         in_features=args.latent_dynamic_dim + args.latent_ancillary_dim,
-        out_features=n_output * spherical_patch_covering.patch_size,
+        out_features=n_func_target * spherical_patch_covering.patch_size,
     ),
     torch.nn.Unflatten(
-        dim=-1, unflattened_size=(n_output, spherical_patch_covering.patch_size)
+        dim=-1, unflattened_size=(n_func_target, spherical_patch_covering.patch_size)
     ),
 ).double()
 
@@ -225,7 +224,7 @@ model = torch.nn.Sequential(
         spherical_patch_covering,
         dynamic_encoder_model,
         ancillary_encoder_model,
-        args.n_dynamic,
+        train_ds.n_func_in_dynamic,
     ),
     NeuralSolver(
         spherical_patch_covering,
