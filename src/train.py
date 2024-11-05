@@ -126,8 +126,6 @@ print()
 train_ds = load_hdf5_dataset(args.train_data)
 valid_ds = load_hdf5_dataset(args.valid_data)
 
-n_func_target = train_ds.n_func_target  # number of output fields: scalar tracer
-
 filename = f"{path_to_output}/hyperparameters.txt"
 with open(filename, "w", encoding="utf8") as f:
     print(f"  dual mesh refinements           = {args.dual_ref}", file=f)
@@ -192,10 +190,11 @@ ancillary_encoder_model = torch.nn.Sequential(
 decoder_model = torch.nn.Sequential(
     torch.nn.Linear(
         in_features=args.latent_dynamic_dim + args.latent_ancillary_dim,
-        out_features=n_func_target * spherical_patch_covering.patch_size,
+        out_features=train_ds.n_func_target * spherical_patch_covering.patch_size,
     ),
     torch.nn.Unflatten(
-        dim=-1, unflattened_size=(n_func_target, spherical_patch_covering.patch_size)
+        dim=-1,
+        unflattened_size=(train_ds.n_func_target, spherical_patch_covering.patch_size),
     ),
 ).double()
 
