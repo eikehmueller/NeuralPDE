@@ -2,7 +2,7 @@
 
 import argparse
 
-from neural_pde.data_classes import AdvectionDataset
+from neural_pde.datasets import AdvectionDataset
 from firedrake import FunctionSpace, UnitIcosahedralSphereMesh
 
 # Create argparse arguments

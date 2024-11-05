@@ -1,7 +1,7 @@
 """Show header of a hdf5 file"""
 
 import argparse
-from neural_pde.data_classes import show_hdf5_header
+from neural_pde.datasets import show_hdf5_header
 
 parser = argparse.ArgumentParser()
 
