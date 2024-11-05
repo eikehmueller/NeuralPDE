@@ -31,10 +31,10 @@ def load_hdf5_dataset(filename):
         data = f["base/data"]
         metadata = json.loads(f["base/metadata"][()])
         dataset = SphericalFunctionSpaceDataset(
-            f.attrs["n_func_in"],
-            f.attrs["n_func_target"],
-            f.attrs["n_ref"],
-            f.attrs["n_samples"],
+            int(f.attrs["n_func_in"]),
+            int(f.attrs["n_func_target"]),
+            int(f.attrs["n_ref"]),
+            int(f.attrs["n_samples"]),
             data=np.asarray(data),
             metadata=metadata,
         )
@@ -125,10 +125,10 @@ class SphericalFunctionSpaceDataset(Dataset):
         with h5py.File(filename, "w") as f:
             group = f.create_group("base")
             dset = group.create_dataset("data", data=self._data)
-            f.attrs["n_func_in"] = self._n_func_in
-            f.attrs["n_func_target"] = self._n_func_target
-            f.attrs["n_ref"] = self.n_ref
-            f.attrs["n_samples"] = self.n_samples
+            f.attrs["n_func_in"] = int(self._n_func_in)
+            f.attrs["n_func_target"] = int(self._n_func_target)
+            f.attrs["n_ref"] = int(self.n_ref)
+            f.attrs["n_samples"] = int(self.n_samples)
             f.attrs["class"] = type(self).__name__
             metadata = group.create_dataset("metadata", data=json.dumps(self.metadata))
 

@@ -48,64 +48,114 @@ parser.add_argument(
     default="data/data_valid.h5",
 )
 
+parser.add_argument(
+    "--dual_ref",
+    type=int,
+    action="store",
+    help="number of refinements of dual mesh",
+    default=0,
+)
+parser.add_argument(
+    "--n_radial",
+    type=int,
+    action="store",
+    help="number of radial points on each patch",
+    default=3,
+)
+parser.add_argument(
+    "--latent_dynamic_dim",
+    type=int,
+    action="store",
+    help="dimension of dynamic latent space",
+    default=7,
+)
+parser.add_argument(
+    "--latent_ancillary_dim",
+    type=int,
+    action="store",
+    help="dimension of ancillary latent space",
+    default=3,
+)
+parser.add_argument(
+    "--batchsize",
+    type=int,
+    action="store",
+    help="size of batches",
+    default=8,
+)
+parser.add_argument(
+    "--nt",
+    type=int,
+    action="store",
+    help="number of timesteps for processor",
+    default=4,
+)
+parser.add_argument(
+    "--dt",
+    type=float,
+    action="store",
+    help="size of timestep for processor",
+    default=0.25,
+)
+parser.add_argument(
+    "--learning_rate",
+    type=float,
+    action="store",
+    help="learning rate",
+    default=0.0006,
+)
+parser.add_argument(
+    "--nepoch", type=int, action="store", help="number of epochs", default=100
+)
+parser.add_argument(
+    "--n_dynamic", type=int, action="store", help="number dynamic fields", default=1
+)
 args, _ = parser.parse_known_args()
 path_to_output = args.path_to_output_folder
 
-clear_output(path_to_output)  # clear the output folder of previous works
-
-##### HYPERPARAMETERS #####
-test_number = "39"
-dual_ref = 0  # refinement of the dual mesh
-n_radial = 3  # number of radial points on each patch
-latent_dynamic_dim = 7  # dimension of dynamic latent space
-latent_ancillary_dim = 3  # dimension of ancillary latent space
-degree = 4  # degree of the polynomials on the dataset
-batchsize = 8  # number of samples to use in each batch
-nt = 4  # number of timesteps
-dt = 0.25  # size of the timesteps
-lr = 0.0006  # learning rate of the optimizer
-nepoch = 100  # number of epochs
-n_dynamic = 1  # number of dynamic fields: scalar tracer
-n_ancillary = 3  # number of ancillary fields: x-, y- and z-coordinates
-n_output = 1  # number of output fields: scalar tracer
-##### HYPERPARAMETERS #####
-
 # construct spherical patch covering
-spherical_patch_covering = SphericalPatchCovering(dual_ref, n_radial)
-print("")
-print(f"running test number {test_number}")
-print("")
+spherical_patch_covering = SphericalPatchCovering(args.dual_ref, args.n_radial)
+print()
+print(f"==== data ====")
+print()
 
 show_hdf5_header(args.train_data)
+print()
 show_hdf5_header(args.valid_data)
-
+print()
 train_ds = load_hdf5_dataset(args.train_data)
 valid_ds = load_hdf5_dataset(args.valid_data)
 
-filename = f"{path_to_output}/hyperparameters_test{test_number}.txt"
-with open(filename, "w", encoding="utf8") as f:
-    print(f"dual mesh refinements           = {dual_ref}", file=f)
-    print(f"radial points per patch         = {n_radial}", file=f)
-    print(
-        f"total points per patch          = {spherical_patch_covering.patch_size}",
-        file=f,
-    )
-    print(
-        f"number of patches               = {spherical_patch_covering.n_patches}",
-        file=f,
-    )
-    print(
-        f"number of points in all patches = {spherical_patch_covering.n_points}", file=f
-    )
-    print(f"dynamic latent variables        = {latent_dynamic_dim}", file=f)
-    print(f"ancillary latent variables      = {latent_ancillary_dim}", file=f)
-    print(f"degree of polynomial in dataset = {degree}", file=f)
-    print(f"batchsize                       = {batchsize}", file=f)
-    print(f"number of timesteps             = {nt}", file=f)
-    print(f"size of timesteps               = {dt}", file=f)
-    print(f"learning rate                   = {lr}", file=f)
-    print(f"number of epochs                = {nepoch}", file=f)
+n_ancillary = train_ds._n_func_in - args.n_dynamic
+n_output = train_ds._n_func_target  # number of output fields: scalar tracer
 
+filename = f"{path_to_output}/hyperparameters.txt"
+with open(filename, "w", encoding="utf8") as f:
+    print(f"  dual mesh refinements           = {args.dual_ref}", file=f)
+    print(f"  radial points per patch         = {args.n_radial}", file=f)
+    print(
+        f"  points per patch                = {spherical_patch_covering.patch_size}",
+        file=f,
+    )
+    print(
+        f"  number of patches               = {spherical_patch_covering.n_patches}",
+        file=f,
+    )
+    print(
+        f"  number of points in all patches = {spherical_patch_covering.n_points}",
+        file=f,
+    )
+    print(f"  dynamic latent variables        = {args.latent_dynamic_dim}", file=f)
+    print(f"  ancillary latent variables      = {args.latent_ancillary_dim}", file=f)
+    print(f"  batchsize                       = {args.batchsize}", file=f)
+    print(f"  number of timesteps             = {args.nt}", file=f)
+    print(f"  size of timesteps               = {args.dt}", file=f)
+    print(f"  learning rate                   = {args.learning_rate}", file=f)
+    print(f"  number of epochs                = {args.nepoch}", file=f)
+
+print()
+print(f"==== parameters ====")
+print()
 with open(filename, "r", encoding="utf8") as f:
     print(f.read())
 
@@ -120,9 +170,9 @@ V = FunctionSpace(mesh, "CG", 1)  # define the function space
 dynamic_encoder_model = torch.nn.Sequential(
     torch.nn.Flatten(start_dim=-2, end_dim=-1),
     torch.nn.Linear(
-        in_features=(n_dynamic + n_ancillary)
+        in_features=(args.n_dynamic + n_ancillary)
         * spherical_patch_covering.patch_size,  # size of each input sample
-        out_features=latent_dynamic_dim,  # size of each output sample
+        out_features=args.latent_dynamic_dim,  # size of each output sample
     ),
 ).double()
 
@@ -133,7 +183,7 @@ ancillary_encoder_model = torch.nn.Sequential(
     torch.nn.Flatten(start_dim=-2, end_dim=-1),
     torch.nn.Linear(
         in_features=n_ancillary * spherical_patch_covering.patch_size,
-        out_features=latent_ancillary_dim,
+        out_features=args.latent_ancillary_dim,
     ),
 ).double()
 
@@ -142,7 +192,7 @@ ancillary_encoder_model = torch.nn.Sequential(
 # output: (n_out,patch_size)
 decoder_model = torch.nn.Sequential(
     torch.nn.Linear(
-        in_features=latent_dynamic_dim + latent_ancillary_dim,
+        in_features=args.latent_dynamic_dim + args.latent_ancillary_dim,
         out_features=n_output * spherical_patch_covering.patch_size,
     ),
     torch.nn.Unflatten(
@@ -156,25 +206,17 @@ interaction_model = torch.nn.Sequential(
     torch.nn.Linear(
         in_features=4
         * (
-            latent_dynamic_dim + latent_ancillary_dim
+            args.latent_dynamic_dim + args.latent_ancillary_dim
         ),  # do we use a linear model here?? Or do we need a nonlinear part
-        out_features=latent_dynamic_dim,
+        out_features=args.latent_dynamic_dim,
     ),
 ).double()
 
 n_train_samples = train_ds.n_samples
 n_valid_samples = valid_ds.n_samples
 
-train_dl = DataLoader(train_ds, batch_size=batchsize, shuffle=True, drop_last=True)
-valid_dl = DataLoader(valid_ds, batch_size=batchsize, drop_last=True)
-
-# assert testing can be included as an extra test in the processor, to check that the tensors have the correct size.
-assert_testing = {
-    "batchsize": batchsize,
-    "n_patches": spherical_patch_covering.n_patches,
-    "d_lat": latent_dynamic_dim + latent_ancillary_dim,
-    "d_dyn": latent_dynamic_dim,
-}
+train_dl = DataLoader(train_ds, batch_size=args.batchsize, shuffle=True, drop_last=True)
+valid_dl = DataLoader(valid_ds, batch_size=args.batchsize, drop_last=True)
 
 # Full model: encoder + processor + decoder
 model = torch.nn.Sequential(
@@ -183,27 +225,27 @@ model = torch.nn.Sequential(
         spherical_patch_covering,
         dynamic_encoder_model,
         ancillary_encoder_model,
-        n_dynamic,
+        args.n_dynamic,
     ),
     NeuralSolver(
         spherical_patch_covering,
         interaction_model,
-        nsteps=nt,
-        stepsize=dt,
+        nsteps=args.nt,
+        stepsize=args.dt,
     ),
     PatchDecoder(V, spherical_patch_covering, decoder_model),
 )
 
 
-device = "cpu"  # torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 model = model.to(device)  # transfer the model to the GPU
 
-optimiser = torch.optim.Adam(model.parameters(), lr=lr)
+optimiser = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
 
 writer = SummaryWriter(flush_secs=5)
 # main training loop
-for epoch in range(nepoch):
-    print(f"epoch {epoch + 1} of {nepoch}")
+for epoch in range(args.nepoch):
+    print(f"epoch {epoch + 1} of {args.nepoch}")
     train_loss = 0
     for Xb, yb in tqdm.tqdm(train_dl):
         Xb = Xb.to(device)  # move to GPU
@@ -214,7 +256,7 @@ for epoch in range(nepoch):
         loss.backward()  # take the backwards gradient
         optimiser.step()  # adjust the parameters by the gradient collected in the backwards pass
         # data collection for the model
-        train_loss += loss.item() / (n_train_samples // batchsize)
+        train_loss += loss.item() / (n_train_samples // args.batchsize)
         del Xb  # clearing the cache
         del yb
         gc.collect()
@@ -227,7 +269,7 @@ for epoch in range(nepoch):
         yv = yv.to(device)  # move to GPU
         yv_pred = model(Xv)  # make a prediction
         loss = loss_fn(yv_pred, yv)  # calculate the loss
-        valid_loss += loss.item() / (n_valid_samples // batchsize)
+        valid_loss += loss.item() / (n_valid_samples // args.batchsize)
 
     print(f"    training loss: {train_loss:8.3e}, validation loss: {valid_loss:8.3e}")
     writer.add_scalars(
