@@ -18,7 +18,6 @@ from neural_pde.patch_decoder import PatchDecoder
 from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header
 from neural_pde.neural_solver import NeuralSolver
 from neural_pde.loss_functions import normalised_mse as loss_fn
-from neural_pde.auxilliary import write_to_vtk
 
 # Create argparse arguments
 parser = argparse.ArgumentParser()
@@ -168,6 +167,13 @@ dynamic_encoder_model = torch.nn.Sequential(
     torch.nn.Linear(
         in_features=(train_ds.n_func_in_dynamic + train_ds.n_func_in_ancillary)
         * spherical_patch_covering.patch_size,  # size of each input sample
+        out_features=16,
+    ),
+    torch.nn.Softplus(),
+    torch.nn.Linear(in_features=16, out_features=16),
+    torch.nn.Softplus(),
+    torch.nn.Linear(
+        in_features=16,
         out_features=args.latent_dynamic_dim,  # size of each output sample
     ),
 ).double()
@@ -179,6 +185,13 @@ ancillary_encoder_model = torch.nn.Sequential(
     torch.nn.Flatten(start_dim=-2, end_dim=-1),
     torch.nn.Linear(
         in_features=train_ds.n_func_in_ancillary * spherical_patch_covering.patch_size,
+        out_features=16,
+    ),
+    torch.nn.Softplus(),
+    torch.nn.Linear(in_features=16, out_features=16),
+    torch.nn.Softplus(),
+    torch.nn.Linear(
+        in_features=16,
         out_features=args.latent_ancillary_dim,
     ),
 ).double()
@@ -189,6 +202,13 @@ ancillary_encoder_model = torch.nn.Sequential(
 decoder_model = torch.nn.Sequential(
     torch.nn.Linear(
         in_features=args.latent_dynamic_dim + args.latent_ancillary_dim,
+        out_features=16,
+    ),
+    torch.nn.Softplus(),
+    torch.nn.Linear(in_features=16, out_features=16),
+    torch.nn.Softplus(),
+    torch.nn.Linear(
+        in_features=16,
         out_features=train_ds.n_func_target * spherical_patch_covering.patch_size,
     ),
     torch.nn.Unflatten(
@@ -224,12 +244,12 @@ model = torch.nn.Sequential(
         ancillary_encoder_model,
         train_ds.n_func_in_dynamic,
     ),
-    NeuralSolver(
-        spherical_patch_covering,
-        interaction_model,
-        nsteps=args.nt,
-        stepsize=args.dt,
-    ),
+    # NeuralSolver(
+    #    spherical_patch_covering,
+    #    interaction_model,
+    #    nsteps=args.nt,
+    #    stepsize=args.dt,
+    # ),
     PatchDecoder(V, spherical_patch_covering, decoder_model),
 )
 
@@ -280,20 +300,20 @@ writer.flush()
 end = timer()
 print(f"Runtime: {timedelta(seconds=end-start)}")
 
-# visualise the first object in the training dataset
+# visualise the validation dataset
 host_model = model.cpu()
-write_to_vtk(
-    V, name="input", dof_values=valid_ds[1][0][0].numpy(), path_to_output=path_to_output
-)
-write_to_vtk(
-    V,
-    name="target",
-    dof_values=valid_ds[0][1].squeeze().cpu().numpy(),
-    path_to_output=path_to_output,
-)
-write_to_vtk(
-    V,
-    name="predicted",
-    dof_values=host_model(valid_ds[0][0]).squeeze().detach().numpy(),
-    path_to_output=path_to_output,
-)
+
+for j, (X, y_target) in enumerate(iter(valid_ds)):
+    y_pred = host_model(X)
+
+    f_input = Function(V, name="input")
+    f_input.dat.data[:] = X.detach().numpy()[0, :]
+
+    f_target = Function(V, name="target")
+    f_target.dat.data[:] = y_target.detach().numpy()[0, :]
+
+    f_pred = Function(V, name="pedicted")
+    f_pred.dat.data[:] = y_pred.detach().numpy()[0, :]
+
+    file = VTKFile(f"{path_to_output}/output_{j:04d}.pvd")
+    file.write(f_input, f_target, f_pred)

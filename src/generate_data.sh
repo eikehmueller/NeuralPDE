@@ -1,14 +1,14 @@
 #!/bin/bash
-NREF=1
-DEGREE=1
-PHI=0.1963
+NREF=2
+DEGREE=4
+PHI=0.0
 
 python data_generator.py \
     --filename data/data_train.h5 \
     --nref ${NREF} \
     --degree ${DEGREE} \
     --phi ${PHI} \
-    --nsamples 128 \
+    --nsamples 512 \
     --seed 152167
 
 python data_generator.py \
