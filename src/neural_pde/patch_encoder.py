@@ -102,49 +102,27 @@ class PatchEncoder(torch.nn.Module):
     def forward(self, x):
         """Forward map
 
-        :arg x: input
+        Returns a tensor of shape (B,n_patches,d_dynamic+d_ancillary)
+
+        :arg x: input, a tensor of shape (B,n_func, n_dof)
         """
         # Part I: interpolation to VOM
-        # input is a (n_func, ndof) tensor
-
-        device = x.device
-        if x.dim() == 2:
-            x = torch.stack(
-                [
-                    torch.reshape(
-                        self._function_to_patch.forward(z).to(device),
-                        (self._npatches, self._patchsize),
-                    )
-                    for z in torch.unbind(x)
-                ]
-            )
-            x = torch.permute(x, (1, 0, 2))
-
-            # Part II: encoding on patches
-            x_ancillary = self._ancillary_encoder_model(x[..., self._n_dynamic :, :])
-            x_dynamic = self._dynamic_encoder_model(x)
-            x = torch.cat((x_dynamic, x_ancillary), dim=-1)
-            return x
-        else:
-            x = torch.stack(
-                [
-                    torch.stack(
-                        [
-                            torch.reshape(
-                                self._function_to_patch.forward(z).to(device),
-                                (self._npatches, self._patchsize),
-                            )
-                            for z in torch.unbind(y)
-                        ]
-                    )
-                    for y in torch.unbind(x)
-                ]
-            )
-
-            x = torch.permute(x, (0, 2, 1, 3))
-
-            # Part II: encoding on patches
-            x_ancillary = self._ancillary_encoder_model(x[..., self._n_dynamic :, :])
-            x_dynamic = self._dynamic_encoder_model(x)
-            x = torch.cat((x_dynamic, x_ancillary), dim=-1)
-            return x
+        # x has shape (B,n_func,n_dof)
+        x = torch.reshape(
+            self._function_to_patch.forward(x),
+            (*x.shape[:-1], self._npatches, self._patchsize),
+        )
+        # x now has shape (B,n_func,n_patches,patchsize)
+        # Part II: permutation
+        dim = x.dim()
+        # permutation idx = [0,1,...,d-4,d-2,d-3,d-1] for example:
+        # d = 3: idx = [1,0,2], d = 4: idx = [0,2,1,3], d = 5: idx = [0,1,3,2,4]
+        idx = list(range(dim - 3)) + [dim - 2, dim - 3, dim - 1]
+        x = torch.permute(x, idx)
+        # x now has shape (B,n_patches,n_func,patchsize)
+        # Part III: encoding on patches
+        x_ancillary = self._ancillary_encoder_model(x[..., self._n_dynamic :, :])
+        x_dynamic = self._dynamic_encoder_model(x)
+        x = torch.cat((x_dynamic, x_ancillary), dim=-1)
+        # x now has shape (B,n_patches,d_dynamic+d_ancillary)
+        return x

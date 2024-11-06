@@ -72,44 +72,22 @@ class PatchDecoder(torch.nn.Module):
     def forward(self, x):
         """Forward map
 
-        :arg x: input
-        """
-        device = x.device
+        Returns tensor of shape (B,n_func,n_output)
 
-        if x.dim() == 2:
-            # Part I: encoding on patches
-            x = self._decoder_model(x)
-            x = torch.permute(x, (1, 0, 2))
-            # Part II: (adjoint) interpolation from VOM to spherical function space
-            x = torch.stack(
-                [
-                    torch.flatten(
-                        self._patch_to_function.forward(
-                            torch.flatten(z, start_dim=-2, end_dim=-1)
-                        ).to(device)
-                    )
-                    for z in torch.unbind(x)
-                ]
-            )
-            return x
-        else:
-            # Part I: encoding on patches
-            x = self._decoder_model(x)
-            x = torch.permute(x, (0, 2, 1, 3))
-            # Part II: (adjoint) interpolation from VOM to spherical function space
-            x = torch.stack(
-                [
-                    torch.stack(
-                        [
-                            torch.flatten(
-                                self._patch_to_function.forward(
-                                    torch.flatten(z, start_dim=-2, end_dim=-1)
-                                ).to(device)
-                            )
-                            for z in torch.unbind(y)
-                        ]
-                    )
-                    for y in torch.unbind(x)
-                ]
-            )
-            return x
+        :arg x: input, tensor of shape (B,n_patches,d_dynamic+d_ancillary)
+        """
+        # Part I: encoding on patches
+        # x has shape (B,n_patches,d_dynamic+d_ancillary)
+        x = self._decoder_model(x)
+        # now x has shape (B,n_patches,patchsize,n_output)
+        dim = x.dim()
+        # Part II: permutation
+        # permutation idx = [0,1,...,d-4,d-2,d-3,d-1] for example:
+        # d = 3: idx = [1,0,2], d = 4: idx = [0,2,1,3], d = 5: idx = [0,1,3,2,4]
+        idx = list(range(dim - 3)) + [dim - 2, dim - 3, dim - 1]
+        x = torch.permute(x, idx)
+        # now x has shape (B,n_output,n_patches,patchsize)
+        # Part III: (adjoint) interpolation from VOM to spherical function space
+        x = self._patch_to_function.forward(torch.flatten(x, start_dim=-2, end_dim=-1))
+        # now x has shape (B,n_output,n_dof)
+        return x
