@@ -1,7 +1,6 @@
 """Patch decoder. Decodes information from latent space back to a function on the sphere"""
 
 from firedrake import *
-from firedrake.adjoint import *
 import torch
 from neural_pde.intergrid import AdjointInterpolator
 
@@ -60,14 +59,11 @@ class PatchDecoder(torch.nn.Module):
         self._patchsize = spherical_patch_covering.patch_size
         vertex_only_mesh = VertexOnlyMesh(mesh, points)
         vertex_only_fs = FunctionSpace(vertex_only_mesh, "DG", 0)
-        continue_annotation()
-        with set_working_tape() as _:
-            self._patch_to_function = AdjointInterpolator(
-                fs,
-                vertex_only_fs,
-                dtype=torch.get_default_dtype() if dtype is None else dtype,
-            )
-        pause_annotation()
+        self._patch_to_function = AdjointInterpolator(
+            fs,
+            vertex_only_fs,
+            dtype=torch.get_default_dtype() if dtype is None else dtype,
+        )
 
     def forward(self, x):
         """Forward map

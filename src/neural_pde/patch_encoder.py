@@ -1,7 +1,6 @@
 """Patch encoder. Encodes the field information into the latent space"""
 
 from firedrake import *
-from firedrake.adjoint import *
 import torch
 from neural_pde.intergrid import Interpolator
 
@@ -88,14 +87,11 @@ class PatchEncoder(torch.nn.Module):
             vertex_only_mesh, "DG", 0
         )  # we can only use DG0 for a vom.
 
-        continue_annotation()
-        with set_working_tape() as _:
-            self._function_to_patch = Interpolator(
-                fs,
-                vertex_only_fs,
-                dtype=torch.get_default_dtype() if dtype is None else dtype,
-            )
-        pause_annotation()
+        self._function_to_patch = Interpolator(
+            fs,
+            vertex_only_fs,
+            dtype=torch.get_default_dtype() if dtype is None else dtype,
+        )
 
         self._n_dynamic = n_dynamic
 
