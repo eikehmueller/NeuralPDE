@@ -39,12 +39,7 @@ class PatchDecoder(torch.nn.Module):
     projection to a VOM.
     """
 
-    def __init__(
-        self,
-        fs,
-        spherical_patch_covering,
-        decoder_model,
-    ):
+    def __init__(self, fs, spherical_patch_covering, decoder_model, dtype=None):
         """Initialise instance
 
         :arg fs: function space
@@ -52,6 +47,7 @@ class PatchDecoder(torch.nn.Module):
             stage
         :arg decoder_model: model that maps tensors of shape
             (d_{lat},) to tensors of shape (n_{out},patch_size)
+        :arg dtype: datatype. Use torch default if None
         """
         super().__init__()
         self._decoder_model = decoder_model
@@ -66,7 +62,11 @@ class PatchDecoder(torch.nn.Module):
         vertex_only_fs = FunctionSpace(vertex_only_mesh, "DG", 0)
         continue_annotation()
         with set_working_tape() as _:
-            self._patch_to_function = AdjointInterpolator(fs, vertex_only_fs)
+            self._patch_to_function = AdjointInterpolator(
+                fs,
+                vertex_only_fs,
+                dtype=torch.get_default_dtype() if dtype is None else dtype,
+            )
         pause_annotation()
 
     def forward(self, x):

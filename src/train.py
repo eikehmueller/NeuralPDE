@@ -176,7 +176,7 @@ dynamic_encoder_model = torch.nn.Sequential(
         in_features=16,
         out_features=args.latent_dynamic_dim,  # size of each output sample
     ),
-).double()
+)
 
 # ancillary encoder model: map ancillary fields to ancillary space
 # input:  (n_ancillary, patch_size)
@@ -194,7 +194,7 @@ ancillary_encoder_model = torch.nn.Sequential(
         in_features=16,
         out_features=args.latent_ancillary_dim,
     ),
-).double()
+)
 
 # decoder model: map latent variables to variables on patches
 # input:  (d_latent)
@@ -215,7 +215,7 @@ decoder_model = torch.nn.Sequential(
         dim=-1,
         unflattened_size=(train_ds.n_func_target, spherical_patch_covering.patch_size),
     ),
-).double()
+)
 
 # interaction model: function on latent space
 interaction_model = torch.nn.Sequential(
@@ -234,7 +234,7 @@ interaction_model = torch.nn.Sequential(
         in_features=8,
         out_features=args.latent_dynamic_dim,
     ),
-).double()
+)
 
 n_train_samples = train_ds.n_samples
 n_valid_samples = valid_ds.n_samples
@@ -263,6 +263,7 @@ model = torch.nn.Sequential(
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 model = model.to(device)  # transfer the model to the GPU
+print(f"Running on device {device}")
 
 optimiser = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
 

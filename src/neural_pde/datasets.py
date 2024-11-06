@@ -84,6 +84,7 @@ class SphericalFunctionSpaceDataset(Dataset):
         nsamples,
         data=None,
         metadata=None,
+        dtype=None,
     ):
         """Initialise new instance
 
@@ -94,11 +95,13 @@ class SphericalFunctionSpaceDataset(Dataset):
         :arg nsamples: number of samples
         :arg data: data to initialise with
         :arg metadata: metadata to initialise with
+        :arg dtype: type to which the data is converted to
         """
         self.n_func_in_dynamic = n_func_in_dynamic
         self.n_func_in_ancillary = n_func_in_ancillary
         self.n_func_target = n_func_target
         self.n_ref = n_ref
+        self.dtype = torch.get_default_dtype() if dtype is None else dtype
         mesh = UnitIcosahedralSphereMesh(n_ref)  # create the mesh
         self._fs = FunctionSpace(mesh, "CG", 1)  # define the function space
         self.n_samples = nsamples
@@ -125,11 +128,11 @@ class SphericalFunctionSpaceDataset(Dataset):
         """
         X = torch.tensor(
             self._data[idx, : self.n_func_in_dynamic + self.n_func_in_ancillary],
-            dtype=torch.float64,
+            dtype=self.dtype,
         )
         y = torch.tensor(
             self._data[idx, self.n_func_in_dynamic + self.n_func_in_ancillary :],
-            dtype=torch.float64,
+            dtype=self.dtype,
         )
         return (X, y)
 

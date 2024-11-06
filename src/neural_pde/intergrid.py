@@ -9,12 +9,13 @@ from firedrake.__future__ import interpolate
 __all__ = ["Interpolator", "AdjointInterpolator"]
 
 
-def torch_interpolation_tensor(fs_from, fs_to, transpose=False):
+def torch_interpolation_tensor(fs_from, fs_to, transpose=False, dtype=None):
     """Construct a sparse torch tensor for the interpolation from fs_from to fs_to.
 
     :arg fs_from: function space to interpolate from
     :arg fs_to: function space to interpolate to
     :arg transpose: transpose matrix?
+    :arg dtype: datatype. Use torch default if None
     """
     u_from = Function(fs_from)
     u_to = Function(fs_to)
@@ -37,7 +38,7 @@ def torch_interpolation_tensor(fs_from, fs_to, transpose=False):
                 mat[j, :] = w[:]
             else:
                 mat[:, j] = w[:]
-    a = torch.tensor(mat)
+    a = torch.tensor(mat, dtype=torch.get_default_dtype() if dtype is None else dtype)
     return a.to_sparse()
 
 
@@ -50,18 +51,25 @@ class Interpolator(torch.nn.Module):
     v = interpolate(u).
     """
 
-    def __init__(self, fs_from, fs_to):
+    def __init__(self, fs_from, fs_to, dtype=None):
         """Initialise new instance
 
         :arg fs_from: original function space
         :arg fs_to: target function space that we want to interpolate to
         :arg assemble: assemble sparse torch matrix of interpolation
+        :arg dtype: datatype. Use torch default if None
         """
         super().__init__()
         self.in_features = int(fs_from.dof_count)
         self.out_features = int(fs_to.dof_count)
         self.register_buffer(
-            "a_sparse", torch_interpolation_tensor(fs_from, fs_to, transpose=True)
+            "a_sparse",
+            torch_interpolation_tensor(
+                fs_from,
+                fs_to,
+                transpose=True,
+                dtype=torch.get_default_dtype() if dtype is None else dtype,
+            ),
         )
 
     def forward(self, x):
@@ -84,17 +92,24 @@ class AdjointInterpolator(torch.nn.Module):
     adjoint of the Encoder operation.
     """
 
-    def __init__(self, fs_from, fs_to):
+    def __init__(self, fs_from, fs_to, dtype=None):
         """Initialise new instance
 
         :arg fs_from: original function space that we want to interpolate from
         :arg fs_to: target function space to which we want to interpolate
+        :arg dtype: datatype. Use torch default if None
         """
         super().__init__()
         self.in_features = int(fs_to.dof_count)
         self.out_features = int(fs_from.dof_count)
         self.register_buffer(
-            "a_sparse", torch_interpolation_tensor(fs_from, fs_to, transpose=False)
+            "a_sparse",
+            torch_interpolation_tensor(
+                fs_from,
+                fs_to,
+                transpose=False,
+                dtype=torch.get_default_dtype() if dtype is None else dtype,
+            ),
         )
 
     def forward(self, x):

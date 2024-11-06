@@ -37,17 +37,17 @@ def test_jacobian(function_spaces, Operator):
     """Check that the Jacobian of the encoder and decoder are correct"""
     # Sizes of function spaces
     fs, fs_vom = function_spaces
-    operator = Operator(fs, fs_vom).double()
+    operator = Operator(fs, fs_vom)
     n_in = operator.in_features
     n_out = operator.out_features
     # extract matrix
     A = np.zeros((n_out, n_in))
     for j in range(n_in):
-        x = torch.zeros(n_in, dtype=torch.float64)
+        x = torch.zeros(n_in)
         x[j] = 1.0
         y = operator(x)
         A[:, j] = np.asarray(y.detach())
-    x = torch.zeros(n_in, dtype=torch.float64)
+    x = torch.zeros(n_in)
     # extract Jacobian
     J = np.asarray(torch.autograd.functional.jacobian(operator, x))
     assert (
@@ -60,10 +60,10 @@ def test_jacobian(function_spaces, Operator):
 def test_jacobian_shape(function_spaces, Operator):
     """Check that the shape of the Jacobian is as expected"""
     fs, fs_vom = function_spaces
-    operator = Operator(fs, fs_vom).double()
+    operator = Operator(fs, fs_vom)
     n_in = operator.in_features
     n_out = operator.out_features
-    x = torch.zeros(n_in, dtype=torch.float64)
+    x = torch.zeros(n_in)
     J = np.asarray(torch.autograd.functional.jacobian(operator, x))
     assert J.shape == (n_out, n_in)
 
@@ -72,12 +72,12 @@ def test_jacobians_are_adjoint(function_spaces):
     """Check that the jacobian of the decoder is the adjoint of the jacobian
     of the encoder"""
     fs, fs_vom = function_spaces
-    encoder = Interpolator(fs, fs_vom).double()
-    decoder = AdjointInterpolator(fs, fs_vom).double()
+    encoder = Interpolator(fs, fs_vom)
+    decoder = AdjointInterpolator(fs, fs_vom)
     n_in = encoder.in_features
     n_out = decoder.in_features
-    x = torch.zeros(n_in, dtype=torch.float64)
-    y = torch.zeros(n_out, dtype=torch.float64)
+    x = torch.zeros(n_in)
+    y = torch.zeros(n_out)
     # Jacobian of encoder
     J_encoder = np.asarray(torch.autograd.functional.jacobian(encoder, x))
     # Jacobian of decoder
@@ -97,9 +97,9 @@ def test_manual_interpolation(function_spaces):
     v.interpolate(u)
 
     # dof vectors for u and v
-    u_dofs = to_torch(u).flatten()
-    v_dofs = to_torch(v).flatten()
-    encoder = Interpolator(fs, fs_vom).double()
+    u_dofs = to_torch(u, dtype=torch.get_default_dtype()).flatten()
+    v_dofs = to_torch(v, dtype=torch.get_default_dtype()).flatten()
+    encoder = Interpolator(fs, fs_vom)
     w_dofs = np.asarray(encoder(u_dofs))
     assert np.all(np.isclose(v_dofs, w_dofs))
 
@@ -127,8 +127,8 @@ def test_manual_interpolation_4d(function_spaces):
                 v.interpolate(u)
                 with v.dat.vec_ro as v_vec:
                     v_dofs[i1, i2, i3, :] = v_vec[:]
-    encoder = Interpolator(fs, fs_vom).double()
-    w_dofs = np.asarray(encoder(torch.tensor(u_dofs)))
+    encoder = Interpolator(fs, fs_vom)
+    w_dofs = np.asarray(encoder(torch.tensor(u_dofs, dtype=torch.get_default_dtype())))
     assert np.all(np.isclose(v_dofs, w_dofs))
 
 
@@ -137,19 +137,29 @@ def test_two_dimensions(function_spaces):
     for an input tensor with the shape (n, n_in). Output should be of the shape
     (n, n_vom)"""
     fs, fs_vom = function_spaces
-    encoder = Interpolator(fs, fs_vom).double()
+    encoder = Interpolator(fs, fs_vom)
     mesh = fs.mesh()
     u1 = Function(fs)
     u2 = Function(fs)
     x, y = SpatialCoordinate(mesh)
     u1.interpolate(1 + sin(x * pi * 2) * sin(y * pi * 2))
     u2.interpolate(2 + sin(x * pi * 2) * cos(y * pi * 2))
-    u_dofs_tensor = torch.vstack((to_torch(u1).flatten(), to_torch(u2).flatten()))
+    u_dofs_tensor = torch.vstack(
+        (
+            to_torch(u1, dtype=torch.get_default_dtype()).flatten(),
+            to_torch(u2, dtype=torch.get_default_dtype()).flatten(),
+        )
+    )
     v1 = Function(fs_vom)
     v1.interpolate(u1)
     v2 = Function(fs_vom)
     v2.interpolate(u2)
-    v_dofs_tensor = torch.vstack((to_torch(v1).flatten(), to_torch(v2).flatten()))
+    v_dofs_tensor = torch.vstack(
+        (
+            to_torch(v1, dtype=torch.get_default_dtype()).flatten(),
+            to_torch(v2, dtype=torch.get_default_dtype()).flatten(),
+        )
+    )
     w_dofs_tensor = np.asarray(encoder(u_dofs_tensor))
     assert np.all(np.isclose(v_dofs_tensor, w_dofs_tensor))
 
@@ -159,20 +169,30 @@ def test_three_dimensions(function_spaces):
     for an input tensor with the shape (batch_size, n, n_in). Output should be of the shape
     (batch_size, n, n_vom)"""
     fs, fs_vom = function_spaces
-    encoder = Interpolator(fs, fs_vom).double()
+    encoder = Interpolator(fs, fs_vom)
     mesh = fs.mesh()
     u1 = Function(fs)
     u2 = Function(fs)
     x, y = SpatialCoordinate(mesh)
     u1.interpolate(1 + sin(x * pi * 2) * sin(y * pi * 2))
     u2.interpolate(2 + sin(x * pi * 2) * cos(y * pi * 2))
-    u_dofs_tensor = torch.vstack((to_torch(u1).flatten(), to_torch(u2).flatten()))
+    u_dofs_tensor = torch.vstack(
+        (
+            to_torch(u1, dtype=torch.get_default_dtype()).flatten(),
+            to_torch(u2, dtype=torch.get_default_dtype()).flatten(),
+        )
+    )
     u_dofs_batches = torch.vstack((u_dofs_tensor, u_dofs_tensor, u_dofs_tensor))
     v1 = Function(fs_vom)
     v1.interpolate(u1)
     v2 = Function(fs_vom)
     v2.interpolate(u2)
-    v_dofs_tensor = torch.vstack((to_torch(v1).flatten(), to_torch(v2).flatten()))
+    v_dofs_tensor = torch.vstack(
+        (
+            to_torch(v1, dtype=torch.get_default_dtype()).flatten(),
+            to_torch(v2, dtype=torch.get_default_dtype()).flatten(),
+        )
+    )
     v_dofs_batches = torch.vstack((v_dofs_tensor, v_dofs_tensor, v_dofs_tensor))
     w_dofs_batches = np.asarray(encoder(u_dofs_batches))
     assert np.all(np.isclose(v_dofs_batches, w_dofs_batches))

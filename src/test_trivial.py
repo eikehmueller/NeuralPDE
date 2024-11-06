@@ -1,8 +1,7 @@
-'''This module tests the trivial cases where nt = 0. The tests here are
+"""This module tests the trivial cases where nt = 0. The tests here are
 
 1: check that the projection matrix satisfies trivial matrix permutations
-2: check that  model = decoder(encoder(.)) maps X to X.'''
-
+2: check that  model = decoder(encoder(.)) maps X to X."""
 
 from firedrake import *
 import torch
@@ -28,23 +27,23 @@ V1 = FunctionSpace(mesh1, "CG", 1)  # define the function space
 V2 = FunctionSpace(mesh2, "CG", 1)  # define the function space
 
 
-dynamic_encoder_model = torch.nn.Flatten(start_dim=-2, end_dim=-1).double()
-ancillary_encoder_model = torch.nn.Flatten(start_dim=-2, end_dim=-1).double()
+dynamic_encoder_model = torch.nn.Flatten(start_dim=-2, end_dim=-1)
+ancillary_encoder_model = torch.nn.Flatten(start_dim=-2, end_dim=-1)
 decoder_model = torch.nn.Unflatten(
     dim=-1, unflattened_size=(n_output, spherical_patch_covering.patch_size)
-).double()
+)
 
 
 def test_trivial_projection():
     """Check that the projection matrix satisfies trivial matrix operations
 
-    PatchEncoder is our projection P.  If the PatchDecoder is the Transpose of P, 
+    PatchEncoder is our projection P.  If the PatchDecoder is the Transpose of P,
     then y^T(xP) = (xP)^T(xP) = P^Tx^TY and this is what is checked."""
-    
+
     # construct P, X and Y
     batchsize = 4
     P = torch_interpolation_tensor(fs_from=V1, fs_to=V2, transpose=True)
-    X = torch.randn(batchsize, V1.dim()).double()
+    X = torch.randn(batchsize, V1.dim())
     Y = torch.matmul(X, P)
 
     # calculate the transpose
@@ -61,7 +60,7 @@ def test_trivial_encoder():
     For random input X compute Y = model(X) and Ax = encoder(X). Then check that
     the dot-product X^T.Y is identical to the squared l2 norm of Ax, i.e. ||Ax||_2^2 = Ax^T.Ax.
     """
-    
+
     # define the model
     encoder = PatchEncoder(
         V1,
@@ -78,13 +77,13 @@ def test_trivial_encoder():
     )
 
     batchsize = 4
-    X = torch.randn(batchsize, n_dynamic + n_ancillary, V1.dim()).double()
+    X = torch.randn(batchsize, n_dynamic + n_ancillary, V1.dim())
     Y = model(X)
 
     # calculate XtY
     XtY = torch.einsum("bij,bij->bi", X, Y)
     XtY = XtY.detach().numpy()
-    
+
     # calculate l2 norm of Ax
     Ax = encoder(X)
     Ax_L2 = torch.einsum("bpi,bpi->bi", Ax, Ax)

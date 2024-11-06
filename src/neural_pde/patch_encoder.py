@@ -57,6 +57,7 @@ class PatchEncoder(torch.nn.Module):
         dynamic_encoder_model,
         ancillary_encoder_model,
         n_dynamic,
+        dtype=None,
     ):
         """Initialise instance
 
@@ -68,6 +69,7 @@ class PatchEncoder(torch.nn.Module):
         :arg ancillary_encoder_model: model that maps tensors of shape
             (n_{ancillary},patch_size) to tensors of shape (d_{ancillary},)
         :arg n_dynamic: number of dynamic functions
+        :arg dtype: datatype. Use torch default if None
         """
         super().__init__()
         self._dynamic_encoder_model = dynamic_encoder_model
@@ -88,7 +90,11 @@ class PatchEncoder(torch.nn.Module):
 
         continue_annotation()
         with set_working_tape() as _:
-            self._function_to_patch = Interpolator(fs, vertex_only_fs)
+            self._function_to_patch = Interpolator(
+                fs,
+                vertex_only_fs,
+                dtype=torch.get_default_dtype() if dtype is None else dtype,
+            )
         pause_annotation()
 
         self._n_dynamic = n_dynamic
