@@ -271,6 +271,7 @@ writer = SummaryWriter(flush_secs=5)
 for epoch in range(args.nepoch):
     print(f"epoch {epoch + 1} of {args.nepoch}")
     train_loss = 0
+    model.train(True)
     for Xb, yb in tqdm.tqdm(train_dl):
         Xb = Xb.to(device)  # move to GPU
         yb = yb.to(device)  # move to GPU
@@ -286,7 +287,8 @@ for epoch in range(args.nepoch):
         gc.collect()
         torch.cuda.empty_cache()
 
-    # validation loop
+    # validation
+    model.train(False)
     valid_loss = 0
     for Xv, yv in valid_dl:
         Xv = Xv.to(device)  # move to GPU
