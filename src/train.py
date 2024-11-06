@@ -283,10 +283,6 @@ for epoch in range(args.nepoch):
         optimiser.step()  # adjust the parameters by the gradient collected in the backwards pass
         # data collection for the model
         train_loss += loss.item() / (n_train_samples // args.batchsize)
-        del Xb  # clearing the cache
-        del yb
-        gc.collect()
-        torch.cuda.empty_cache()
 
     # validation
     model.train(False)
