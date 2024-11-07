@@ -9,10 +9,8 @@ dual_ref = 0             # number of refinements of dual mesh
 n_radial = 3             # number of radial points on each patch
 latent_dynamic_dim = 7   # dimension of dynamic latent space
 latent_ancillary_dim = 3 # dimension of ancillary latent space
-
-[processor]
-nt = 10  # number of time steps
-dt = 0.1 # size of timestep 
+nt = 10                  # number of time steps
+dt = 0.1                 # size of timestep 
 
 [optimiser]
 nepoch = 100           # number of epochs
