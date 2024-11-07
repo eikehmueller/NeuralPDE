@@ -139,7 +139,7 @@ for j, (X, y_target) in enumerate(iter(valid_ds)):
     f_target = Function(V, name="target")
     f_target.dat.data[:] = y_target.detach().numpy()[0, :]
 
-    f_pred = Function(V, name="pedicted")
+    f_pred = Function(V, name="predicted")
     f_pred.dat.data[:] = y_pred.detach().numpy()[0, :]
 
     file = VTKFile(f"{path_to_output}/output_{j:04d}.pvd")
