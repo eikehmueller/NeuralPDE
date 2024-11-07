@@ -1,5 +1,6 @@
 import torch
 
+
 class NeuralSolver(torch.nn.Module):
     """Neural solver which integrates forward the equations of motion in latent space.
 
@@ -40,7 +41,6 @@ class NeuralSolver(torch.nn.Module):
         interaction_model,
         nsteps=1,
         stepsize=1.0,
-        assert_testing=None
     ):
         """Initialise new instance
 
@@ -59,7 +59,6 @@ class NeuralSolver(torch.nn.Module):
             [j] + beta
             for j, beta in enumerate(self.spherical_patch_covering.neighbour_list)
         ]
-        self.assert_testing = assert_testing
 
     def forward(self, x):
         """Carry out a number of forward-Euler steps for the latent variables on the dual mesh
@@ -71,36 +70,26 @@ class NeuralSolver(torch.nn.Module):
             x = x.squeeze(0)
             index = (
                 torch.tensor(self._neighbour_list, device=device)
-                .unsqueeze(-1) 
-                .expand((-1, -1, x.shape[-1])) 
-                )
-            
+                .unsqueeze(-1)
+                .expand((-1, -1, x.shape[-1]))
+            )
+
             for _ in range(self.nsteps):
                 # ---- stage 1 ---- gather to tensor Z of shape
                 #                   (n_patch,4,d_{lat}^{dynamic}+d_{lat}^{ancillary})
                 z = torch.gather(
                     x.unsqueeze(-2).repeat((x.shape[0], 4, x.shape[-1])),
-                    0, 
-                    index, # must have same number of dimensions as the input
+                    0,
+                    index,  # must have same number of dimensions as the input
                 )
-
-                if self.assert_testing is not None:
-                    assert z.shape[0] == self.assert_testing["n_patches"], "z[1] is not equal to n_patches"
-                    assert z.shape[1] == 4,                                "z[2] is not equal to 4"
-                    assert z.shape[2] == self.assert_testing["d_lat"],     "z[3] is not equal to d_lat"
 
                 # ---- stage 2 ---- apply interaction model to obtain tensor of shape
                 #                   (n_patch,d_{lat}^{dynamic})
                 fz = self.interaction_model(z)
 
-                if self.assert_testing is not None:
-                    assert fz.shape[0] == self.assert_testing["n_patches"], "fz[0] is not equal to n_patches"
-                    assert fz.shape[1] == self.assert_testing["d_dyn"],     "fz[1] is not equal to d_dyn"
-
-
                 # ---- stage 3 ---- pad with zeros in last dimension to obtain a tensor dY of shape
                 #                   (n_patch,d_{lat}^{dynamic}+d_{lat}^{ancillary})
-                dx = torch.nn.functional.pad( 
+                dx = torch.nn.functional.pad(
                     fz, (0, x.shape[-1] - fz.shape[-1]), mode="constant", value=0
                 )
 
@@ -111,9 +100,9 @@ class NeuralSolver(torch.nn.Module):
         else:
             index = (
                 torch.tensor(self._neighbour_list, device=device)
-                .unsqueeze(0) 
-                .unsqueeze(-1) 
-                .expand((x.shape[0], -1, -1, x.shape[-1])) 
+                .unsqueeze(0)
+                .unsqueeze(-1)
+                .expand((x.shape[0], -1, -1, x.shape[-1]))
             )
             for _ in range(self.nsteps):
                 # ---- stage 1 ---- gather to tensor Z of shape
@@ -121,28 +110,17 @@ class NeuralSolver(torch.nn.Module):
 
                 z = torch.gather(
                     x.unsqueeze(-2).repeat((x.shape[0], x.shape[1], 4, x.shape[-1])),
-                    1, 
-                    index, 
+                    1,
+                    index,
                 )
-
-                if self.assert_testing is not None:
-                    assert z.shape[0] == self.assert_testing["batchsize"], "z[0] is not equal to batch size"
-                    assert z.shape[1] == self.assert_testing["n_patches"], "z[1] is not equal to n_patches"
-                    assert z.shape[2] == 4,                                "z[2] is not equal to 4"
-                    assert z.shape[3] == self.assert_testing["d_lat"],     "z[3] is not equal to d_lat"
 
                 # ---- stage 2 ---- apply interaction model to obtain tensor of shape
                 #                   (B,n_patch,d_{lat}^{dynamic})
                 fz = self.interaction_model(z)
 
-                if self.assert_testing is not None:
-                    assert fz.shape[0] == self.assert_testing["batchsize"], "fz[0] is not equal to batch size"
-                    assert fz.shape[1] == self.assert_testing["n_patches"], "fz[1] is not equal to n_patches"
-                    assert fz.shape[2] == self.assert_testing["d_dyn"],     "fz[2] is not equal to d_dyn"
-
                 # ---- stage 3 ---- pad with zeros in last dimension to obtain a tensor dY of shape
                 #                   (B,n_patch,d_{lat}^{dynamic}+d_{lat}^{ancillary})
-                dx = torch.nn.functional.pad( 
+                dx = torch.nn.functional.pad(
                     fz, (0, x.shape[-1] - fz.shape[-1]), mode="constant", value=0
                 )
 
