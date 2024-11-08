@@ -15,7 +15,7 @@ import argparse
 from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header
 from neural_pde.loss_functions import normalised_mse as loss_fn
 
-from model import build_model
+from model import build_model, load_model
 
 # Create argparse arguments
 parser = argparse.ArgumentParser()
@@ -29,11 +29,11 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--path_to_output_folder",
+    "--model",
     type=str,
     action="store",
-    help="path to output folder",
-    default="output",
+    help="directory to stored trained model in",
+    default="saved_model",
 )
 
 args, _ = parser.parse_known_args()
@@ -126,21 +126,4 @@ writer.flush()
 end = timer()
 print(f"Runtime: {timedelta(seconds=end-start)}")
 
-# visualise the validation dataset
-host_model = model.cpu()
-mesh = UnitIcosahedralSphereMesh(train_ds.n_ref)
-V = FunctionSpace(mesh, "CG", 1)
-for j, (X, y_target) in enumerate(iter(valid_ds)):
-    y_pred = host_model(X)
-
-    f_input = Function(V, name="input")
-    f_input.dat.data[:] = X.detach().numpy()[0, :]
-
-    f_target = Function(V, name="target")
-    f_target.dat.data[:] = y_target.detach().numpy()[0, :]
-
-    f_pred = Function(V, name="predicted")
-    f_pred.dat.data[:] = y_pred.detach().numpy()[0, :]
-
-    file = VTKFile(f"{path_to_output}/output_{j:04d}.pvd")
-    file.write(f_input, f_target, f_pred)
+model.save(args.model)
