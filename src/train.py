@@ -37,7 +37,6 @@ parser.add_argument(
 )
 
 args, _ = parser.parse_known_args()
-path_to_output = args.path_to_output_folder
 
 with open(args.config, "rb") as f:
     config = tomllib.load(f)
