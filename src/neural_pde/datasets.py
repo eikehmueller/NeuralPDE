@@ -146,14 +146,14 @@ class SphericalFunctionSpaceDataset(Dataset):
         :arg filename: name of file to save to"""
         with h5py.File(filename, "w") as f:
             group = f.create_group("base")
-            dset = group.create_dataset("data", data=self._data)
+            group.create_dataset("data", data=self._data)
             f.attrs["n_func_in_dynamic"] = int(self.n_func_in_dynamic)
             f.attrs["n_func_in_ancillary"] = int(self.n_func_in_ancillary)
             f.attrs["n_func_target"] = int(self.n_func_target)
             f.attrs["n_ref"] = int(self.n_ref)
             f.attrs["n_samples"] = int(self.n_samples)
             f.attrs["class"] = type(self).__name__
-            metadata = group.create_dataset("metadata", data=json.dumps(self.metadata))
+            group.create_dataset("metadata", data=json.dumps(self.metadata))
 
 
 class AdvectionDataset(SphericalFunctionSpaceDataset):
