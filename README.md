@@ -19,7 +19,7 @@ If you want to edit the code, you might prefer to install in editable mode with
 
 ### Usage
 #### Generating data
-To generate data, use the script [src/generate_data.sh], which will write the training, validation and test datasets as hdf5 file. A generated file `DATA.h5` can be inspected with the `show_hdf5_header()` method which can be invoked as follows:
+To generate data, use [src/data_generator.py], which can be controlled via command line options (run `python data_generator.py --help` to see these), can be used to generate datasets as hdf5 files. For convenience, the script [src/generate_data.sh] will generate the training, validation and test datasets. A generated file `DATA.h5` can be inspected with the `show_hdf5_header()` method which can be invoked as follows:
 ```
 python -c "from neural_pde.datasets import show_hdf5_header; show_hdf5_header('DATA.h5')"
 ```
