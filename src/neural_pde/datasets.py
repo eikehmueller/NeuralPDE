@@ -57,6 +57,7 @@ def show_hdf5_header(filename):
             "n_func_in_ancillary",
             "n_func_target",
             "n_ref",
+            "n_dof",
             "n_samples",
         ]:
             print(f"    {item:20s} = {f.attrs[item]:8d}")
@@ -151,6 +152,7 @@ class SphericalFunctionSpaceDataset(Dataset):
             f.attrs["n_func_in_ancillary"] = int(self.n_func_in_ancillary)
             f.attrs["n_func_target"] = int(self.n_func_target)
             f.attrs["n_ref"] = int(self.n_ref)
+            f.attrs["n_dof"] = int(self._fs.dof_count)
             f.attrs["n_samples"] = int(self.n_samples)
             f.attrs["class"] = type(self).__name__
             group.create_dataset("metadata", data=json.dumps(self.metadata))

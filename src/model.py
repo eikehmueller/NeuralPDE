@@ -1,3 +1,5 @@
+"""Encoder-processor-decoder model"""
+
 from firedrake import *
 import torch
 import os
@@ -19,7 +21,7 @@ def build_model(
     architecture,
 ):
     """
-    Construct encoder - processor - decoder network
+    Construct encoder - processor - decoder model
 
     :arg n_ref: number of refinement steps of icosahedral mesh
     :arg n_func_in_dynamic: number of dynamic input functions
@@ -35,23 +37,29 @@ def build_model(
 
 
 def load_model(directory):
+    """Load model from disk
+
+    :arg directory: directory containing the saved model"""
     model = NeuralPDEModel()
     model.load(directory)
     return model
 
 
 class NeuralPDEModel(torch.nn.Sequential):
-    """encoder - processor - decoder network"""
+    """Class representing the encoder - processor - decoder network"""
 
     def __init__(self):
+        """Initialise a new instance with empty model"""
         super().__init__()
+        self.architecture = None
+        self.dimensions = None
         self.initialised = False
 
     def setup(
         self, n_ref, n_func_in_dynamic, n_func_in_ancillary, n_func_target, architecture
     ):
         """
-        Initialise new instance
+        Initialise new instance with model
 
         :arg n_ref: number of refinement steps of icosahedral mesh
         :arg n_func_in_dynamic: number of dynamic input functions
@@ -72,16 +80,17 @@ class NeuralPDEModel(torch.nn.Sequential):
             architecture["dual_ref"], architecture["n_radial"]
         )
         print(
-            f"  points per patch                = {spherical_patch_covering.patch_size}",
+            f"  points per patch                     = {spherical_patch_covering.patch_size}",
         )
         print(
-            f"  number of patches               = {spherical_patch_covering.n_patches}",
+            f"  number of patches                    = {spherical_patch_covering.n_patches}",
         )
         print(
-            f"  number of points in all patches = {spherical_patch_covering.n_points}",
+            f"  number of points in all patches      = {spherical_patch_covering.n_points}",
         )
         mesh = UnitIcosahedralSphereMesh(n_ref)  # create the mesh
         V = FunctionSpace(mesh, "CG", 1)  # define the function space
+        print(f"  number of unknowns if function space = {V.dof_count}")
 
         # encoder models
         # dynamic encoder model: map all fields to the latent space
@@ -92,13 +101,15 @@ class NeuralPDEModel(torch.nn.Sequential):
             torch.nn.Linear(
                 in_features=(n_func_in_dynamic + n_func_in_ancillary)
                 * spherical_patch_covering.patch_size,  # size of each input sample
-                out_features=16,
+                out_features=32,
             ),
             torch.nn.Softplus(),
-            torch.nn.Linear(in_features=16, out_features=16),
+            torch.nn.Linear(in_features=32, out_features=32),
+            torch.nn.Softplus(),
+            torch.nn.Linear(in_features=32, out_features=32),
             torch.nn.Softplus(),
             torch.nn.Linear(
-                in_features=16,
+                in_features=32,
                 out_features=architecture["latent_dynamic_dim"],
             ),
         )
@@ -110,13 +121,15 @@ class NeuralPDEModel(torch.nn.Sequential):
             torch.nn.Flatten(start_dim=-2, end_dim=-1),
             torch.nn.Linear(
                 in_features=n_func_in_ancillary * spherical_patch_covering.patch_size,
-                out_features=16,
+                out_features=32,
             ),
             torch.nn.Softplus(),
-            torch.nn.Linear(in_features=16, out_features=16),
+            torch.nn.Linear(in_features=32, out_features=32),
+            torch.nn.Softplus(),
+            torch.nn.Linear(in_features=32, out_features=32),
             torch.nn.Softplus(),
             torch.nn.Linear(
-                in_features=16,
+                in_features=32,
                 out_features=architecture["latent_ancillary_dim"],
             ),
         )
@@ -128,13 +141,15 @@ class NeuralPDEModel(torch.nn.Sequential):
             torch.nn.Linear(
                 in_features=architecture["latent_dynamic_dim"]
                 + architecture["latent_ancillary_dim"],
-                out_features=16,
+                out_features=32,
             ),
             torch.nn.Softplus(),
-            torch.nn.Linear(in_features=16, out_features=16),
+            torch.nn.Linear(in_features=32, out_features=32),
+            torch.nn.Softplus(),
+            torch.nn.Linear(in_features=32, out_features=32),
             torch.nn.Softplus(),
             torch.nn.Linear(
-                in_features=16,
+                in_features=32,
                 out_features=n_func_target * spherical_patch_covering.patch_size,
             ),
             torch.nn.Unflatten(
@@ -155,16 +170,16 @@ class NeuralPDEModel(torch.nn.Sequential):
                     architecture["latent_dynamic_dim"]
                     + architecture["latent_ancillary_dim"]
                 ),
-                out_features=8,
+                out_features=16,
             ),
             torch.nn.Softplus(),
             torch.nn.Linear(
-                in_features=8,
-                out_features=8,
+                in_features=16,
+                out_features=16,
             ),
             torch.nn.Softplus(),
             torch.nn.Linear(
-                in_features=8,
+                in_features=16,
                 out_features=architecture["latent_dynamic_dim"],
             ),
         )
@@ -198,6 +213,8 @@ class NeuralPDEModel(torch.nn.Sequential):
     def save(self, directory):
         """Save model to disk
 
+        The model weights are saved in model.pt and model metadata in model.json
+
         :arg directory: directory to save in
         """
         assert self.initialised
@@ -211,7 +228,7 @@ class NeuralPDEModel(torch.nn.Sequential):
     def load(self, directory):
         """Load model from disk
 
-        :arg directory: directory to save in
+        :arg directory: directory to load model from
         """
         with open(os.path.join(directory, "model.json"), "r", encoding="utf8") as f:
             config = json.load(f)

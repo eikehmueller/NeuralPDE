@@ -17,6 +17,18 @@ as usual after installing the dependencies (see below).
 If you want to edit the code, you might prefer to install in editable mode with
 ```python -m pip install --editable .```
 
+### Usage
+#### Generating data
+To generate data, use the script [src/generate_data.sh], which will write the training, validation and test datasets as hdf5 file. A generated file `DATA.h5` can be inspected with the `show_hdf5_header()` method which can be invoked as follows:
+```
+python -c "from neural_pde.datasets import show_hdf5_header; show_hdf5_header('DATA.h5')"
+```
+#### Training
+To train the model, user [src/train.py], which is controlled by a parameter file such as `config.toml`. Run `python train.py --help`to see the command line options. The trained model is saved to disk.
+
+#### Evaluation
+The traibed model can be loaded and evaluated with [src/evaluate.py]. Run `python evaluate.py --help` to see the available command line options.
+
 ### Dependencies
 #### Firedrake
 See [here](https://www.firedrakeproject.org/download.html) for Firedrake installation instructions.
