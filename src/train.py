@@ -14,8 +14,7 @@ import argparse
 
 from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header
 from neural_pde.loss_functions import normalised_mse as loss_fn
-
-from model import build_model, load_model
+from neural_pde.model import build_model
 
 # Create argparse arguments
 parser = argparse.ArgumentParser()
