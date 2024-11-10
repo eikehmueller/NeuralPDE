@@ -78,8 +78,13 @@ model = model.to(device)  # transfer the model to the GPU
 print(f"Running on device {device}")
 
 optimiser = torch.optim.Adam(
-    model.parameters(), lr=config["optimiser"]["learning_rate"]
+    model.parameters(), lr=config["optimiser"]["initial_learning_rate"]
 )
+gamma = (
+    config["optimiser"]["final_learning_rate"]
+    / config["optimiser"]["initial_learning_rate"]
+) ** (1 / config["optimiser"]["nepoch"])
+scheduler = torch.optim.lr_scheduler.ExponentialLR(optimiser, gamma=gamma)
 
 writer = SummaryWriter(flush_secs=5)
 # main training loop
@@ -99,6 +104,7 @@ for epoch in range(config["optimiser"]["nepoch"]):
         train_loss += loss.item() / (
             train_ds.n_samples // config["optimiser"]["batchsize"]
         )
+    scheduler.step()
 
     # validation
     model.train(False)
@@ -118,6 +124,7 @@ for epoch in range(config["optimiser"]["nepoch"]):
         {"train": train_loss, "valid": valid_loss},
         epoch,
     )
+    writer.add_scalar("learning_rate", scheduler.get_last_lr()[0], epoch)
     print()
 writer.flush()
 

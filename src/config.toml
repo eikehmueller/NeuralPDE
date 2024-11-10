@@ -6,13 +6,14 @@ valid = "data/data_valid.h5" # file containing the validation data
 
 [architecture]
 dual_ref = 0             # number of refinements of dual mesh
-n_radial = 4             # number of radial points on each patch
+n_radial = 16            # number of radial points on each patch
 latent_dynamic_dim = 7   # dimension of dynamic latent space
 latent_ancillary_dim = 3 # dimension of ancillary latent space
-nt = 10                  # number of time steps
-dt = 0.1                 # size of timestep 
+nt = 16                  # number of time steps
+dt = 0.0625              # size of timestep 
 
 [optimiser]
-nepoch = 100          # number of epochs
-batchsize = 16        # size of training batches
-learning_rate = 0.001 # learning rate
+nepoch = 2000                 # number of epochs
+batchsize = 16                # size of training batches
+initial_learning_rate = 0.001 # initial learning rate
+final_learning_rate = 0.0001  # final learning rate
