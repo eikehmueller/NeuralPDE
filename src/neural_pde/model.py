@@ -90,7 +90,7 @@ class NeuralPDEModel(torch.nn.Sequential):
         )
         mesh = UnitIcosahedralSphereMesh(n_ref)  # create the mesh
         V = FunctionSpace(mesh, "CG", 1)  # define the function space
-        print(f"  number of unknowns if function space = {V.dof_count}")
+        print(f"  number of unknowns of function space = {V.dof_count}")
 
         # encoder models
         # dynamic encoder model: map all fields to the latent space
