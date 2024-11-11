@@ -1,4 +1,5 @@
 import torch
+import functools
 
 
 class NeuralSolver(torch.nn.Module):
@@ -55,76 +56,53 @@ class NeuralSolver(torch.nn.Module):
         self.interaction_model = interaction_model
         self.nsteps = nsteps
         self.stepsize = stepsize
+        # Construct nested list of the form
+        #
+        #   [[0,n^0_0,n^0_1,n^0_2,]... [j,n^j_0,n^j_1,n^j_2],...]
+        #
+        # where n^j_0, n^j_1,n^j_2 are the indices of the three neighbours of
+        # each vertex of the dual mesh.
         self._neighbour_list = [
             [j] + beta
             for j, beta in enumerate(self.spherical_patch_covering.neighbour_list)
         ]
+        self.register_buffer("index", torch.tensor(self._neighbour_list).unsqueeze(-1))
+
+    # @functools.cache
+    # def index(self, device):
+    #    """Index list on a particular device"""
+    #    return self._index.to(device)
 
     def forward(self, x):
         """Carry out a number of forward-Euler steps for the latent variables on the dual mesh
 
         :arg inputs: tensor of shape (B,n_patch,d_{latent}+d_{ancillary}) or (B,n_patch,d_{latent}+d_{ancillary})
         """
-        device = x.device
-        if x.dim() == 2 or x.shape[0] == 1:
-            x = x.squeeze(0)
-            index = (
-                torch.tensor(self._neighbour_list, device=device)
-                .unsqueeze(-1)
-                .expand((-1, -1, x.shape[-1]))
+        index = self.index.expand(x.shape[:-2] + (-1, -1, x.shape[-1]))
+        dim = x.dim()
+        for _ in range(self.nsteps):
+            # input x is of shape (B,n_patch,d_{lat}^{dynamic}+d_{lat}^{ancillary})
+            #
+            # ---- stage 1 ---- gather to tensor Z of shape
+            #                   (B,n_patch,4,d_{lat}^{dynamic}+d_{lat}^{ancillary})
+
+            z = torch.gather(
+                x.unsqueeze(-2).repeat((dim - 1) * (1,) + (4, 1)),
+                dim - 2,
+                index,
             )
 
-            for _ in range(self.nsteps):
-                # ---- stage 1 ---- gather to tensor Z of shape
-                #                   (n_patch,4,d_{lat}^{dynamic}+d_{lat}^{ancillary})
-                z = torch.gather(
-                    x.unsqueeze(-2).repeat((x.shape[0], 4, x.shape[-1])),
-                    0,
-                    index,  # must have same number of dimensions as the input
-                )
+            # ---- stage 2 ---- apply interaction model to obtain tensor of shape
+            #                   (B,n_patch,d_{lat}^{dynamic})
+            fz = self.interaction_model(z)
 
-                # ---- stage 2 ---- apply interaction model to obtain tensor of shape
-                #                   (n_patch,d_{lat}^{dynamic})
-                fz = self.interaction_model(z)
-
-                # ---- stage 3 ---- pad with zeros in last dimension to obtain a tensor dY of shape
-                #                   (n_patch,d_{lat}^{dynamic}+d_{lat}^{ancillary})
-                dx = torch.nn.functional.pad(
-                    fz, (0, x.shape[-1] - fz.shape[-1]), mode="constant", value=0
-                )
-
-                # ---- stage 4 ---- update Y = Y + dt*dY
-                x += self.stepsize * dx
-
-            return x
-        else:
-            index = (
-                torch.tensor(self._neighbour_list, device=device)
-                .unsqueeze(0)
-                .unsqueeze(-1)
-                .expand((x.shape[0], -1, -1, x.shape[-1]))
+            # ---- stage 3 ---- pad with zeros in last dimension to obtain a tensor dY of shape
+            #                   (B,n_patch,d_{lat}^{dynamic}+d_{lat}^{ancillary})
+            dx = torch.nn.functional.pad(
+                fz, (0, x.shape[-1] - fz.shape[-1]), mode="constant", value=0
             )
-            for _ in range(self.nsteps):
-                # ---- stage 1 ---- gather to tensor Z of shape
-                #                   (B,n_patch,4,d_{lat}^{dynamic}+d_{lat}^{ancillary})
 
-                z = torch.gather(
-                    x.unsqueeze(-2).repeat((x.shape[0], x.shape[1], 4, x.shape[-1])),
-                    1,
-                    index,
-                )
+            # ---- stage 4 ---- update Y = Y + dt*dY
+            x += self.stepsize * dx
 
-                # ---- stage 2 ---- apply interaction model to obtain tensor of shape
-                #                   (B,n_patch,d_{lat}^{dynamic})
-                fz = self.interaction_model(z)
-
-                # ---- stage 3 ---- pad with zeros in last dimension to obtain a tensor dY of shape
-                #                   (B,n_patch,d_{lat}^{dynamic}+d_{lat}^{ancillary})
-                dx = torch.nn.functional.pad(
-                    fz, (0, x.shape[-1] - fz.shape[-1]), mode="constant", value=0
-                )
-
-                # ---- stage 4 ---- update Y = Y + dt*dY
-                x += self.stepsize * dx
-
-            return x
+        return x

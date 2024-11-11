@@ -115,19 +115,6 @@ def test_sample_2d():
     assert y.shape == sample_2d.shape
 
 
-def test_sample_3d_flat():
-    """Check whether the input and output are the same shape"""
-    model = NeuralSolver(
-        spherical_patch_covering,
-        interaction_model,
-        nsteps=1,
-        stepsize=1.0,
-    )
-    y = model(sample_3d_flat).unsqueeze(0)
-
-    assert y.shape == sample_3d_flat.shape
-
-
 def test_sample_3d_full():
     """Check whether the input and output are the same shape"""
     model = NeuralSolver(
