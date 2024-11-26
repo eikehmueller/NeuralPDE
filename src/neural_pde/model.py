@@ -176,11 +176,6 @@ class NeuralPDEModel(torch.nn.Sequential):
             torch.nn.Softplus(),
             torch.nn.Linear(
                 in_features=16,
-                out_features=16,
-            ),
-            torch.nn.Softplus(),
-            torch.nn.Linear(
-                in_features=16,
                 out_features=architecture["latent_dynamic_dim"],
             ),
         )
