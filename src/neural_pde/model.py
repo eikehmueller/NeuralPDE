@@ -96,20 +96,21 @@ class NeuralPDEModel(torch.nn.Sequential):
         # dynamic encoder model: map all fields to the latent space
         # input:  (n_dynamic+n_ancillary, patch_size)
         # output: (latent_dynamic_dim)
+        n_hidden = 64
         dynamic_encoder_model = torch.nn.Sequential(
             torch.nn.Flatten(start_dim=-2, end_dim=-1),
             torch.nn.Linear(
                 in_features=(n_func_in_dynamic + n_func_in_ancillary)
                 * spherical_patch_covering.patch_size,  # size of each input sample
-                out_features=32,
+                out_features=n_hidden,
             ),
             torch.nn.Softplus(),
-            torch.nn.Linear(in_features=32, out_features=32),
+            torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
             torch.nn.Softplus(),
-            torch.nn.Linear(in_features=32, out_features=32),
+            torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
             torch.nn.Softplus(),
             torch.nn.Linear(
-                in_features=32,
+                in_features=n_hidden,
                 out_features=architecture["latent_dynamic_dim"],
             ),
         )
@@ -121,15 +122,15 @@ class NeuralPDEModel(torch.nn.Sequential):
             torch.nn.Flatten(start_dim=-2, end_dim=-1),
             torch.nn.Linear(
                 in_features=n_func_in_ancillary * spherical_patch_covering.patch_size,
-                out_features=32,
+                out_features=n_hidden,
             ),
             torch.nn.Softplus(),
-            torch.nn.Linear(in_features=32, out_features=32),
+            torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
             torch.nn.Softplus(),
-            torch.nn.Linear(in_features=32, out_features=32),
+            torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
             torch.nn.Softplus(),
             torch.nn.Linear(
-                in_features=32,
+                in_features=n_hidden,
                 out_features=architecture["latent_ancillary_dim"],
             ),
         )
@@ -141,15 +142,15 @@ class NeuralPDEModel(torch.nn.Sequential):
             torch.nn.Linear(
                 in_features=architecture["latent_dynamic_dim"]
                 + architecture["latent_ancillary_dim"],
-                out_features=32,
+                out_features=n_hidden,
             ),
             torch.nn.Softplus(),
-            torch.nn.Linear(in_features=32, out_features=32),
+            torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
             torch.nn.Softplus(),
-            torch.nn.Linear(in_features=32, out_features=32),
+            torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
             torch.nn.Softplus(),
             torch.nn.Linear(
-                in_features=32,
+                in_features=n_hidden,
                 out_features=n_func_target * spherical_patch_covering.patch_size,
             ),
             torch.nn.Unflatten(

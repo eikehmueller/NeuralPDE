@@ -1,28 +1,28 @@
 #!/bin/bash
-NREF=3
+NREF=4
 DEGREE=4
 PHI=0.5
 
 python data_generator.py \
-    --filename data/data_train.h5 \
+    --filename data/data_train_nref4.h5 \
     --nref ${NREF} \
     --degree ${DEGREE} \
     --phi ${PHI} \
-    --nsamples 512 \
+    --nsamples 1024 \
     --seed 152167
 
 python data_generator.py \
-    --filename data/data_valid.h5 \
+    --filename data/data_valid_nref4.h5 \
     --nref ${NREF} \
     --degree ${DEGREE} \
     --phi ${PHI} \
-    --nsamples 64 \
+    --nsamples 128 \
     --seed 251373
 
 python data_generator.py \
-    --filename data/data_test.h5 \
+    --filename data/data_test_nref4.h5 \
     --nref ${NREF} \
     --degree ${DEGREE} \
     --phi ${PHI} \
-    --nsamples 64 \
+    --nsamples 128 \
     --seed 515157
