@@ -7,7 +7,7 @@ import os
 import argparse
 
 from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header
-from neural_pde.loss_functions import normalised_mse as loss_fn
+from neural_pde.loss_functions import normalised_rmse as loss_fn
 from neural_pde.model import load_model
 
 parser = argparse.ArgumentParser()
@@ -47,7 +47,8 @@ print()
 
 dataset = load_hdf5_dataset(args.data)
 
-dataloader = DataLoader(dataset, batch_size=1)
+batch_size = len(dataset)
+dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
 model = load_model(args.model)
 
@@ -58,9 +59,9 @@ avg_loss = 0
 for Xv, yv in dataloader:
     yv_pred = model(Xv)
     loss = loss_fn(yv_pred, yv)
-    avg_loss += loss.item() / dataset.n_samples
+    avg_loss += loss.item() / (dataset.n_samples / batch_size)
 
-print(f"average loss: {avg_loss:8.3e}")
+print(f"average relative error: {100*avg_loss:6.3f} %")
 
 if not os.path.exists(args.output):
     os.makedirs(args.output)
