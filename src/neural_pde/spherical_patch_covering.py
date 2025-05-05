@@ -1,7 +1,7 @@
-"""A spherical patch covering consists of circular patches that cover 
+"""A spherical patch covering consists of circular patches that cover
 the unit sphere and which are centred at the vertices of the dual mesh
 of a refined icosahedron. Each patch has the same number of points, so that
-the total number of points in the patch covering is 
+the total number of points in the patch covering is
 n_{patches} x n_{point per patch}
 """
 
@@ -9,6 +9,7 @@ from collections import defaultdict
 import numpy as np
 import scipy as sp
 from firedrake import UnitIcosahedralSphereMesh
+from neural_pde.icosahedral_dual_mesh import IcosahedralDualMesh
 
 
 class SphericalPatch:
@@ -84,7 +85,7 @@ class SphericalPatch:
 
 
 class SphericalPatchCovering:
-    """Class that defines a coverging of the unit sphere with spherical patches
+    """Class that defines a covering of the unit sphere with spherical patches
 
     The centres of the patches are arranged to form the dual of a refined
     icosahedral mesh, which implies that each patch has exactly three neighbours.
@@ -98,52 +99,23 @@ class SphericalPatchCovering:
     def __init__(self, nref, patch_n, patch_radius=None):
         self.patch_radius = patch_radius
         self.patch_n = patch_n
-
-        mesh = UnitIcosahedralSphereMesh(nref)
-        plex = mesh.topology_dm
-        dim = plex.getCoordinateDim()
-        vertex_coords = np.asarray(plex.getCoordinates()).reshape([-1, dim])
-        pCellStart, pCellEnd = plex.getHeightStratum(0)
-        pEdgeStart, pEdgeEnd = plex.getHeightStratum(1)
-        pVertexStart, _ = plex.getHeightStratum(2)
-
-        # work out the cell centres
-        self._cell_centres = np.zeros((pCellEnd - pCellStart, 3))
-        for cell in range(pCellStart, pCellEnd):
-            vertices = {
-                vertex
-                for edge in plex.getCone(cell).tolist()
-                for vertex in plex.getCone(edge).tolist()
-            }
-            p = np.asarray(
-                [
-                    vertex_coords[vertex - pVertexStart, :].tolist()
-                    for vertex in vertices
-                ]
-            )
-            self._cell_centres[cell, :] = np.average(p[:, :], axis=0)
-        # work out the connectivity information
-        neighbour_map = defaultdict(set)
-        for edge in range(pEdgeStart, pEdgeEnd):
-            cells = [cell - pCellStart for cell in plex.getSupport(edge).tolist()]
-            for cell in cells:
-                neighbour_map[cell].update([other for other in cells if other != cell])
-        self._neighbours = [list(value) for key, value in sorted(neighbour_map.items())]
+        self.dual_mesh = IcosahedralDualMesh(nref)
+        cell_centres = self.dual_mesh.vertices
         if patch_radius is None:
             # Work out edge lengths
             edge_lengths = []
-            for j, nbs in enumerate(self._neighbours):
+            for j, nbs in enumerate(self.neighbour_list):
                 for k in nbs:
                     edge_lengths.append(
-                        np.linalg.norm(self._cell_centres[j] - self._cell_centres[k])
+                        np.linalg.norm(cell_centres[j] - cell_centres[k])
                     )
             r_theta = np.average(np.asarray(edge_lengths))
         else:
             r_theta = patch_radius
         # construct patches
         self._patches = [
-            SphericalPatch(self._cell_centres[j, :], r_theta, patch_n)
-            for j in range(self._cell_centres.shape[0])
+            SphericalPatch(cell_centres[j, :], r_theta, patch_n)
+            for j in range(cell_centres.shape[0])
         ]
 
     @property
@@ -170,8 +142,8 @@ class SphericalPatchCovering:
     @property
     def neighbour_list(self):
         """return neighbour list"""
-        return list(self._neighbours)
-    
+        return self.dual_mesh.neighbour_list
+
     def visualise(self, data=None):
         """Visualise spherical patch covering
 
@@ -181,7 +153,7 @@ class SphericalPatchCovering:
         """
         fig = go.Figure()
         # extract vertices
-        vertices = self._cell_centres[:, :]
+        vertices = self.dual_mesh._vertices[:, :]
         # vertices of mesh
         fig.add_trace(
             go.Scatter3d(
@@ -193,7 +165,7 @@ class SphericalPatchCovering:
             ),
         )
         # edges of mesh
-        for j, nbs in enumerate(self._neighbours):
+        for j, nbs in enumerate(self.dual_mesh._neighbours):
             for k in nbs:
                 fig.add_trace(
                     go.Scatter3d(
@@ -231,7 +203,7 @@ class SphericalPatchCovering:
                 marker_size=2,
             )
         )
-        
+
         fig.show()
 
 
