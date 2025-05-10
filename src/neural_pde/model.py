@@ -45,7 +45,7 @@ def load_model(directory):
     return model
 
 
-class NeuralPDEModel(torch.nn.Sequential):
+class NeuralPDEModel(torch.nn.Module):
     """Class representing the encoder - processor - decoder network"""
 
     def __init__(self):
@@ -196,7 +196,6 @@ class NeuralPDEModel(torch.nn.Sequential):
             NeuralSolver(
                 spherical_patch_covering,
                 interaction_model,
-                nsteps=architecture["nt"],
                 stepsize=architecture["dt"],
             ),
         )
@@ -205,6 +204,12 @@ class NeuralPDEModel(torch.nn.Sequential):
             PatchDecoder(V, spherical_patch_covering, decoder_model),
         )
         self.initialised = True
+
+    def forward(self, x, t_final):
+        y = self.PatchEncoder(x)
+        z = self.NeuralSolver(y, t_final)
+        w = self.PatchDecoder(z)
+        return w
 
     def save(self, directory):
         """Save model to disk

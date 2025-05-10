@@ -1,5 +1,5 @@
 import torch
-import functools
+import numpy as np
 
 
 class NeuralSolver(torch.nn.Module):
@@ -40,7 +40,6 @@ class NeuralSolver(torch.nn.Module):
         self,
         spherical_patch_covering,
         interaction_model,
-        nsteps=1,
         stepsize=1.0,
     ):
         """Initialise new instance
@@ -48,13 +47,11 @@ class NeuralSolver(torch.nn.Module):
         :arg spherical_patch_covering: the spherical patch covering that defines the topology and
             local patches
         :arg interaction_model: model that describes the interactions Phi_theta
-        :arg nsteps: number of forward-Euler steps
         :arg stepsize: size dt of steps
         """
         super().__init__()
         self.spherical_patch_covering = spherical_patch_covering
         self.interaction_model = interaction_model
-        self.nsteps = nsteps
         self.stepsize = stepsize
         # Construct nested list of the form
         #
@@ -73,14 +70,21 @@ class NeuralSolver(torch.nn.Module):
     #    """Index list on a particular device"""
     #    return self._index.to(device)
 
-    def forward(self, x):
+    def forward(self, x, t_final):
         """Carry out a number of forward-Euler steps for the latent variables on the dual mesh
 
-        :arg inputs: tensor of shape (B,n_patch,d_{latent}+d_{ancillary}) or (B,n_patch,d_{latent}+d_{ancillary})
+        :arg x: tensor of shape (B,n_patch,d_{latent}+d_{ancillary}) or (B,n_patch,d_{latent}+d_{ancillary})
+        :arg t_final: final time of the integration, tensor of shape (B,) or scalar
         """
         index = self.index.expand(x.shape[:-2] + (-1, -1, x.shape[-1]))
         dim = x.dim()
-        for _ in range(self.nsteps):
+        t = 0
+        while True:
+            mask = torch.where(t < t_final, 1, 0)
+            if mask.ndim > 0:
+                mask = mask.view(-1, 1, 1)
+            if torch.count_nonzero(mask) == 0:
+                break
             # input x is of shape (B,n_patch,d_{lat}^{dynamic}+d_{lat}^{ancillary})
             #
             # ---- stage 1 ---- gather to tensor Z of shape
@@ -101,8 +105,8 @@ class NeuralSolver(torch.nn.Module):
             dx = torch.nn.functional.pad(
                 fz, (0, x.shape[-1] - fz.shape[-1]), mode="constant", value=0
             )
-
             # ---- stage 4 ---- update Y = Y + dt*dY
-            x += self.stepsize * dx
+            x += self.stepsize * mask * dx
+            t += self.stepsize
 
         return x

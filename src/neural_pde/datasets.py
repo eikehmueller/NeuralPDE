@@ -29,6 +29,7 @@ def load_hdf5_dataset(filename):
     :arg filename: name of file to load from"""
     with h5py.File(filename, "r") as f:
         data = f["base/data"]
+        t_final = f["base/t_final"]
         metadata = json.loads(f["base/metadata"][()])
         dataset = SphericalFunctionSpaceDataset(
             int(f.attrs["n_func_in_dynamic"]),
@@ -37,6 +38,7 @@ def load_hdf5_dataset(filename):
             int(f.attrs["n_ref"]),
             int(f.attrs["n_samples"]),
             data=np.asarray(data),
+            t_final=np.asarray(t_final),
             metadata=metadata,
         )
     return dataset
@@ -71,8 +73,8 @@ class SphericalFunctionSpaceDataset(Dataset):
     """Abstract base class for data generation on a function space
     defined on a spherical mesh
 
-    yields input,target pairs (X,y) where the input X is a tensor
-    of shape (n_func, n_dof) and the target y is a tensor
+    yields input,target pairs ((X,t),y) where the input X is a tensor
+    of shape (n_func, n_dof), t is a scalar and the target y is a tensor
     of shape (n_func_target,n_dof).
     """
 
@@ -84,6 +86,7 @@ class SphericalFunctionSpaceDataset(Dataset):
         n_ref,
         nsamples,
         data=None,
+        t_final=None,
         metadata=None,
         dtype=None,
     ):
@@ -95,6 +98,7 @@ class SphericalFunctionSpaceDataset(Dataset):
         :arg n_ref: number of mesh refinements
         :arg nsamples: number of samples
         :arg data: data to initialise with
+        :arg t_final: final times
         :arg metadata: metadata to initialise with
         :arg dtype: type to which the data is converted to
         """
@@ -120,6 +124,10 @@ class SphericalFunctionSpaceDataset(Dataset):
             if data is None
             else data
         )
+        self._t_final = (
+            np.empty(self.n_samples, dtype=np.float64) if t_final is None else t_final
+        )
+
         self.metadata = {} if metadata is None else metadata
 
     def __getitem__(self, idx):
@@ -131,11 +139,15 @@ class SphericalFunctionSpaceDataset(Dataset):
             self._data[idx, : self.n_func_in_dynamic + self.n_func_in_ancillary],
             dtype=self.dtype,
         )
+        t = torch.tensor(
+            self._t_final[idx],
+            dtype=self.dtype,
+        )
         y = torch.tensor(
             self._data[idx, self.n_func_in_dynamic + self.n_func_in_ancillary :],
             dtype=self.dtype,
         )
-        return (X, y)
+        return (X, t), y
 
     def __len__(self):
         """Return numnber of samples"""
@@ -148,6 +160,7 @@ class SphericalFunctionSpaceDataset(Dataset):
         with h5py.File(filename, "w") as f:
             group = f.create_group("base")
             group.create_dataset("data", data=self._data)
+            group.create_dataset("t_final", data=self._t_final)
             f.attrs["n_func_in_dynamic"] = int(self.n_func_in_dynamic)
             f.attrs["n_func_in_ancillary"] = int(self.n_func_in_ancillary)
             f.attrs["n_func_target"] = int(self.n_func_target)
@@ -167,12 +180,13 @@ class AdvectionDataset(SphericalFunctionSpaceDataset):
 
     """
 
-    def __init__(self, nref, nsamples, phi, degree=4, seed=12345):
+    def __init__(self, nref, nsamples, omega, t_final_max=1.0, degree=4, seed=12345):
         """Initialise new instance
 
         :arg nref: number of mesh refinements
         :arg nsamples: number of samples
-        :arg phi: rotation angle phi
+        :arg omega: rotation speed
+        :arg t_final_max: maximum final time
         :arg degree: polynomial degree used for generating random fields
         :arg seed: seed of rng
         """
@@ -182,13 +196,19 @@ class AdvectionDataset(SphericalFunctionSpaceDataset):
         super().__init__(
             n_func_in_dynamic, n_func_in_ancillary, n_func_target, nref, nsamples
         )
-        self.metadata = {"phi": f"{phi:}", "degree": degree, "seed": seed}
+        self.metadata = {
+            "omega": f"{omega:}",
+            "t_final_max": f"{t_final_max:}",
+            "degree": degree,
+            "seed": seed,
+        }
         x, y, z = SpatialCoordinate(self._fs.mesh())
         self._u_x = Function(self._fs).interpolate(x)
         self._u_y = Function(self._fs).interpolate(y)
         self._u_z = Function(self._fs).interpolate(z)
         self._u = Function(self._fs)
-        self._phi = phi
+        self._omega = omega
+        self._t_final_max = t_final_max
         self._degree = degree
         self._rng = np.random.default_rng(
             seed
@@ -199,6 +219,8 @@ class AdvectionDataset(SphericalFunctionSpaceDataset):
         # generate data
         x, y, z = SpatialCoordinate(self._fs.mesh())
         for j in tqdm.tqdm(range(self.n_samples)):
+            t_final = self._t_final_max * self._rng.uniform(0, 1)
+            phi = self._omega * t_final
             expr_in = 0
             expr_in_dx = 0
             expr_in_dy = 0
@@ -217,8 +239,8 @@ class AdvectionDataset(SphericalFunctionSpaceDataset):
                     expr_in_dz += coeff[jx, jy, jz] * jz * x**jx * y**jy * z ** (jz - 1)
                 expr_target += (
                     coeff[jx, jy, jz]
-                    * (x * np.cos(self._phi) - y * np.sin(self._phi)) ** jx
-                    * (x * np.sin(self._phi) + y * np.cos(self._phi)) ** jy
+                    * (x * np.cos(phi) - y * np.sin(phi)) ** jx
+                    * (x * np.sin(phi) + y * np.cos(phi)) ** jy
                     * z**jz
                 )
             self._u.interpolate(expr_in)
@@ -234,3 +256,4 @@ class AdvectionDataset(SphericalFunctionSpaceDataset):
             self._data[j, 6, :] = self._u_z.dat.data
             self._u.interpolate(expr_target)
             self._data[j, 7, :] = self._u.dat.data
+            self._t_final[j] = t_final

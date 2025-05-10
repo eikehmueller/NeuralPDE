@@ -1,4 +1,4 @@
-""" This script produces the data"""
+"""This script produces the data"""
 
 import argparse
 
@@ -33,11 +33,19 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--phi",
+    "--omega",
     type=float,
     action="store",
-    help="rotation angle",
-    default=0.1963,
+    help="angular velocity",
+    default=1.0,
+)
+
+parser.add_argument(
+    "--tfinalmax",
+    type=float,
+    action="store",
+    help="maximal final time",
+    default=1.0,
 )
 
 parser.add_argument(
@@ -61,10 +69,13 @@ args, _ = parser.parse_known_args()
 print(f"generating data in file {args.filename}")
 print(f"  nref      = {args.nref}")
 print(f"  nsamples  = {args.nsamples}")
-print(f"  phi       = {args.phi}")
+print(f"  omega     = {args.omega}")
+print(f"  tfinalmax = {args.tfinalmax}")
 print(f"  seed      = {args.seed}")
 print(f"  degree    = {args.degree}")
 
-dataset = AdvectionDataset(args.nref, args.nsamples, args.phi, args.degree, args.seed)
+dataset = AdvectionDataset(
+    args.nref, args.nsamples, args.omega, args.tfinalmax, args.degree, args.seed
+)
 dataset.generate()
 dataset.save(args.filename)

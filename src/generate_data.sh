@@ -1,28 +1,32 @@
 #!/bin/bash
-NREF=4
+NREF=5
 DEGREE=4
-PHI=0.5
+OMEGA=1.0
+TFINALMAX=12.5663706144 # = 4 pi
 
 python data_generator.py \
-    --filename data/data_train_nref4.h5 \
+    --filename data/data_train_nref${NREF}.h5 \
     --nref ${NREF} \
     --degree ${DEGREE} \
-    --phi ${PHI} \
+    --omega ${OMEGA} \
+    --tfinalmax ${TFINALMAX} \
     --nsamples 1024 \
     --seed 152167
 
 python data_generator.py \
-    --filename data/data_valid_nref4.h5 \
+    --filename data/data_valid_nref${NREF}.h5 \
     --nref ${NREF} \
     --degree ${DEGREE} \
-    --phi ${PHI} \
+    --omega ${OMEGA} \
+    --tfinalmax ${TFINALMAX} \
     --nsamples 128 \
     --seed 251373
 
 python data_generator.py \
-    --filename data/data_test_nref4.h5 \
+    --filename data/data_test_nref${NREF}.h5 \
     --nref ${NREF} \
     --degree ${DEGREE} \
-    --phi ${PHI} \
+    --omega ${OMEGA} \
+    --tfinalmax ${TFINALMAX} \
     --nsamples 128 \
     --seed 515157

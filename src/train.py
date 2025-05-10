@@ -92,10 +92,11 @@ for epoch in range(config["optimiser"]["nepoch"]):
     print(f"epoch {epoch + 1} of {config["optimiser"]["nepoch"]}")
     train_loss = 0
     model.train(True)
-    for Xb, yb in tqdm.tqdm(train_dl):
+    for (Xb, tb), yb in tqdm.tqdm(train_dl):
         Xb = Xb.to(device)  # move to GPU
+        tb = tb.to(device)  # move to GPU
         yb = yb.to(device)  # move to GPU
-        y_pred = model(Xb)  # make a prediction
+        y_pred = model(Xb, tb)  # make a prediction
         optimiser.zero_grad()  # resets all of the gradients to zero, otherwise the gradients are accumulated
         loss = loss_fn(y_pred, yb)  # calculate the loss
         loss.backward()  # take the backwards gradient
@@ -109,10 +110,11 @@ for epoch in range(config["optimiser"]["nepoch"]):
     # validation
     model.train(False)
     valid_loss = 0
-    for Xv, yv in valid_dl:
+    for (Xv, tv), yv in valid_dl:
         Xv = Xv.to(device)  # move to GPU
+        tv = tv.to(device)  # move to GPU
         yv = yv.to(device)  # move to GPU
-        yv_pred = model(Xv)  # make a prediction
+        yv_pred = model(Xv, tv)  # make a prediction
         loss = loss_fn(yv_pred, yv)  # calculate the loss
         valid_loss += loss.item() / (
             valid_ds.n_samples // config["optimiser"]["batchsize"]

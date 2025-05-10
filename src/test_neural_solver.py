@@ -1,9 +1,9 @@
-""" This module is for testing the Neural solver module. The tests here are 
+"""This module is for testing the Neural solver module. The tests here are
 
 1: check that the neighbouring cells have a shared edge
-2: check that input and output have shape (n_patches, d_lat) 
-3: check that input and output have shape (1, n_patches, d_lat) 
-4: check that input and output have shape (batchsize, n_patches, d_lat) 
+2: check that input and output have shape (n_patches, d_lat)
+3: check that input and output have shape (1, n_patches, d_lat)
+4: check that input and output have shape (batchsize, n_patches, d_lat)
 5: check that an averaging function returns the expected result
 """
 
@@ -33,6 +33,8 @@ sample_3d_flat = torch.rand(
 sample_3d_full = torch.rand(
     batchsize, n_patches, d_lat
 )  # A sample with shape (batchsize, n_patches, d_lat)
+t_final_2d = torch.tensor(1.0)
+t_final_3d = torch.ones(batchsize)
 
 neighbour_list = spherical_patch_covering.neighbour_list
 
@@ -107,10 +109,9 @@ def test_sample_2d():
     model = NeuralSolver(
         spherical_patch_covering,
         interaction_model,
-        nsteps=1,
         stepsize=1.0,
     )
-    y = model(sample_2d)
+    y = model(sample_2d, t_final_2d)
 
     assert y.shape == sample_2d.shape
 
@@ -120,10 +121,9 @@ def test_sample_3d_full():
     model = NeuralSolver(
         spherical_patch_covering,
         interaction_model,
-        nsteps=1,
         stepsize=1.0,
     )
-    y = model(sample_3d_full)
+    y = model(sample_3d_full, t_final_3d)
 
     assert y.shape == sample_3d_full.shape
 
@@ -134,11 +134,10 @@ def test_average():
     model = NeuralSolver(
         spherical_patch_covering,
         average_model,
-        nsteps=1,
         stepsize=1.0,
     )
 
-    y1 = model(sample_3d_full)
+    y1 = model(sample_3d_full, t_final_3d)
     y2 = sample_3d_full
 
     y2[:, :, :d_dyn] += average_neighbours(sample_3d_full, neighbour_list)[:, :, :d_dyn]
