@@ -56,8 +56,8 @@ model = load_model(args.model)
 # validation
 model.train(False)
 avg_loss = 0
-for Xv, yv in dataloader:
-    yv_pred = model(Xv)
+for (Xv, tv), yv in dataloader:
+    yv_pred = model(Xv, tv)
     loss = loss_fn(yv_pred, yv)
     avg_loss += loss.item() / (dataset.n_samples / batch_size)
 
@@ -68,8 +68,8 @@ if not os.path.exists(args.output):
 
 mesh = UnitIcosahedralSphereMesh(dataset.n_ref)
 V = FunctionSpace(mesh, "CG", 1)
-for j, (X, y_target) in enumerate(iter(dataset)):
-    y_pred = model(X)
+for j, ((X, t), y_target) in enumerate(iter(dataset)):
+    y_pred = model(X, t)
 
     f_input = Function(V, name="input")
     f_input.dat.data[:] = X.detach().numpy()[0, :]
