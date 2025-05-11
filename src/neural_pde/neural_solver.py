@@ -80,10 +80,16 @@ class NeuralSolver(torch.nn.Module):
         dim = x.dim()
         t = 0
         while True:
-            mask = torch.where(t < t_final, 1, 0)
-            if mask.ndim > 0:
-                mask = mask.view(-1, 1, 1)
-            if torch.count_nonzero(mask) == 0:
+            # The masked stepsize dt_{masked} is defined as
+            #
+            #  dt_{masked} = { 0                     if t > t_{final}
+            #                { min(t - t_{final},dt) if t <= t_{final}
+            #
+            masked_stepsize = torch.minimum(
+                torch.maximum(t_final - t, torch.tensor(0)), torch.tensor(self.stepsize)
+            ).view(t_final.ndim * [-1] + [1, 1])
+            # Stop if t > t_{final} for all elements in the batch
+            if torch.count_nonzero(masked_stepsize) == 0:
                 break
             # input x is of shape (B,n_patch,d_{lat}^{dynamic}+d_{lat}^{ancillary})
             #
@@ -106,7 +112,7 @@ class NeuralSolver(torch.nn.Module):
                 fz, (0, x.shape[-1] - fz.shape[-1]), mode="constant", value=0
             )
             # ---- stage 4 ---- update Y = Y + dt*dY
-            x += self.stepsize * mask * dx
+            x += masked_stepsize * dx
             t += self.stepsize
 
         return x
