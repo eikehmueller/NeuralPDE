@@ -2,7 +2,7 @@
 NREF=5
 DEGREE=4
 OMEGA=1.0
-TFINALMAX=12.5663706144 # = 4 pi
+TFINALMAX=6.28318530718 # = 2 pi
 
 python data_generator.py \
     --filename data/data_train_nref${NREF}.h5 \
