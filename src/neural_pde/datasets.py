@@ -3,7 +3,7 @@ import numpy as np
 import json
 import h5py
 import tqdm
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 
 import itertools
 
@@ -19,7 +19,7 @@ __all__ = [
     "show_hdf5_header",
     "load_hdf5_dataset",
     "SphericalFunctionSpaceDataset",
-    "AdvectionDataset",
+    "SolidBodyRotationDataset",
 ]
 
 
@@ -171,7 +171,7 @@ class SphericalFunctionSpaceDataset(Dataset):
             group.create_dataset("metadata", data=json.dumps(self.metadata))
 
 
-class AdvectionDataset(SphericalFunctionSpaceDataset):
+class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
     """Data set for advection
 
     The input conists of the function fields (u,x,y,z) which represent a

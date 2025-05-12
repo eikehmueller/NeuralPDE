@@ -2,7 +2,7 @@
 
 import argparse
 
-from neural_pde.datasets import AdvectionDataset
+from neural_pde.datasets import SolidBodyRotationDataset
 from firedrake import FunctionSpace, UnitIcosahedralSphereMesh
 
 # Create argparse arguments
@@ -74,7 +74,7 @@ print(f"  tfinalmax = {args.tfinalmax}")
 print(f"  seed      = {args.seed}")
 print(f"  degree    = {args.degree}")
 
-dataset = AdvectionDataset(
+dataset = SolidBodyRotationDataset(
     args.nref, args.nsamples, args.omega, args.tfinalmax, args.degree, args.seed
 )
 dataset.generate()
