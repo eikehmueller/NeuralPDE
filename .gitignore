@@ -6,3 +6,7 @@ tb_logs/
 *.vtk
 *.pvd
 *.txt
+*.vtu
+
+src/runs/
+src/data/
