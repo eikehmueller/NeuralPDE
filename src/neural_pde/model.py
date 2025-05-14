@@ -96,7 +96,7 @@ class NeuralPDEModel(torch.nn.Module):
         # dynamic encoder model: map all fields to the latent space
         # input:  (n_dynamic+n_ancillary, patch_size)
         # output: (latent_dynamic_dim)
-        n_hidden = 32
+        n_hidden = 16
         dynamic_encoder_model = torch.nn.Sequential(
             torch.nn.Flatten(start_dim=-2, end_dim=-1),
             torch.nn.Linear(
@@ -158,7 +158,7 @@ class NeuralPDEModel(torch.nn.Module):
                 out_features=n_func_target,
             ),
         )
-
+        n_hidden_interaction = 128
         # interaction model: function on latent space
         interaction_model = torch.nn.Sequential(
             torch.nn.Flatten(start_dim=-2, end_dim=-1),
@@ -168,16 +168,16 @@ class NeuralPDEModel(torch.nn.Module):
                     architecture["latent_dynamic_dim"]
                     + architecture["latent_ancillary_dim"]
                 ),
-                out_features=32,
+                out_features=n_hidden_interaction,
             ),
             torch.nn.Softplus(),
             torch.nn.Linear(
-                in_features=32,
-                out_features=32,
+                in_features=n_hidden_interaction,
+                out_features=n_hidden_interaction,
             ),
             torch.nn.Softplus(),
             torch.nn.Linear(
-                in_features=32,
+                in_features=n_hidden_interaction,
                 out_features=architecture["latent_dynamic_dim"],
             ),
         )
