@@ -190,7 +190,7 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
         :arg degree: polynomial degree used for generating random fields
         :arg seed: seed of rng
         """
-        n_func_in_dynamic = 1
+        n_func_in_dynamic = 4
         n_func_in_ancillary = 3
         n_func_target = 1
         super().__init__(
@@ -213,7 +213,7 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
         self._rng = np.random.default_rng(
             seed
         )  # removing the seed seems to make it slower
-        self.nt = 4
+        self.nt = 1
 
     def generate(self):
         """Generate the data"""
@@ -225,6 +225,9 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
             )
             phi = self._omega * t_final
             expr_in = 0
+            expr_in_dx = 0
+            expr_in_dy = 0
+            expr_in_dz = 0
             expr_target = 0
             coeff = self._rng.normal(size=(self._degree, self._degree, self._degree))
             for jx, jy, jz in itertools.product(
@@ -237,11 +240,23 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
                     * (x * np.sin(phi) + y * np.cos(phi)) ** jy
                     * z**jz
                 )
+                if jx > 0:
+                    expr_in_dx += coeff[jx, jy, jz] * jx * x ** (jx - 1) * y**jy * z**jz
+                if jy > 0:
+                    expr_in_dy += coeff[jx, jy, jz] * jy * x**jx * y ** (jy - 1) * z**jz
+                if jz > 0:
+                    expr_in_dz += coeff[jx, jy, jz] * jz * x**jx * y**jy * z ** (jz - 1)
             self._u.interpolate(expr_in)
             self._data[j, 0, :] = self._u.dat.data
-            self._data[j, 1, :] = self._u_x.dat.data
-            self._data[j, 2, :] = self._u_y.dat.data
-            self._data[j, 3, :] = self._u_z.dat.data
+            self._u.interpolate(expr_in_dx)
+            self._data[j, 1, :] = self._u.dat.data
+            self._u.interpolate(expr_in_dy)
+            self._data[j, 2, :] = self._u.dat.data
+            self._u.interpolate(expr_in_dz)
+            self._data[j, 3, :] = self._u.dat.data
+            self._data[j, 4, :] = self._u_x.dat.data
+            self._data[j, 5, :] = self._u_y.dat.data
+            self._data[j, 6, :] = self._u_z.dat.data
             self._u.interpolate(expr_target)
-            self._data[j, 4, :] = self._u.dat.data
+            self._data[j, 7, :] = self._u.dat.data
             self._t_final[j] = t_final
