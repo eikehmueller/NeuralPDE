@@ -6,6 +6,7 @@ import os
 import json
 
 from neural_pde.patch_encoder import PatchEncoder
+from neural_pde.patch_decoder import PatchDecoder
 from neural_pde.decoder import Decoder
 from neural_pde.neural_solver import NeuralSolver
 from neural_pde.spherical_patch_covering import SphericalPatchCovering
@@ -134,31 +135,7 @@ class NeuralPDEModel(torch.nn.Module):
                 out_features=architecture["latent_ancillary_dim"],
             ),
         )
-
-        # decoder model: map latent variables to variables on patches
-        # input:  (nu*d_latent+n_ancil)
-        # output: (n_out)
-        decoder_model = torch.nn.Sequential(
-            torch.nn.Linear(
-                in_features=architecture["nu"]
-                * (
-                    architecture["latent_dynamic_dim"]
-                    + architecture["latent_ancillary_dim"]
-                )
-                + n_func_in_ancillary,
-                out_features=n_hidden,
-            ),
-            torch.nn.Softplus(),
-            torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
-            torch.nn.Softplus(),
-            torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
-            torch.nn.Softplus(),
-            torch.nn.Linear(
-                in_features=n_hidden,
-                out_features=n_func_target,
-            ),
-        )
-        n_hidden_interaction = 128
+        n_hidden_interaction = 32
         # interaction model: function on latent space
         interaction_model = torch.nn.Sequential(
             torch.nn.Flatten(start_dim=-2, end_dim=-1),
@@ -168,6 +145,11 @@ class NeuralPDEModel(torch.nn.Module):
                     architecture["latent_dynamic_dim"]
                     + architecture["latent_ancillary_dim"]
                 ),
+                out_features=n_hidden_interaction,
+            ),
+            torch.nn.Softplus(),
+            torch.nn.Linear(
+                in_features=n_hidden_interaction,
                 out_features=n_hidden_interaction,
             ),
             torch.nn.Softplus(),
@@ -201,15 +183,72 @@ class NeuralPDEModel(torch.nn.Module):
                 stepsize=architecture["dt"],
             ),
         )
-        self.add_module(
-            "Decoder",
-            Decoder(
-                V,
-                spherical_patch_covering.dual_mesh,
-                decoder_model,
-                nu=architecture["nu"],
-            ),
-        )
+        if architecture["decoder"] == "patch":
+            # decoder model: map latent variables to variables on patches
+            # input:  (nu*d_latent+n_ancil)
+            # output: (n_out)
+            decoder_model = torch.nn.Sequential(
+                torch.nn.Linear(
+                    in_features=architecture["latent_dynamic_dim"]
+                    + architecture["latent_ancillary_dim"],
+                    out_features=n_hidden,
+                ),
+                torch.nn.Softplus(),
+                torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
+                torch.nn.Softplus(),
+                torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
+                torch.nn.Softplus(),
+                torch.nn.Linear(
+                    in_features=n_hidden,
+                    out_features=n_func_target * spherical_patch_covering.patch_size,
+                ),
+                torch.nn.Unflatten(
+                    dim=-1,
+                    unflattened_size=(
+                        n_func_target,
+                        spherical_patch_covering.patch_size,
+                    ),
+                ),
+            )
+            self.add_module(
+                "PatchDecoder",
+                PatchDecoder(
+                    V,
+                    spherical_patch_covering,
+                    decoder_model,
+                ),
+            )
+        elif architecture["decoder"] == "nearest_neighbour":
+            decoder_model = torch.nn.Sequential(
+                torch.nn.Linear(
+                    in_features=architecture["nu"]
+                    * (
+                        architecture["latent_dynamic_dim"]
+                        + architecture["latent_ancillary_dim"]
+                    )
+                    + n_func_in_ancillary,
+                    out_features=n_hidden,
+                ),
+                torch.nn.Softplus(),
+                torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
+                torch.nn.Softplus(),
+                torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
+                torch.nn.Softplus(),
+                torch.nn.Linear(
+                    in_features=n_hidden,
+                    out_features=n_func_target,
+                ),
+            )
+
+            self.add_module(
+                "Decoder",
+                Decoder(
+                    V,
+                    spherical_patch_covering.dual_mesh,
+                    decoder_model,
+                    nu=architecture["nu"],
+                ),
+            )
         self.initialised = True
 
     def forward(self, x, t_final):
@@ -217,10 +256,14 @@ class NeuralPDEModel(torch.nn.Module):
         :arg x: input tensor of shape (batch_size, n_func_in_dynamic+n_func_in_ancillary, n_vertex)
         :arg t_final: final time for each sample, tensor of shape (batch_size,)
         """
-        x_ancil = x[..., self.dimensions["n_func_in_dynamic"] :, :]
+
         y = self.PatchEncoder(x)
         z = self.NeuralSolver(y, t_final)
-        w = self.Decoder(z, x_ancil)
+        if hasattr(self, "PatchDecoder"):
+            w = self.PatchDecoder(z)
+        if hasattr(self, "Decoder"):
+            x_ancil = x[..., self.dimensions["n_func_in_dynamic"] :, :]
+            w = self.Decoder(z, x_ancil)
         return w
 
     def save(self, directory):

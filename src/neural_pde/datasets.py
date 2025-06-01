@@ -213,13 +213,16 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
         self._rng = np.random.default_rng(
             seed
         )  # removing the seed seems to make it slower
+        self.nt = 4
 
     def generate(self):
         """Generate the data"""
         # generate data
         x, y, z = SpatialCoordinate(self._fs.mesh())
         for j in tqdm.tqdm(range(self.n_samples)):
-            t_final = self._t_final_max * self._rng.uniform(0, 1)
+            t_final = (
+                self._t_final_max * self._rng.integers(1, high=self.nt + 1) / self.nt
+            )
             phi = self._omega * t_final
             expr_in = 0
             expr_target = 0
