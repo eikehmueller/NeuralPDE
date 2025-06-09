@@ -131,7 +131,7 @@ class NeuralPDEModel(torch.nn.Module):
                 out_features=architecture["latent_ancillary_dim"],
             ),
         )
-        n_hidden_interaction = 16
+        n_hidden_interaction = 32
         # interaction model: function on latent space
         interaction_model = torch.nn.Sequential(
             torch.nn.Flatten(start_dim=-2, end_dim=-1),

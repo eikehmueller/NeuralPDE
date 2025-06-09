@@ -220,9 +220,7 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
         # generate data
         x, y, z = SpatialCoordinate(self._fs.mesh())
         for j in tqdm.tqdm(range(self.n_samples)):
-            t_final = (
-                self._t_final_max * self._rng.integers(1, high=self.nt + 1) / self.nt
-            )
+            t_final = self._t_final_max * self._rng.uniform(low=0.0, high=1.0)
             phi = self._omega * t_final
             expr_in = 0
             expr_in_dx = 0

@@ -1,20 +1,20 @@
 #!/bin/bash
-NREF=5
+NREF=4
 DEGREE=4
 OMEGA=1.0
-TFINALMAX=1.57079632679 # = pi/2
+TFINALMAX=3.14 # ~ pi
 
 python data_generator.py \
-    --filename data/data_train_nref${NREF}.h5 \
+    --filename data/data_train_nref${NREF}_${TFINALMAX}.h5 \
     --nref ${NREF} \
     --degree ${DEGREE} \
     --omega ${OMEGA} \
     --tfinalmax ${TFINALMAX} \
-    --nsamples 1024 \
+    --nsamples 4096 \
     --seed 152167
 
 python data_generator.py \
-    --filename data/data_valid_nref${NREF}.h5 \
+    --filename data/data_valid_nref${NREF}_${TFINALMAX}.h5 \
     --nref ${NREF} \
     --degree ${DEGREE} \
     --omega ${OMEGA} \
@@ -23,7 +23,7 @@ python data_generator.py \
     --seed 251373
 
 python data_generator.py \
-    --filename data/data_test_nref${NREF}.h5 \
+    --filename data/data_test_nref${NREF}_${TFINALMAX}.h5 \
     --nref ${NREF} \
     --degree ${DEGREE} \
     --omega ${OMEGA} \
