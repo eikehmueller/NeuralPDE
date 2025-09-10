@@ -33,7 +33,7 @@ parser.add_argument(
     type=str,
     action="store",
     help="file containing the data",
-    default="data/data_test.h5",
+    default="data/data_test_nref5_omega1.h5",
 )
 
 args, _ = parser.parse_known_args()
