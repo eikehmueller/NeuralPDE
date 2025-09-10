@@ -6,3 +6,4 @@ tb_logs/
 *.vtk
 *.pvd
 *.txt
+*.h5
