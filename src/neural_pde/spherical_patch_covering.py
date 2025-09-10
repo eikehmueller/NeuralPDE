@@ -5,12 +5,9 @@ the total number of points in the patch covering is
 n_{patches} x n_{point per patch}
 """
 
-from collections import defaultdict
 import numpy as np
 import scipy as sp
-from firedrake import UnitIcosahedralSphereMesh
 from neural_pde.icosahedral_dual_mesh import IcosahedralDualMesh
-
 
 class SphericalPatch:
     """A single spherical patch

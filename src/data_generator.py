@@ -3,7 +3,6 @@
 import argparse
 
 from neural_pde.datasets import SolidBodyRotationDataset
-from firedrake import FunctionSpace, UnitIcosahedralSphereMesh
 
 # Create argparse arguments
 parser = argparse.ArgumentParser()

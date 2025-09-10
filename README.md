@@ -27,7 +27,7 @@ python -c "from neural_pde.datasets import show_hdf5_header; show_hdf5_header('D
 To train the model, user [src/train.py], which is controlled by a parameter file such as `config.toml`. Run `python train.py --help`to see the command line options. The trained model is saved to disk.
 
 #### Evaluation
-The traibed model can be loaded and evaluated with [src/evaluate.py]. Run `python evaluate.py --help` to see the available command line options.
+The trained model can be loaded and evaluated with [src/evaluate.py]. Run `python evaluate.py --help` to see the available command line options.
 
 ### Dependencies
 #### Firedrake

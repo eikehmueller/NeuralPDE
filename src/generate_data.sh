@@ -1,4 +1,6 @@
 #!/bin/bash
+mkdir -p data/
+
 NREF=5
 DEGREE=4
 OMEGA=1.0

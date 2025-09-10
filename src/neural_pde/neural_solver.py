@@ -1,6 +1,4 @@
 import torch
-import numpy as np
-
 
 class NeuralSolver(torch.nn.Module):
     """Neural solver which integrates forward the equations of motion in latent space.

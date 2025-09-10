@@ -87,6 +87,12 @@ gamma = (
 scheduler = torch.optim.lr_scheduler.ExponentialLR(optimiser, gamma=gamma)
 
 writer = SummaryWriter(flush_secs=5)
+writer.add_text("Model parameters", f"Refinements of dual space: {config["architecture"]["dual_ref"]}\n \
+No. radial points per patch: {config["architecture"]["n_radial"]} \n \
+Dimension of dynamic latent space: {config["architecture"]["latent_dynamic_dim"]} \n \
+Dimension of ancillary latent space: {config["architecture"]["latent_ancillary_dim"]} \n \
+Time-step: {config["architecture"]["dt"]}")
+
 # main training loop
 for epoch in range(config["optimiser"]["nepoch"]):
     print(f"epoch {epoch + 1} of {config["optimiser"]["nepoch"]}")
@@ -128,6 +134,7 @@ for epoch in range(config["optimiser"]["nepoch"]):
     )
     writer.add_scalar("learning_rate", scheduler.get_last_lr()[0], epoch)
     print()
+
 writer.flush()
 
 end = timer()
