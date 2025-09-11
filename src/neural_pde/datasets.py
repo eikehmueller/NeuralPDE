@@ -213,13 +213,14 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
         self._rng = np.random.default_rng(
             seed
         )  # removing the seed seems to make it slower
+        self.nt = 1
 
     def generate(self):
         """Generate the data"""
         # generate data
         x, y, z = SpatialCoordinate(self._fs.mesh())
         for j in tqdm.tqdm(range(self.n_samples)):
-            t_final = self._t_final_max * self._rng.uniform(0, 1)
+            t_final = self._t_final_max * self._rng.uniform(low=0.0, high=1.0)
             phi = self._omega * t_final
             expr_in = 0
             expr_in_dx = 0
@@ -231,18 +232,18 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
                 range(self._degree), range(self._degree), range(self._degree)
             ):
                 expr_in += coeff[jx, jy, jz] * x**jx * y**jy * z**jz
-                if jx > 0:
-                    expr_in_dx += coeff[jx, jy, jz] * jx * x ** (jx - 1) * y**jy * z**jz
-                if jy > 0:
-                    expr_in_dy += coeff[jx, jy, jz] * jy * x**jx * y ** (jy - 1) * z**jz
-                if jz > 0:
-                    expr_in_dz += coeff[jx, jy, jz] * jz * x**jx * y**jy * z ** (jz - 1)
                 expr_target += (
                     coeff[jx, jy, jz]
                     * (x * np.cos(phi) - y * np.sin(phi)) ** jx
                     * (x * np.sin(phi) + y * np.cos(phi)) ** jy
                     * z**jz
                 )
+                if jx > 0:
+                    expr_in_dx += coeff[jx, jy, jz] * jx * x ** (jx - 1) * y**jy * z**jz
+                if jy > 0:
+                    expr_in_dy += coeff[jx, jy, jz] * jy * x**jx * y ** (jy - 1) * z**jz
+                if jz > 0:
+                    expr_in_dz += coeff[jx, jy, jz] * jz * x**jx * y**jy * z ** (jz - 1)
             self._u.interpolate(expr_in)
             self._data[j, 0, :] = self._u.dat.data
             self._u.interpolate(expr_in_dx)

@@ -6,7 +6,7 @@ tb_logs/
 *.vtk
 *.pvd
 *.txt
-*.h5
-data/
-runs/
+*.vtu
+src/runs/
+src/data/
 output/

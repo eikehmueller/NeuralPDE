@@ -134,7 +134,13 @@ for epoch in range(config["optimiser"]["nepoch"]):
     )
     writer.add_scalar("learning_rate", scheduler.get_last_lr()[0], epoch)
     print()
+<<<<<<< HEAD
 
+=======
+    if epoch % 100 == 0:
+        print("Saving model...")
+        model.save(args.model)
+>>>>>>> origin/improved_decoder
 writer.flush()
 
 end = timer()
