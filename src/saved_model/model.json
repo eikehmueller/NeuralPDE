@@ -1,6 +1,6 @@
 {
     "dimensions": {
-        "n_ref": 5,
+        "n_ref": 4,
         "n_func_in_dynamic": 4,
         "n_func_in_ancillary": 3,
         "n_func_target": 1
