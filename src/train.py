@@ -11,10 +11,11 @@ from firedrake.adjoint import *
 import tqdm
 import tomllib
 import argparse
+import os
 
 from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header
 from neural_pde.loss_functions import normalised_mse as loss_fn
-from neural_pde.model import build_model
+from neural_pde.model import build_model, load_model
 
 # Create argparse arguments
 parser = argparse.ArgumentParser()
@@ -65,13 +66,16 @@ valid_dl = DataLoader(
     valid_ds, batch_size=config["optimiser"]["batchsize"], drop_last=True
 )
 
-model = build_model(
-    train_ds.n_ref,
-    train_ds.n_func_in_dynamic,
-    train_ds.n_func_in_ancillary,
-    train_ds.n_func_target,
-    config["architecture"],
-)
+if not os.listdir("saved_model"): # load model or initialise new one
+    model = build_model(
+        train_ds.n_ref,
+        train_ds.n_func_in_dynamic,
+        train_ds.n_func_in_ancillary,
+        train_ds.n_func_target,
+        config["architecture"],
+    )
+else:
+    model = load_model(args.model)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 model = model.to(device)  # transfer the model to the GPU
@@ -134,13 +138,9 @@ for epoch in range(config["optimiser"]["nepoch"]):
     )
     writer.add_scalar("learning_rate", scheduler.get_last_lr()[0], epoch)
     print()
-<<<<<<< HEAD
-
-=======
     if epoch % 100 == 0:
         print("Saving model...")
         model.save(args.model)
->>>>>>> origin/improved_decoder
 writer.flush()
 
 end = timer()

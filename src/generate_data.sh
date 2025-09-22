@@ -4,7 +4,7 @@ mkdir -p data/
 NREF=4
 DEGREE=4
 OMEGA=1.0
-TFINALMAX=3.14 # ~ pi
+TFINALMAX=0 # ~ pi
 
 python data_generator.py \
     --filename data/data_train_nref${NREF}_${TFINALMAX}.h5 \

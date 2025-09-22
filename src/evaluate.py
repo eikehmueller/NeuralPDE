@@ -82,7 +82,7 @@ parser.add_argument(
     type=str,
     action="store",
     help="file containing the data",
-    default="data/data_test_nref4_tfinalmax3.14.h5",
+    default="data/data_test_nref4_0.h5",
 )
 
 args, _ = parser.parse_known_args()

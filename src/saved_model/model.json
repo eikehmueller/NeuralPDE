@@ -7,9 +7,11 @@
     },
     "architecture": {
         "dual_ref": 1,
-        "n_radial": 4,
+        "n_radial": 8,
+        "decoder": "patch",
         "latent_dynamic_dim": 32,
         "latent_ancillary_dim": 16,
-        "dt": 0.1
+        "nu": 3,
+        "dt": 0.01
     }
 }
