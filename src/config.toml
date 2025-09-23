@@ -7,7 +7,7 @@ valid = "data/data_valid_nref4_0.h5" # file containing the validation data
 [architecture]
 dual_ref = 1              # number of refinements of dual mesh
 n_radial = 8              # number of radial points on each patch
-decoder = "patch"         # decoder to use ('patch' or 'nearest_neighbour')
+decoder = "nearest_neighbour"         # decoder to use ('patch' or 'nearest_neighbour')
 latent_dynamic_dim = 32   # dimension of dynamic latent space
 latent_ancillary_dim = 16 # dimension of ancillary latent space
 nu = 3                    # number of nearest neighours in decoder
