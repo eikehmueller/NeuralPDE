@@ -46,6 +46,11 @@ class IcosahedralDualMesh:
     def vertices(self):
         """return an array of shape (n_cells,3) which contains the vertices of the dual grid"""
         return np.array(self._vertices)
+    
+    @property
+    def dof_count(self):
+        """Return the number of dofs on the dual mesh"""
+        return len(self._vertices)
 
     @property
     def neighbour_list(self):
