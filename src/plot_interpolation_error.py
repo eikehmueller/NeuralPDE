@@ -57,7 +57,7 @@ for j, ((X, t), y_target) in enumerate(iter(dataset)):
     f_input = Function(V, name="input")
 
     interp = Interpolator(fs_from=V, fs_to=dualmesh)
-    f_dual = interp.forward(f_input)
+    f_dual = interp.forward(X.detach()[0, :])
     adjinterp = AdjointInterpolator(fs_from=dualmesh, fs_to=V.mesh())
     f_interpolated = adjinterp.forward(f_dual)
 

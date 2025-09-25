@@ -107,7 +107,7 @@ class SphericalFunctionSpaceDataset(Dataset):
         self.n_func_target = n_func_target
         self.n_ref = n_ref
         self.dtype = torch.get_default_dtype() if dtype is None else dtype
-        mesh = UnitIcosahedralSphereMesh(n_ref)  # create the mesh
+        mesh = UnitIcosahedralSphereMesh(refinement_level=n_ref)  # create the mesh
         self._fs = FunctionSpace(mesh, "CG", 1)  # define the function space
         self.n_samples = nsamples
         self._data = (

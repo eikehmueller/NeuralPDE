@@ -50,7 +50,7 @@ class IcosahedralDualMesh:
     @property
     def dof_count(self):
         """Return the number of dofs on the dual mesh"""
-        return len(self._vertices)
+        return len(self._vertices[:,0])
 
     @property
     def neighbour_list(self):
