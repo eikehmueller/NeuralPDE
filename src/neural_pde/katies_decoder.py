@@ -2,7 +2,6 @@
 
 import numpy as np
 import torch
-from neural_pde.icosahedral_dual_mesh import IcosahedralDualMesh
 
 from firedrake import *
 
@@ -42,10 +41,6 @@ class KatiesDecoder(torch.nn.Module):
                 dist[idx] = np.inf
 
         self.register_buffer("index", torch.tensor(index).unsqueeze(-1))
-
-
-    def testing(self):
-        return
     
     def forward(self, z_prime, x_ancil):
         """
@@ -55,52 +50,28 @@ class KatiesDecoder(torch.nn.Module):
         :arg x_ancil: ancillary state, tensor of shape (batch_size, n_ancil, n_vertex)
         """
 
+        # create an zero tensor with shape (n_vertex, nu)
         z_bar = torch.zeros_like(self.index, dtype=torch.float64)
 
+        # expand to be zero tensor of shape (batch_size, n_vertex, nu, d_lat)
         z_tilde = z_bar.repeat(z_prime.shape[0], 1, 1, z_prime.shape[-1])
 
 
-        print(z_tilde.shape)
         # i is the firedrake node
         # j is how close the node is
-        # k is the barch size 
-        for i in range(z_tilde.shape[1]):
-            for j in range(self.nu):
-                for k in range(z_tilde.shape[0]):
-                    index_value = self.index[i][j] # 0 corresponds to the nearest neighbour
-                    #print(f'Index value is {index_value}')
-                    #print(f'We want to insert {z_prime[index_value].squeeze()}')
-                    #print(f'We will insert it at {z_tilde[i][0]}')
+        # k is the branch size 
+        for k in range(z_tilde.shape[0]):
+            for i in range(z_tilde.shape[1]):
+                for j in range(self.nu):
+                    # jth nearest neighbour to ith node
+                    index_value = self.index[i][j] # 
+                    # fill z_tilde batch k, node i, jth nearest neighbour
+                    # with the d_latent variable data
                     z_tilde[k][i][j] = z_prime[k][index_value].squeeze().detach().clone()
-                    #print(z_tilde[0][0])
-                    #z_tilde[i][0] = torch.ones(5)
 
+        # combine nu and dlat 
         z_tilde = z_tilde.flatten(start_dim=-2, end_dim=-1)
         #x_ancil_tilde = x_ancil.transpose(-2, -1)
         #y_tilde = torch.cat((z_tilde, x_ancil_tilde), dim=-1)
 
         return z_tilde #self._decoder_model(y_tilde).transpose(-2, -1)
-
-'''
-
-d_lat = 5
-n_ancil = 3
-batch_size = 8 
-
-icomesh = UnitIcosahedralSphereMesh(refinement_level=0)
-dualmesh = IcosahedralDualMesh(nref=0)
-V = FunctionSpace(icomesh, "CG", 1)  # define the function space
-
-n_dual_vertex = dualmesh.dof_count
-#print(f'No dual vertices is {n_dual_vertex}')
-
-n_vertex = V.dim()
-#print(f'No vertices of firedrake mesh is {n_vertex}')
-
-z_prime = torch.rand(batch_size, n_dual_vertex, d_lat)
-#print(f'Shape of z_prime is {z_prime.shape}')
-x_ancil = torch.rand(batch_size, n_ancil, n_vertex)
-#print(f'Shape of x_ancil is {x_ancil.shape}')
-'''
-#testing_decoder = KatiesDecoder(V, dualmesh, 1)
-#testing_decoder.forward(z_prime, x_ancil)
