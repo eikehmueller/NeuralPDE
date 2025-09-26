@@ -41,15 +41,18 @@ class Decoder(torch.nn.Module):
         dim = plex.getCoordinateDim()
         vertex_coords = np.asarray(plex.getCoordinates()).reshape([-1, dim])
         n_vertex = vertex_coords.shape[0]
+        pVertexStart, pVertexEnd = plex.getHeightStratum(2)
+        section = V.dm.getDefaultSection()
         # Construct index array of shape (n_vertex, nu) such that
         # index[j,k] = index of the k-th closest dual vertex to vertex j
         index = np.zeros(shape=(n_vertex, self.nu), dtype=np.int64)
-        for j in range(n_vertex):
-            p = vertex_coords[j, :]
+        for vertex in range(pVertexStart, pVertexEnd):
+            offset = section.getOffset(vertex)
+            p = vertex_coords[vertex - pVertexStart, :]
             dist = np.linalg.norm(dual_mesh._vertices - p, axis=1)
             for k in range(self.nu):
                 idx = np.argmin(dist)
-                index[j, k] = idx
+                index[offset, k] = idx
                 dist[idx] = np.inf
         self.register_buffer("index", torch.tensor(index).unsqueeze(-1))
 
@@ -72,7 +75,7 @@ class Decoder(torch.nn.Module):
         # Convert x_ancil to shape (batch_size, n_vertex, n_ancil) by swapping the last two
         # dimensions
         x_ancil_tilde = x_ancil.transpose(-2, -1)
-        # Concat z_tilde and x_ancil_tilde to shape (batch_size, nu*d_lat + n_ancil, n_vertex)
+        # Concat z_tilde and x_ancil_tilde to shape (batch_size, n_vertex, nu*d_lat + n_ancil)
         y_tilde = torch.cat((z_tilde, x_ancil_tilde), dim=-1)
         # Pass through decoder model and transpose to shape (batch_size, n_out, n_vertex)
         return self._decoder_model(y_tilde).transpose(-2, -1)
