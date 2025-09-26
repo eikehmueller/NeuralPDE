@@ -71,8 +71,8 @@ class Decoder(torch.nn.Module):
         ).flatten(start_dim=-2, end_dim=-1)
         # Convert x_ancil to shape (batch_size, n_vertex, n_ancil) by swapping the last two
         # dimensions
-        x_ancil_tilde = x_ancil.transpose(-2, -1)
+        #x_ancil_tilde = x_ancil.transpose(-2, -1)
         # Concat z_tilde and x_ancil_tilde to shape (batch_size, nu*d_lat + n_ancil, n_vertex)
-        y_tilde = torch.cat((z_tilde, x_ancil_tilde), dim=-1)
+        #y_tilde = torch.cat((z_tilde, x_ancil_tilde), dim=-1)
         # Pass through decoder model and transpose to shape (batch_size, n_out, n_vertex)
-        return self._decoder_model(y_tilde).transpose(-2, -1)
+        return z_tilde #self._decoder_model(y_tilde).transpose(-2, -1)

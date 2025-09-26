@@ -5,6 +5,7 @@ import sys
 sys.path.append("..")
 from neural_pde.icosahedral_dual_mesh import IcosahedralDualMesh
 from neural_pde.katies_decoder import KatiesDecoder
+from neural_pde.decoder import Decoder
 import sys
 from torch.profiler import profile, ProfilerActivity, record_function
 
@@ -46,7 +47,7 @@ n_ancil = 3
 batch_size = 1
 nu = 1
 
-decoder_test = KatiesDecoder(V, dualmesh, 1, 1)
+decoder_test = Decoder(V, dualmesh, 1, 1)
 z = decoder_test.forward(z_prime, 1)
 f_z = Function(V)
 print(f'Length of f_z is {len(f_z.dat.data)}')
