@@ -72,7 +72,7 @@ class IcosahedralDualMesh:
 
         """
         fs = FunctionSpace(self._mesh, "DG", 0)
-        u = Function(fs)
+        u = Function(fs, name="target")
         plex = self._mesh.topology_dm
         section = fs.dm.getDefaultSection()
         pCellStart, pCellEnd = plex.getHeightStratum(0)

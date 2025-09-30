@@ -9,8 +9,8 @@
         "dual_ref": 1,
         "n_radial": 8,
         "decoder": "nearest_neighbour",
-        "latent_dynamic_dim": 32,
-        "latent_ancillary_dim": 16,
+        "latent_dynamic_dim": 16,
+        "latent_ancillary_dim": 8,
         "nu": 3,
         "dt": 0.01
     }
