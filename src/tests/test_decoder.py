@@ -30,7 +30,6 @@ mesh = UnitIcosahedralSphereMesh(refinement_level=4) # the firedrake mesh
 dualmesh = IcosahedralDualMesh(nref=0) # the dual mesh (much coarser)
 V = FunctionSpace(mesh, "CG", 1) # FEM function space related to firedrake mesh
 
-
 dual_mesh_vertices = dualmesh.vertices 
 
 z_prime = torch.rand(1, len(dual_mesh_vertices), 1)

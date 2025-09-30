@@ -12,6 +12,7 @@ import tqdm
 import tomllib
 import argparse
 import os
+from torch.profiler import profile, ProfilerActivity
 
 from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header
 from neural_pde.loss_functions import normalised_mse as loss_fn
@@ -97,53 +98,56 @@ Dimension of dynamic latent space: {config["architecture"]["latent_dynamic_dim"]
 Dimension of ancillary latent space: {config["architecture"]["latent_ancillary_dim"]} \n \
 Time-step: {config["architecture"]["dt"]}")
 
+
 # main training loop
-for epoch in range(config["optimiser"]["nepoch"]):
-    print(f"epoch {epoch + 1} of {config["optimiser"]["nepoch"]}")
-    train_loss = 0
-    model.train(True)
-    for (Xb, tb), yb in tqdm.tqdm(train_dl):
-        Xb = Xb.to(device)  # move to GPU
-        tb = tb.to(device)  # move to GPU
-        yb = yb.to(device)  # move to GPU
-        y_pred = model(Xb, tb)  # make a prediction
-        optimiser.zero_grad()  # resets all of the gradients to zero, otherwise the gradients are accumulated
-        loss = loss_fn(y_pred, yb)  # calculate the loss
-        loss.backward()  # take the backwards gradient
-        optimiser.step()  # adjust the parameters by the gradient collected in the backwards pass
-        # data collection for the model
-        train_loss += loss.item() / (
-            train_ds.n_samples // config["optimiser"]["batchsize"]
-        )
-    scheduler.step()
+with profile(activities=[ProfilerActivity.CPU], record_shapes=True) as prof:
+    for epoch in range(config["optimiser"]["nepoch"]):
+        print(f"epoch {epoch + 1} of {config["optimiser"]["nepoch"]}")
+        train_loss = 0
+        model.train(True)
+        for (Xb, tb), yb in tqdm.tqdm(train_dl):
+            Xb = Xb.to(device)  # move to GPU
+            tb = tb.to(device)  # move to GPU
+            yb = yb.to(device)  # move to GPU
+            y_pred = model(Xb, tb)  # make a prediction
+            optimiser.zero_grad()  # resets all of the gradients to zero, otherwise the gradients are accumulated
+            loss = loss_fn(y_pred, yb)  # calculate the loss
+            loss.backward()  # take the backwards gradient
+            optimiser.step()  # adjust the parameters by the gradient collected in the backwards pass
+            # data collection for the model
+            train_loss += loss.item() / (
+                train_ds.n_samples // config["optimiser"]["batchsize"]
+            )
+        scheduler.step()
 
-    # validation
-    model.train(False)
-    valid_loss = 0
-    for (Xv, tv), yv in valid_dl:
-        Xv = Xv.to(device)  # move to GPU
-        tv = tv.to(device)  # move to GPU
-        yv = yv.to(device)  # move to GPU
-        yv_pred = model(Xv, tv)  # make a prediction
-        loss = loss_fn(yv_pred, yv)  # calculate the loss
-        valid_loss += loss.item() / (
-            valid_ds.n_samples // config["optimiser"]["batchsize"]
-        )
+        # validation
+        model.train(False)
+        valid_loss = 0
+        for (Xv, tv), yv in valid_dl:
+            Xv = Xv.to(device)  # move to GPU
+            tv = tv.to(device)  # move to GPU
+            yv = yv.to(device)  # move to GPU
+            yv_pred = model(Xv, tv)  # make a prediction
+            loss = loss_fn(yv_pred, yv)  # calculate the loss
+            valid_loss += loss.item() / (
+                valid_ds.n_samples // config["optimiser"]["batchsize"]
+            )
 
-    print(f"    training loss: {train_loss:8.3e}, validation loss: {valid_loss:8.3e}")
-    writer.add_scalars(
-        "loss",
-        {"train": train_loss, "valid": valid_loss},
-        epoch,
-    )
-    writer.add_scalar("learning_rate", scheduler.get_last_lr()[0], epoch)
-    print()
-    if epoch % 100 == 0:
-        print("Saving model...")
-        model.save(args.model)
+        print(f"    training loss: {train_loss:8.3e}, validation loss: {valid_loss:8.3e}")
+        writer.add_scalars(
+            "loss",
+            {"train": train_loss, "valid": valid_loss},
+            epoch,
+        )
+        writer.add_scalar("learning_rate", scheduler.get_last_lr()[0], epoch)
+        print()
+        if epoch % 100 == 0:
+            print("Saving model...")
+            model.save(args.model)
 writer.flush()
 
 end = timer()
 print(f"Runtime: {timedelta(seconds=end-start)}")
-
+print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
+prof.export_chrome_trace("trace.json")
 model.save(args.model)
