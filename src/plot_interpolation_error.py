@@ -7,9 +7,6 @@ import os
 import argparse
 
 from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header
-from neural_pde.intergrid import Interpolator, AdjointInterpolator
-from neural_pde.icosahedral_dual_mesh import IcosahedralDualMesh
-from neural_pde.loss_functions import normalised_rmse
 
 parser = argparse.ArgumentParser()
 
@@ -47,20 +44,29 @@ if not os.path.exists(args.output):
     os.makedirs(args.output)
 
 mesh = UnitIcosahedralSphereMesh(dataset.n_ref)
+dualmesh = UnitIcosahedralSphereMesh(1) # number of refinements on the dual mesh
 V = FunctionSpace(mesh, "CG", 1)
-dualmesh = IcosahedralDualMesh(1)
+V_dg = FunctionSpace(dualmesh, "DG", 0)
 
-newmesh = V.mesh()
 
 for j, ((X, t), y_target) in enumerate(iter(dataset)):
 
     f_input = Function(V, name="input")
+    f_input.dat.data[:] = X.detach().numpy()[0, :]
 
-    interp = Interpolator(fs_from=V, fs_to=dualmesh)
-    f_dual = interp.forward(X.detach()[0, :])
-    adjinterp = AdjointInterpolator(fs_from=dualmesh, fs_to=V.mesh())
-    f_interpolated = adjinterp.forward(f_dual)
+    f_process = Function(V_dg, name="process")
+    f_process.interpolate(f_input)
 
-    L2_error = normalised_rmse(f_input, f_interpolated)
+    f_output = Function(V, name="output")
+    f_output.interpolate(f_process)
+
+    L2_error = norms.errornorm(f_input, f_output)
     print(L2_error)
+
+    file = VTKFile(os.path.join(args.output, f"firedrake_mesh_output_{j:04d}.pvd"))
+    file.write(f_input, f_output)
+
+    file = VTKFile(os.path.join(args.output, f"dual_mesh_output_{j:04d}.pvd"))
+    file.write(f_process)
+
 
