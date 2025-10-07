@@ -15,7 +15,7 @@ import os
 from torch.profiler import profile, ProfilerActivity
 
 from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header
-from neural_pde.loss_functions import normalised_mse as loss_fn
+from neural_pde.loss_functions import normalised_absolute_error as loss_fn
 from neural_pde.model import build_model, load_model
 
 # Create argparse arguments

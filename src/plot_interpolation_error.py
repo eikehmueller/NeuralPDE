@@ -48,6 +48,7 @@ dualmesh = UnitIcosahedralSphereMesh(1) # number of refinements on the dual mesh
 V = FunctionSpace(mesh, "CG", 1)
 V_dg = FunctionSpace(dualmesh, "DG", 0)
 
+L2_error_list = []
 
 for j, ((X, t), y_target) in enumerate(iter(dataset)):
 
@@ -61,12 +62,14 @@ for j, ((X, t), y_target) in enumerate(iter(dataset)):
     f_output.interpolate(f_process)
 
     L2_error = norms.errornorm(f_input, f_output)
-    print(L2_error)
+    L2_error_list.append(L2_error)
 
     file = VTKFile(os.path.join(args.output, f"firedrake_mesh_output_{j:04d}.pvd"))
     file.write(f_input, f_output)
 
     file = VTKFile(os.path.join(args.output, f"dual_mesh_output_{j:04d}.pvd"))
     file.write(f_process)
+
+print(f'Average L2 error: {np.average(np.asarray(L2_error_list))}')
 
 

@@ -9,7 +9,7 @@ import time
 import argparse
 
 from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header
-from neural_pde.loss_functions import normalised_rmse as loss_fn
+from neural_pde.loss_functions import normalised_absolute_error as metric
 from neural_pde.model import load_model
 
 
@@ -107,7 +107,7 @@ model.train(False)
 avg_loss = 0
 for (Xv, tv), yv in dataloader:
     yv_pred = model(Xv, tv)
-    loss = loss_fn(yv_pred, yv)
+    loss = metric(yv_pred, yv)
     avg_loss += loss.item() / (dataset.n_samples / batch_size)
 
 print(f"average relative error: {100*avg_loss:6.3f} %")
