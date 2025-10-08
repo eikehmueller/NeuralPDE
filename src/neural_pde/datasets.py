@@ -14,6 +14,7 @@ from firedrake import (
     SpatialCoordinate,
     UnitIcosahedralSphereMesh,
 )
+from firedrake import *
 
 __all__ = [
     "show_hdf5_header",
@@ -258,3 +259,220 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
             self._u.interpolate(expr_target)
             self._data[j, 7, :] = self._u.dat.data
             self._t_final[j] = t_final
+
+
+
+class Projector:
+
+    def __init__(self, W, V):
+        """Class for projecting functions in from a 3D vector space to 3 separate scalar functions in V
+
+        :arg W: function space W
+        :arg V: function space V
+        """
+        self._W = W # this should be the BDM space!!
+        self._V = V # CG1 space
+        phi = TestFunction(self._V)
+        psi = TrialFunction(self._V)
+        self._w_hdiv = Function(self._W)
+        self._u = [
+            Function(self._V),
+            Function(self._V),
+            Function(self._V),
+        ]
+        self._lvs = []
+        a_mass = phi * psi * dx
+        # this is the part that projects from Hdiv into CG1
+        for j in range(3):
+            n_hat = [0, 0, 0]
+            n_hat[j] = 1
+            b_hdiv = phi * inner(self._w_hdiv, as_vector(n_hat)) * dx
+            lvp = LinearVariationalProblem(a_mass, b_hdiv, self._u[j])
+            self._lvs.append(LinearVariationalSolver(lvp))
+
+    def apply(self, w, u):
+        """Project a specific function
+
+        :arg w: function in W to project
+        :arg u: list of three functions which will contain the result
+        """
+        
+        self._w_hdiv.assign(w)
+        for j in range(3):
+            self._lvs[j].solve()
+            u[j].assign(self._u[j])
+
+
+#test_projector()
+class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
+    """Data set for Shallow Water Equations
+
+    The input conists of the function fields (u,x,y,z) which represent a
+    scalar function u and the three coordinate fields. The output is
+    the same function, but rotated by some angle phi
+
+    """
+
+    def __init__(self, n_ref, nsamples, nt, t_final_max=1.0):
+        """Initialise new instance
+
+        :arg nref: number of mesh refinements
+        :arg nsamples: number of samples
+        :arg omega: rotation speed
+        :arg t_final_max: maximum final time
+        :arg degree: polynomial degree used for generating random fields
+        :arg seed: seed of rng
+        """
+        n_func_in_dynamic = 4   # fixed for swes
+        n_func_in_ancillary = 3 # x y and z coordinates
+        n_func_target = 4       # fixed for swes
+
+        # initialise with the SphericalFunctionSpaceData
+        super().__init__(
+            n_func_in_dynamic, n_func_in_ancillary, n_func_target, n_ref, nsamples
+        )
+
+        self.nt = nt # number of timesteps
+        self.t_final_max = t_final_max # final time
+
+        x, y, z = SpatialCoordinate(self._fs.mesh()) # spatial coordinate
+        self._x = Function(self._fs).interpolate(x) # collect data on x,y,z coordinates
+        self._y = Function(self._fs).interpolate(y)
+        self._z = Function(self._fs).interpolate(z)
+
+    def generate_full_dataset(self):
+        '''
+        Generate the full data for the shallow water equations. The dataset used to train the model
+        will be sampled from this data. This may take a while to load.
+        '''
+
+        L0 = 5960 # charactersistic length scale (mean height of water)
+        T0 = 82794.2 # characteristic time scale - time for wave to travel halfway around the world
+        R = 6371220 / L0 # radius of earth divided by length scale
+
+        element_order = 1 # CG method
+        dt = self.t_final_max / self.nt # Timestep
+
+        # BDM means Brezzi-Douglas-Marini finite element basis function
+        domain = Domain(self.mesh, dt, 'BDM', element_order)
+        print(domain.spaces)
+
+        # ShallowWaterParameters are the physical parameters for the shallow water equations
+        mean_depth = 1           # this is the parameter we nondimensionalise around
+        Omega = 7.292e-5         # speed of rotation of the earth
+        g = 9.80616              # gravitational acceleration
+        g0 = g * (T0**2) / L0    # nondimensionalised g (m/s^2)
+        Omega0 = 2 * Omega * T0  # nondimensionalised omega (s^-1), scaled by 2
+
+        # initialise parameters object
+        parameters = ShallowWaterParameters(self.mesh, H=mean_depth, g=g0, Omega=Omega0)
+
+        # set up the finite element form
+        xyz = SpatialCoordinate(self.mesh)
+        lon, lat, _ = lonlatr_from_xyz(*xyz)  # latitide and longitude 
+        eqns = ShallowWaterEquations(domain, parameters)
+
+        # output options 
+        output = OutputParameters(dirname="output", dump_vtus=True, dump_diagnostics=True, dumpfreq=1, checkpoint=True, chkptfreq=1, multichkpt=True) # these have been modified so we get no output
+
+        # choose which fields to record over the simulation
+        diagnostic_fields = [MeridionalComponent('u'), ZonalComponent('u'), SteadyStateError('D')]
+        io = IO(domain, output, diagnostic_fields=diagnostic_fields)
+
+        # the methods to solve the equations
+        transported_fields = [SSPRK3(domain, "u"), SSPRK3(domain, "D")]
+        transport_methods  = [DGUpwind(eqns, "u"), DGUpwind(eqns, "D")]
+        stepper = SemiImplicitQuasiNewton(eqns, io, transported_fields, transport_methods)
+
+        # setting the initial conditions for velocity
+        u0 = stepper.fields("u")
+        day = 24*60*60 / T0 # day in seconds
+        u_max = 2*pi*R/(12*day)  # Maximum amplitude of the zonal wind (m/s)
+        uexpr = as_vector((-u_max*cos(lat)*sin(lon), u_max*cos(lat)*cos(lon), 0))
+        u0.project(uexpr)
+
+        # setting up initial conditions for height
+        D0 = stepper.fields("D")
+        g = parameters.g
+        H = parameters.H
+
+        lamda_c = -pi/2.  # longitudinal centre of mountain (rad)
+        phi_c = pi/6.     # latitudinal centre of mountain (rad)
+        lamda_a = - pi/4
+        phi_a = pi/4
+
+        R0 = pi/9.                  # radius of mountain (rad)
+        mountain_height = 2000 / L0 # height of mountain (m)
+
+        rsq1 = min_value(R0**2, (lon - lamda_c)**2 + (lat - phi_c)**2)
+        rsq2 = min_value(R0**2, (lon - lamda_a)**2 + (lat - phi_a)**2)
+
+        r1 = sqrt(rsq1)
+        r2 = sqrt(rsq2)
+
+        tpexpr = mountain_height *( (1 - r1/R0) + (1 - r2/R0) )#+ (1 - r3/R0))
+        Dexpr = H - ((R * Omega0 * u_max + 0.5*u_max**2)*(sin(lat))**2) / g0 + tpexpr
+
+        D0.interpolate(Dexpr)
+
+        # reference velocity is zero, reference depth is H
+        Dbar = Function(D0.function_space()).assign(H)
+        stepper.set_reference_profiles([('D', Dbar)])
+
+        # run the simulation
+        stepper.run(t=0, tmax=self.t_final_max)
+    
+    def prepare_for_model(self):
+        '''
+        Sample the data from the generated dataset and save as a np array
+        '''
+        dt = self.t_final_max / self.nt # Timestep
+
+        h_inp = Function(self._fs) # input function for h
+        h_tar = Function(self._fs) # target function for h
+
+        # TODO: figure out how to get this function space from the data
+
+        
+        for j in tqdm.tqdm(range(self.n_samples)):
+
+            lowest = 0
+            highest = self.nt
+            start = np.random.randint(lowest, highest)
+            end   = np.random.randint(start, highest + 1)
+            
+            with CheckpointFile("results/output/chkpt.h5", 'r') as afile:
+                mesh_h5 = afile.load_mesh("IcosahedralMesh")
+                V_BDM = FunctionSpace(mesh_h5, "BDM", 2)
+                V_CG = FunctionSpace(mesh_h5, "CG", 1)
+
+                u_inp = [Function(V_CG) for _ in range(3)]
+                u_tar = [Function(V_CG) for _ in range(3)]
+
+                p = Projector(V_BDM, V_CG)
+
+                w1 = afile.load_function(mesh_h5, "u", idx=start)
+                w2 = afile.load_function(mesh_h5, "u", idx=end)
+                
+                h_inp.interpolate(afile.load_function(mesh_h5, "D", idx=start)) # input h data
+                h_tar.interpolate(afile.load_function(mesh_h5, "D", idx=end))   # target h data
+                p.apply(w1, u_inp)    # input u data
+                p.apply(w2, u_tar)    # target u data
+                
+            # coordinate data
+            self._data[j, 0, :] = self._x.dat.data # x coord data
+            self._data[j, 1, :] = self._y.dat.data # y coord data
+            self._data[j, 2, :] = self._z.dat.data # z coord data
+            # input data
+            self._data[j, 3, :] = h_inp.dat.data # h data
+            self._data[j, 4, :] = u_inp[0].dat.data # u in x direction
+            self._data[j, 5, :] = u_inp[1].dat.data # u in y direction
+            self._data[j, 6, :] = u_inp[2].dat.data # u in z direction
+            # output data
+            self._data[j, 7, :]  = h_tar.dat.data # h data
+            # NEED TO CHECK THAT THESE ARE CORRECT!!
+            self._data[j, 8, :]  = u_tar[0].dat.data # u in x direction
+            self._data[j, 9, :]  = u_tar[1].dat.data # u in y direction
+            self._data[j, 10, :] = u_tar[2].dat.data # u in z direction
+            self._t_total[j] = (start - end) * dt
+        return
