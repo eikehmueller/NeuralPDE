@@ -1,5 +1,6 @@
 {
     {
-        "python.pythonPath": "~/Software/firedrake/bin"
+        "python.pythonPath": "~/Software/firedrake/bin",
+        "python.envFile": "${workspaceFolder}/.env"
     }
 }

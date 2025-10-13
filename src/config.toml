@@ -7,14 +7,14 @@ valid = "data/data_valid_nref4_0.h5" # file containing the validation data
 [architecture]
 dual_ref = 1              # number of refinements of dual mesh
 n_radial = 8              # number of radial points on each patch
-decoder = "nearest_neighbour"         # decoder to use ('patch' or 'nearest_neighbour')
+decoder = "patch"         # decoder to use ('patch' or 'nearest_neighbour')
 latent_dynamic_dim = 10   # dimension of dynamic latent space
 latent_ancillary_dim = 5  # dimension of ancillary latent space
 nu = 8                    # number of nearest neighours in decoder
 dt = 0.01                 # Stepsize
 
 [optimiser]
-nepoch = 1                 # number of epochs
+nepoch = 1                   # number of epochs
 batchsize = 32               # size of training batches
 initial_learning_rate = 0.01 # initial learning rate
 final_learning_rate = 0.001  # final learning rate

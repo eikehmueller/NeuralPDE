@@ -4,9 +4,14 @@ import json
 import h5py
 import tqdm
 from torch.utils.data import Dataset
-
 import itertools
-
+import sys
+sys.path.append("/home/katie795/software/gusto/gusto")
+from gusto import (
+    lonlatr_from_xyz, ShallowWaterParameters, ShallowWaterEquations, Domain,
+    OutputParameters, MeridionalComponent, ZonalComponent,
+    IO, SSPRK3, DGUpwind, SemiImplicitQuasiNewton,
+    SteadyStateError)
 
 from firedrake import (
     FunctionSpace,
@@ -22,7 +27,6 @@ __all__ = [
     "SphericalFunctionSpaceDataset",
     "SolidBodyRotationDataset",
 ]
-
 
 def load_hdf5_dataset(filename):
     """Load the dataset from disk
@@ -108,8 +112,8 @@ class SphericalFunctionSpaceDataset(Dataset):
         self.n_func_target = n_func_target
         self.n_ref = n_ref
         self.dtype = torch.get_default_dtype() if dtype is None else dtype
-        mesh = UnitIcosahedralSphereMesh(refinement_level=n_ref)  # create the mesh
-        self._fs = FunctionSpace(mesh, "CG", 1)  # define the function space
+        self.mesh = UnitIcosahedralSphereMesh(refinement_level=n_ref, name="IcosahedralMesh")  # create the mesh
+        self._fs = FunctionSpace(self.mesh, "CG", 1)  # define the function space
         self.n_samples = nsamples
         self._data = (
             np.empty(
@@ -302,8 +306,6 @@ class Projector:
             self._lvs[j].solve()
             u[j].assign(self._u[j])
 
-
-#test_projector()
 class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
     """Data set for Shallow Water Equations
 
@@ -313,19 +315,20 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
     """
 
-    def __init__(self, n_ref, nsamples, nt, t_final_max=1.0):
+    def __init__(self, n_ref, nsamples, nt, t_final_max=1.0, omega=7.292e-5, g=9.8):
         """Initialise new instance
 
         :arg nref: number of mesh refinements
         :arg nsamples: number of samples
         :arg omega: rotation speed
         :arg t_final_max: maximum final time
-        :arg degree: polynomial degree used for generating random fields
-        :arg seed: seed of rng
         """
         n_func_in_dynamic = 4   # fixed for swes
         n_func_in_ancillary = 3 # x y and z coordinates
         n_func_target = 4       # fixed for swes
+
+        self.omega = omega
+        self.g = g
 
         # initialise with the SphericalFunctionSpaceData
         super().__init__(
@@ -355,14 +358,11 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
         # BDM means Brezzi-Douglas-Marini finite element basis function
         domain = Domain(self.mesh, dt, 'BDM', element_order)
-        print(domain.spaces)
 
         # ShallowWaterParameters are the physical parameters for the shallow water equations
         mean_depth = 1           # this is the parameter we nondimensionalise around
-        Omega = 7.292e-5         # speed of rotation of the earth
-        g = 9.80616              # gravitational acceleration
-        g0 = g * (T0**2) / L0    # nondimensionalised g (m/s^2)
-        Omega0 = 2 * Omega * T0  # nondimensionalised omega (s^-1), scaled by 2
+        g0 = self.g * (T0**2) / L0    # nondimensionalised g (m/s^2)
+        Omega0 = 2 * self.omega * T0  # nondimensionalised omega (s^-1), scaled by 2
 
         # initialise parameters object
         parameters = ShallowWaterParameters(self.mesh, H=mean_depth, g=g0, Omega=Omega0)
@@ -433,7 +433,6 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
         # TODO: figure out how to get this function space from the data
 
-        
         for j in tqdm.tqdm(range(self.n_samples)):
 
             lowest = 0
@@ -474,5 +473,5 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
             self._data[j, 8, :]  = u_tar[0].dat.data # u in x direction
             self._data[j, 9, :]  = u_tar[1].dat.data # u in y direction
             self._data[j, 10, :] = u_tar[2].dat.data # u in z direction
-            self._t_total[j] = (start - end) * dt
+            self._t_final[j] = (start - end) * dt
         return
