@@ -129,7 +129,10 @@ class SphericalFunctionSpaceDataset(Dataset):
             if data is None
             else data
         )
-        self._t_final = (
+        self._t_initial = (
+            np.empty(self.n_samples, dtype=np.float64) if t_final is None else t_final
+        ) 
+        self._t_elapsed = (
             np.empty(self.n_samples, dtype=np.float64) if t_final is None else t_final
         )
 
@@ -145,7 +148,7 @@ class SphericalFunctionSpaceDataset(Dataset):
             dtype=self.dtype,
         )
         t = torch.tensor(
-            self._t_final[idx],
+            self._t_elapsed[idx],
             dtype=self.dtype,
         )
         y = torch.tensor(
@@ -165,7 +168,8 @@ class SphericalFunctionSpaceDataset(Dataset):
         with h5py.File(filename, "w") as f:
             group = f.create_group("base")
             group.create_dataset("data", data=self._data)
-            group.create_dataset("t_final", data=self._t_final)
+            group.create_dataset("t_initial", data=self._t_initial)
+            group.create_dataset("t_elapsed", data=self._t_elapsed)
             f.attrs["n_func_in_dynamic"] = int(self.n_func_in_dynamic)
             f.attrs["n_func_in_ancillary"] = int(self.n_func_in_ancillary)
             f.attrs["n_func_target"] = int(self.n_func_target)
@@ -262,7 +266,7 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
             self._data[j, 6, :] = self._u_z.dat.data
             self._u.interpolate(expr_target)
             self._data[j, 7, :] = self._u.dat.data
-            self._t_final[j] = t_final
+            self._t_elapsed[j] = t_final
 
 
 
@@ -501,5 +505,6 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 self._data[j, 8, :]  = u_tar[0].dat.data # u in x direction
                 self._data[j, 9, :]  = u_tar[1].dat.data # u in y direction
                 self._data[j, 10, :] = u_tar[2].dat.data # u in z direction
-                self._t_final[j] = (start - end) * dt
+                self._t_initial[j] = dt * start
+                self._t_elapsed[j] = (end - start) * dt
         return
