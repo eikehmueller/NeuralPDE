@@ -274,25 +274,38 @@ class Projector:
         :arg W: function space W
         :arg V: function space V
         """
-        self._W = W # this should be the BDM space!!
+        self._W = W # this should be the BDM space!! or a DG space
         self._V = V # CG1 space
-        phi = TestFunction(self._V)
-        psi = TrialFunction(self._V)
+        self.phi = TestFunction(self._V)
+        self.psi = TrialFunction(self._V)
         self._w_hdiv = Function(self._W)
         self._u = [
             Function(self._V),
             Function(self._V),
             Function(self._V),
         ]
-        self._lvs = []
-        a_mass = phi * psi * dx
-        # this is the part that projects from Hdiv into CG1
-        for j in range(3):
-            n_hat = [0, 0, 0]
-            n_hat[j] = 1
-            b_hdiv = phi * inner(self._w_hdiv, as_vector(n_hat)) * dx
-            lvp = LinearVariationalProblem(a_mass, b_hdiv, self._u[j])
-            self._lvs.append(LinearVariationalSolver(lvp))
+        self._v = Function(self._V)
+        self.a_mass = self.phi * self.psi * dx
+
+
+    def create_linear_solver(self):
+
+        if self._W.value_size == 3:
+            lvs = []
+            for j in range(3):
+                n_hat = [0, 0, 0]
+                n_hat[j] = 1
+                b_hdiv = self.phi * inner(self._w_hdiv, as_vector(n_hat)) * dx
+                lvp = LinearVariationalProblem(self.a_mass, b_hdiv, self._u[j])
+                lvs.append(LinearVariationalSolver(lvp))
+        elif self._W.value_size == 1:
+            b_hscalar = self.phi * self._w_hdiv * dx
+            lvp = LinearVariationalProblem(self.a_mass, b_hscalar, self._v)
+            lvs = LinearVariationalSolver(lvp)
+        else:
+            print('Projector error: function space value is neither 1 nor 3.')
+
+        return lvs
 
     def apply(self, w, u):
         """Project a specific function
@@ -300,11 +313,19 @@ class Projector:
         :arg w: function in W to project
         :arg u: list of three functions which will contain the result
         """
-        
-        self._w_hdiv.assign(w)
-        for j in range(3):
-            self._lvs[j].solve()
-            u[j].assign(self._u[j])
+        lvs = self.create_linear_solver()
+
+        if w.function_space().value_size == 3:
+            self._w_hdiv.assign(w)
+            for j in range(3):
+                lvs[j].solve()
+                u[j].assign(self._u[j])
+        elif w.function_space().value_size == 1:
+            self._w_hdiv.assign(w)
+            lvs.solve()
+            u.assign(self._v)
+        else:
+            print('Projector error: function space value is neither 1 nor 3.')
 
 class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
     """Data set for Shallow Water Equations
@@ -431,49 +452,54 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         '''
         dt = self.t_final_max / self.nt # Timestep
 
-        h_inp = Function(self._fs) # input function for h
-        h_tar = Function(self._fs) # target function for h
+        with CheckpointFile("results/output/chkpt.h5", 'r') as afile:
+            mesh_h5 = afile.load_mesh("IcosahedralMesh")
+            V_BDM = FunctionSpace(mesh_h5, "BDM", 2)
+            V_DG = FunctionSpace(mesh_h5, "DG", 1)
+            V_CG = FunctionSpace(mesh_h5, "CG", 1)
 
-        for j in tqdm.tqdm(range(self.n_samples)):
-            
-            # randomly sample the generated data
-            lowest = 0
-            highest = self.nt
-            start = np.random.randint(lowest, highest)
-            end   = np.random.randint(start, highest + 1)
-            
-            with CheckpointFile("results/output/chkpt.h5", 'r') as afile:
-                mesh_h5 = afile.load_mesh("IcosahedralMesh")
-                V_BDM = FunctionSpace(mesh_h5, "BDM", 2)
-                V_CG = FunctionSpace(mesh_h5, "CG", 1)
+            u_inp = [Function(V_CG) for _ in range(3)]
+            u_tar = [Function(V_CG) for _ in range(3)]
 
-                u_inp = [Function(V_CG) for _ in range(3)]
-                u_tar = [Function(V_CG) for _ in range(3)]
+            h_inp = Function(V_CG) # input function for h
+            h_tar = Function(V_CG) # target function for h
 
-                p = Projector(V_BDM, V_CG)
+            p1 = Projector(V_BDM, V_CG)
+            p2 = Projector(V_DG, V_CG)
+
+            for j in tqdm.tqdm(range(self.n_samples)):
+                
+                # randomly sample the generated data
+                lowest = 0
+                highest = self.nt
+                start = np.random.randint(lowest, highest)
+                end   = np.random.randint(start, highest + 1)
 
                 w1 = afile.load_function(mesh_h5, "u", idx=start)
                 w2 = afile.load_function(mesh_h5, "u", idx=end)
-                
-                h_inp.interpolate(afile.load_function(mesh_h5, "D", idx=start)) # input h data
-                h_tar.interpolate(afile.load_function(mesh_h5, "D", idx=end))   # target h data
-                p.apply(w1, u_inp)    # input u data
-                p.apply(w2, u_tar)    # target u data
-                
-            # coordinate data
-            self._data[j, 0, :] = self._x.dat.data # x coord data
-            self._data[j, 1, :] = self._y.dat.data # y coord data
-            self._data[j, 2, :] = self._z.dat.data # z coord data
-            # input data
-            self._data[j, 3, :] = h_inp.dat.data # h data
-            self._data[j, 4, :] = u_inp[0].dat.data # u in x direction
-            self._data[j, 5, :] = u_inp[1].dat.data # u in y direction
-            self._data[j, 6, :] = u_inp[2].dat.data # u in z direction
-            # output data
-            self._data[j, 7, :]  = h_tar.dat.data # h data
-            # NEED TO CHECK THAT THESE ARE CORRECT!!
-            self._data[j, 8, :]  = u_tar[0].dat.data # u in x direction
-            self._data[j, 9, :]  = u_tar[1].dat.data # u in y direction
-            self._data[j, 10, :] = u_tar[2].dat.data # u in z direction
-            self._t_final[j] = (start - end) * dt
+
+                h1 = afile.load_function(mesh_h5, "D", idx=start)
+                h2 = afile.load_function(mesh_h5, "D", idx=end)
+
+                p1.apply(w1, u_inp)    # input u data
+                p1.apply(w2, u_tar)    # target u data
+                p2.apply(h1, h_inp)
+                p2.apply(h2, h_tar)
+                    
+                # coordinate data
+                self._data[j, 0, :] = self._x.dat.data # x coord data
+                self._data[j, 1, :] = self._y.dat.data # y coord data
+                self._data[j, 2, :] = self._z.dat.data # z coord data
+                # input data
+                self._data[j, 3, :] = h_inp.dat.data # h data
+                self._data[j, 4, :] = u_inp[0].dat.data # u in x direction
+                self._data[j, 5, :] = u_inp[1].dat.data # u in y direction
+                self._data[j, 6, :] = u_inp[2].dat.data # u in z direction
+                # output data
+                self._data[j, 7, :]  = h_tar.dat.data # h data
+                # NEED TO CHECK THAT THESE ARE CORRECT!!
+                self._data[j, 8, :]  = u_tar[0].dat.data # u in x direction
+                self._data[j, 9, :]  = u_tar[1].dat.data # u in y direction
+                self._data[j, 10, :] = u_tar[2].dat.data # u in z direction
+                self._t_final[j] = (start - end) * dt
         return

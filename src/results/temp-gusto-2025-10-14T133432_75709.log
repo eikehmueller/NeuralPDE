@@ -1,0 +1,53 @@
+2025-10-14 13:34:32,292 INFO     Running data_generator_swes.py --filename data/data_train_swes_nref_4_0.0001.h5 --nref 4 --omega 7.292e-5 --g 9.8 --nt 10 --tfinalmax 0.0001 --nsamples 4096
+2025-10-14 13:34:56,225 ERROR    Gusto is logging this unhandled exception:
+Traceback (most recent call last):
+  File "/home/katie795/NeuralPDE_workspace/NeuralPDE/src/data_generator_swes.py", line 98, in <module>
+    dataset.prepare_for_model()
+  File "/home/katie795/NeuralPDE_workspace/NeuralPDE/src/neural_pde/datasets.py", line 462, in prepare_for_model
+    h_tar.interpolate(h2)   # target h data
+    ^^^^^^^^^^^^^^^^^^^^^
+  File "petsc4py/PETSc/Log.pyx", line 250, in petsc4py.PETSc.Log.EventDecorator.decorator.wrapped_func
+  File "petsc4py/PETSc/Log.pyx", line 251, in petsc4py.PETSc.Log.EventDecorator.decorator.wrapped_func
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/firedrake/function.py", line 406, in interpolate
+    return assemble(interp, tensor=self, ad_block_tag=ad_block_tag)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "petsc4py/PETSc/Log.pyx", line 250, in petsc4py.PETSc.Log.EventDecorator.decorator.wrapped_func
+  File "petsc4py/PETSc/Log.pyx", line 251, in petsc4py.PETSc.Log.EventDecorator.decorator.wrapped_func
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/firedrake/adjoint_utils/assembly.py", line 30, in wrapper
+    output = assemble(form, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/firedrake/assemble.py", line 142, in assemble
+    return get_assembler(expr, *args, **kwargs).assemble(**assemble_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/firedrake/assemble.py", line 406, in assemble
+    result = BaseFormAssembler.base_form_postorder_traversal(self._form, visitor, visited)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/firedrake/assemble.py", line 624, in base_form_postorder_traversal
+    visited[e] = visitor(e, *(visited[arg] for arg in operands))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/firedrake/assemble.py", line 402, in visitor
+    return self.base_form_assembly_visitor(e, t, *operands)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/firedrake/assemble.py", line 562, in base_form_assembly_visitor
+    interpolator = firedrake.Interpolator(expression, expr.function_space(), **interp_data)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/firedrake/interpolation.py", line 613, in __init__
+    self.vom_dest_node_coords_in_src_mesh = firedrake.VertexOnlyMesh(
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "petsc4py/PETSc/Log.pyx", line 250, in petsc4py.PETSc.Log.EventDecorator.decorator.wrapped_func
+  File "petsc4py/PETSc/Log.pyx", line 251, in petsc4py.PETSc.Log.EventDecorator.decorator.wrapped_func
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/firedrake/mesh.py", line 3376, in VertexOnlyMesh
+    swarm, input_ordering_swarm, n_missing_points = _pic_swarm_in_mesh(
+                                                    ^^^^^^^^^^^^^^^^^^^
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/firedrake/mesh.py", line 3595, in _pic_swarm_in_mesh
+    ) = _parent_mesh_embedding(
+        ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/firedrake/mesh.py", line 4155, in _parent_mesh_embedding
+    ) = parent_mesh.locate_cells_ref_coords_and_dists(coords_global, tolerance)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/firedrake/mesh.py", line 2641, in locate_cells_ref_coords_and_dists
+    self._c_locator(tolerance=tolerance)(self.coordinates._ctypes,
+KeyboardInterrupt

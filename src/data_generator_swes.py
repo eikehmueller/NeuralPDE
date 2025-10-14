@@ -30,7 +30,7 @@ parser.add_argument(
     "--omega",
     type=float,
     action="store",
-    help="angular velocity",
+    help="angular velocity 1/s",
     default=7.292e-5,
 )
 
@@ -38,7 +38,7 @@ parser.add_argument(
     "--g",
     type=float,
     action="store",
-    help="gravitational force",
+    help="gravitational acceleration m/s^2",
     default=9.80616,
 )
 

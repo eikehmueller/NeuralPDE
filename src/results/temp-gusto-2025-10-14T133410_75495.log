@@ -1,0 +1,23 @@
+2025-10-14 13:34:10,227 INFO     Running data_generator_swes.py --filename data/data_train_swes_nref_4_0.0001.h5 --nref 4 --omega 7.292e-5 --g 9.8 --nt 10 --tfinalmax 0.0001 --nsamples 4096
+2025-10-14 13:34:22,753 ERROR    Gusto is logging this unhandled exception:
+Traceback (most recent call last):
+  File "/home/katie795/NeuralPDE_workspace/NeuralPDE/src/data_generator_swes.py", line 98, in <module>
+    dataset.prepare_for_model()
+  File "/home/katie795/NeuralPDE_workspace/NeuralPDE/src/neural_pde/datasets.py", line 456, in prepare_for_model
+    w2 = afile.load_function(mesh_h5, "u", idx=end)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "petsc4py/PETSc/Log.pyx", line 250, in petsc4py.PETSc.Log.EventDecorator.decorator.wrapped_func
+  File "petsc4py/PETSc/Log.pyx", line 251, in petsc4py.PETSc.Log.EventDecorator.decorator.wrapped_func
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/firedrake/checkpointing.py", line 1338, in load_function
+    _f = self.load_function(mesh, _name, idx=idx)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "petsc4py/PETSc/Log.pyx", line 250, in petsc4py.PETSc.Log.EventDecorator.decorator.wrapped_func
+  File "petsc4py/PETSc/Log.pyx", line 251, in petsc4py.PETSc.Log.EventDecorator.decorator.wrapped_func
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/firedrake/checkpointing.py", line 1348, in load_function
+    tf = self._load_function_topology(tV.mesh(), tV.ufl_element(), tf_name, idx=idx)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "petsc4py/PETSc/Log.pyx", line 250, in petsc4py.PETSc.Log.EventDecorator.decorator.wrapped_func
+  File "petsc4py/PETSc/Log.pyx", line 251, in petsc4py.PETSc.Log.EventDecorator.decorator.wrapped_func
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/firedrake/checkpointing.py", line 1390, in _load_function_topology
+    topology_dm.globalVectorLoad(self.viewer, dm, sf, vec)
+KeyboardInterrupt
