@@ -320,8 +320,10 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
         :arg nref: number of mesh refinements
         :arg nsamples: number of samples
-        :arg omega: rotation speed
+        :arg nt: number of timesteps
         :arg t_final_max: maximum final time
+        :arg omega: rotation speed
+        :arg g: gravitational acceleration 
         """
         n_func_in_dynamic = 4   # fixed for swes
         n_func_in_ancillary = 3 # x y and z coordinates

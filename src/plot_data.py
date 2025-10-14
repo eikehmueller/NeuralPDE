@@ -1,4 +1,4 @@
-"""Visualise some parts of the dataset"""
+"""Visualise some parts of the dataset from the hdf5 file"""
 
 from torch.utils.data import DataLoader
 from firedrake import *
@@ -23,7 +23,7 @@ parser.add_argument(
     type=str,
     action="store",
     help="file containing the data",
-    default="data/data_test_nref4_0.h5",
+    default="data/data_swes.h5",
 )
 
 args, _ = parser.parse_known_args()
@@ -47,8 +47,10 @@ mesh = UnitIcosahedralSphereMesh(dataset.n_ref)
 V = FunctionSpace(mesh, "CG", 1)
 for j, ((X, t), y_target) in enumerate(iter(dataset)):
 
+    # This does not work with the ordering!!!
+
     f_input = Function(V, name="input")
-    f_input.dat.data[:] = X.detach().numpy()[0, :]
+    f_input.dat.data[:] = X.detach().numpy()[3, :]
 
     f_target = Function(V, name="target")
     f_target.dat.data[:] = y_target.detach().numpy()[0, :]

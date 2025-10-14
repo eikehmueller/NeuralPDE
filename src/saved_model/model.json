@@ -1,14 +1,14 @@
 {
     "dimensions": {
-        "n_ref": 4,
+        "n_ref": 2,
         "n_func_in_dynamic": 4,
         "n_func_in_ancillary": 3,
-        "n_func_target": 1
+        "n_func_target": 4
     },
     "architecture": {
         "dual_ref": 1,
         "n_radial": 8,
-        "decoder": "nearest_neighbour",
+        "decoder": "patch",
         "latent_dynamic_dim": 10,
         "latent_ancillary_dim": 5,
         "nu": 8,

@@ -8,7 +8,7 @@ import json
 from neural_pde.patch_encoder import PatchEncoder
 from neural_pde.patch_decoder import PatchDecoder
 from neural_pde.decoder import Decoder
-from neural_pde.katies_decoder import KatiesDecoder
+#from neural_pde.katies_decoder import KatiesDecoder
 from neural_pde.neural_solver import NeuralSolver
 from neural_pde.spherical_patch_covering import SphericalPatchCovering
 
@@ -235,37 +235,6 @@ class NeuralPDEModel(torch.nn.Module):
                 ),
             )
         
-        elif architecture["decoder"] == "katies_decoder":
-            decoder_model = torch.nn.Sequential(
-                torch.nn.Linear(
-                    in_features=architecture["nu"]
-                    * (
-                        architecture["latent_dynamic_dim"]
-                        + architecture["latent_ancillary_dim"]
-                    )
-                    + n_func_in_ancillary,
-                    out_features=n_hidden,
-                ),
-                torch.nn.Softplus(),
-                torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
-                torch.nn.Softplus(),
-                torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
-                torch.nn.Softplus(),
-                torch.nn.Linear(
-                    in_features=n_hidden,
-                    out_features=n_func_target,
-                ),
-            )
-
-            self.add_module(
-                "Decoder",
-                KatiesDecoder(
-                    V,
-                    spherical_patch_covering.dual_mesh,
-                    decoder_model,
-                    nu=architecture["nu"],
-                ),
-            )
         self.initialised = True
 
     def forward(self, x, t_final):
