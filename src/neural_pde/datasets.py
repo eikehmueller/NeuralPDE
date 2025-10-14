@@ -364,7 +364,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         # ShallowWaterParameters are the physical parameters for the shallow water equations
         mean_depth = 1           # this is the parameter we nondimensionalise around
         g0 = self.g * (T0**2) / L0    # nondimensionalised g (m/s^2)
-        Omega0 = 2 * self.omega * T0  # nondimensionalised omega (s^-1), scaled by 2
+        Omega0 = self.omega * T0  # nondimensionalised omega (s^-1)
 
         # initialise parameters object
         parameters = ShallowWaterParameters(self.mesh, H=mean_depth, g=g0, Omega=Omega0)
@@ -398,6 +398,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         g = parameters.g
         H = parameters.H
 
+        # adding mountain ranges - these could all be varied!
         lamda_c = -pi/2.  # longitudinal centre of mountain (rad)
         phi_c = pi/6.     # latitudinal centre of mountain (rad)
         lamda_a = - pi/4
@@ -413,7 +414,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         r2 = sqrt(rsq2)
 
         tpexpr = mountain_height *( (1 - r1/R0) + (1 - r2/R0) )#+ (1 - r3/R0))
-        Dexpr = H - ((R * Omega0 * u_max + 0.5*u_max**2)*(sin(lat))**2) / g0 + tpexpr
+        Dexpr = H - ((R * Omega0 * u_max + 0.5*u_max**2)*(sin(lat))**2) / g + tpexpr
 
         D0.interpolate(Dexpr)
 
@@ -433,10 +434,9 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         h_inp = Function(self._fs) # input function for h
         h_tar = Function(self._fs) # target function for h
 
-        # TODO: figure out how to get this function space from the data
-
         for j in tqdm.tqdm(range(self.n_samples)):
-
+            
+            # randomly sample the generated data
             lowest = 0
             highest = self.nt
             start = np.random.randint(lowest, highest)

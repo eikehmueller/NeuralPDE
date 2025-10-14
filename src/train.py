@@ -12,7 +12,7 @@ import tqdm
 import tomllib
 import argparse
 import os
-from torch.profiler import profile, ProfilerActivity
+import cProfile
 
 from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header
 from neural_pde.loss_functions import normalised_absolute_error as loss_fn
@@ -132,6 +132,7 @@ for epoch in range(config["optimiser"]["nepoch"]):
         valid_loss += loss.item() / (
             valid_ds.n_samples // config["optimiser"]["batchsize"]
         )
+    cProfile.run('model(Xv, tv)', sort='cumtime')
 
     print(f"    training loss: {train_loss:8.3e}, validation loss: {valid_loss:8.3e}")
     writer.add_scalars(
