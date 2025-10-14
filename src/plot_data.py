@@ -45,9 +45,8 @@ if not os.path.exists(args.output):
 
 mesh = UnitIcosahedralSphereMesh(dataset.n_ref)
 V = FunctionSpace(mesh, "CG", 1)
-for j, ((X, t), y_target) in enumerate(iter(dataset)):
 
-    print(t)
+for j, ((X, t), y_target) in enumerate(iter(dataset)):
 
     f_input_d = Function(V, name="input_d")
     f_input_d.dat.data[:] = X.detach().numpy()[3, :]
@@ -90,7 +89,9 @@ def move_files_and_directories(wsl_folder, windows_folder):
         print(f'Moved: {wsl_path} -> {windows_path}')
 
 # Define your WSL and Windows folders
-wsl_folder = '/home/katie795/NeuralPDE_workspace/NeuralPDE/src/results/output/field_output'
+wsl_folder1 = '/home/katie795/NeuralPDE_workspace/NeuralPDE/src/output_for_visualisation'
+wsl_folder1 = '/home/katie795/NeuralPDE_workspace/NeuralPDE/src/results/output/field_output'
 windows_folder = 'C:\\Users\\kathe\\OneDrive\\Desktop\\paraview_data'
+
 
 #move_files_and_directories(wsl_folder, windows_folder)

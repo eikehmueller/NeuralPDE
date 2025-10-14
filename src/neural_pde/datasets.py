@@ -34,7 +34,8 @@ def load_hdf5_dataset(filename):
     :arg filename: name of file to load from"""
     with h5py.File(filename, "r") as f:
         data = f["base/data"]
-        t_final = f["base/t_final"]
+        t_initial = f["base/t_initial"]
+        t_elapsed = f["base/t_elapsed"]
         metadata = json.loads(f["base/metadata"][()])
         dataset = SphericalFunctionSpaceDataset(
             int(f.attrs["n_func_in_dynamic"]),
@@ -43,7 +44,8 @@ def load_hdf5_dataset(filename):
             int(f.attrs["n_ref"]),
             int(f.attrs["n_samples"]),
             data=np.asarray(data),
-            t_final=np.asarray(t_final),
+            t_initial=np.asarray(t_initial),
+            t_elapsed=np.asarray(t_elapsed),
             metadata=metadata,
         )
     return dataset
@@ -91,7 +93,8 @@ class SphericalFunctionSpaceDataset(Dataset):
         n_ref,
         nsamples,
         data=None,
-        t_final=None,
+        t_initial=None,
+        t_elapsed=None,
         metadata=None,
         dtype=None,
     ):
@@ -130,10 +133,10 @@ class SphericalFunctionSpaceDataset(Dataset):
             else data
         )
         self._t_initial = (
-            np.empty(self.n_samples, dtype=np.float64) if t_final is None else t_final
+            np.empty(self.n_samples, dtype=np.float64) if t_initial is None else t_initial
         ) 
         self._t_elapsed = (
-            np.empty(self.n_samples, dtype=np.float64) if t_final is None else t_final
+            np.empty(self.n_samples, dtype=np.float64) if t_elapsed is None else t_elapsed
         )
 
         self.metadata = {} if metadata is None else metadata
