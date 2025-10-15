@@ -7,6 +7,7 @@ TFINALMAX=0.0001 # ~ pi
 G=9.8
 NT=10
 
+
 python data_generator_swes.py \
     --filename data/data_train_swes_nref_${NREF}_${TFINALMAX}.h5 \
     --nref ${NREF} \
@@ -15,6 +16,7 @@ python data_generator_swes.py \
     --nt ${NT} \
     --tfinalmax ${TFINALMAX} \
     --nsamples 64 \
+    --regenerate_data \
 
 python data_generator_swes.py \
     --filename data/data_valid_swes_nref_${NREF}_${TFINALMAX}.h5 \

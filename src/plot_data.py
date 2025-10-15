@@ -26,6 +26,14 @@ parser.add_argument(
     default="data/data_valid_swes_nref_3_0.0001.h5",
 )
 
+parser.add_argument(
+    "--move_to_windows",
+    type=bool,
+    action="store",
+    help="whether to move paraview data to windows folder",
+    default=False,
+)
+
 args, _ = parser.parse_known_args()
 
 print()
@@ -90,8 +98,10 @@ def move_files_and_directories(wsl_folder, windows_folder):
 
 # Define your WSL and Windows folders
 wsl_folder1 = '/home/katie795/NeuralPDE_workspace/NeuralPDE/src/output_for_visualisation'
-wsl_folder1 = '/home/katie795/NeuralPDE_workspace/NeuralPDE/src/results/output/field_output'
+wsl_folder2 = '/home/katie795/NeuralPDE_workspace/NeuralPDE/src/results/output/field_output'
 windows_folder = 'C:\\Users\\kathe\\OneDrive\\Desktop\\paraview_data'
 
-
+if args.move_to_windows:
+    move_files_and_directories(wsl_folder1, windows_folder)
+    move_files_and_directories(wsl_folder2, windows_folder)
 #move_files_and_directories(wsl_folder, windows_folder)

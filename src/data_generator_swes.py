@@ -19,6 +19,20 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--output_file_path",
+    type=str,
+    action="store",
+    help="name of file where the gusto results are saved",
+    default="/home/katie795/NeuralPDE_workspace/NeuralPDE/src/results/output",
+)
+
+parser.add_argument(
+    "--regenerate_data",
+    action="store_true",
+    help="whether to overwrite the full simulation",
+)
+
+parser.add_argument(
     "--nref",
     type=int,
     action="store",
@@ -66,58 +80,35 @@ parser.add_argument(
     default=32,
 )
 
-parser.add_argument(
-    "--move_to_windows",
-    type=bool,
-    action="store",
-    help="whether to move paraview data to windows folder",
-    default=False,
-)
-
 args, _ = parser.parse_known_args()
 
-print(f"  filename  = {args.filename}")
-print(f"  nref      = {args.nref}")
-print(f"  omega     = {args.omega}")
-print(f"  g         = {args.g}")
-print(f"  nt        = {args.nt}")
-print(f"  tfinalmax = {args.tfinalmax}")
-print(f"  nsamples  = {args.nsamples}")
-
+print(f"  filename         = {args.filename}")
+print(f"  nref             = {args.nref}")
+print(f"  omega            = {args.omega}")
+print(f"  g                = {args.g}")
+print(f"  nt               = {args.nt}")
+print(f"  tfinalmax        = {args.tfinalmax}")
+print(f"  nsamples         = {args.nsamples}")
+print(f"  regenerate_data  = {args.regenerate_data}")
 
 dataset = ShallowWaterEquationsDataset(
     n_ref=args.nref, nsamples=args.nsamples, nt=args.nt, t_final_max=args.tfinalmax,
     omega=args.omega, g=args.g
 )
 
-if not os.path.isdir('/home/katie795/NeuralPDE_workspace/NeuralPDE/src/results/output'):
-    print('Generating the data')
+if not os.path.isdir(args.output_file_path):
+    print('Generating the full simulation')
     dataset.generate_full_dataset()
+elif args.regenerate_data:
+    print('Regenerating the full simulation')
+    shutil.rmtree(args.output_file_path)
+    dataset.generate_full_dataset()
+    i = 1
+else:
+    print('Opening previously generated data')
 
 print('Extracting the data for the training, test, and validation sets')
 dataset.prepare_for_model()
+
+print('Saving the data in h5 format')
 dataset.save(args.filename)
-
-def move_files_and_directories(wsl_folder, windows_folder):
-    # Convert the Windows folder path to a format that WSL understands
-    windows_folder_in_wsl = f'/mnt/{windows_folder[0].lower()}' + windows_folder[2:].replace('\\', '/')
-    
-    # Ensure the target directory exists
-    if not os.path.exists(windows_folder_in_wsl):
-        os.makedirs(windows_folder_in_wsl)
-    
-    # Move each file and directory from WSL folder to Windows folder
-    for item in os.listdir(wsl_folder):
-        wsl_path = os.path.join(wsl_folder, item)
-        windows_path = os.path.join(windows_folder_in_wsl, item)
-        
-        # Move the file or directory
-        shutil.move(wsl_path, windows_path)
-        print(f'Moved: {wsl_path} -> {windows_path}')
-
-# Define your WSL and Windows folders
-wsl_folder = '/home/katie795/NeuralPDE_workspace/NeuralPDE/src/results/output/field_output'
-windows_folder = 'C:\\Users\\kathe\\OneDrive\\Desktop\\paraview_data'
-
-if args.move_to_windows:
-    move_files_and_directories(wsl_folder, windows_folder)
