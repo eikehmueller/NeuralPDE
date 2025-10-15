@@ -3,10 +3,9 @@ mkdir -p data/
 
 NREF=3
 OMEGA=7.292e-5
-TFINALMAX=0.0001 # ~ pi
+TFINALMAX=0.0001
 G=9.8
-NT=10
-
+NT=5
 
 python data_generator_swes.py \
     --filename data/data_train_swes_nref_${NREF}_${TFINALMAX}.h5 \
@@ -15,7 +14,7 @@ python data_generator_swes.py \
     --g ${G} \
     --nt ${NT} \
     --tfinalmax ${TFINALMAX} \
-    --nsamples 64 \
+    --nsamples 32 \
     --regenerate_data \
 
 python data_generator_swes.py \
@@ -25,7 +24,7 @@ python data_generator_swes.py \
     --g ${G} \
     --nt ${NT} \
     --tfinalmax ${TFINALMAX} \
-    --nsamples 32 \
+    --nsamples 16 \
 
 python data_generator_swes.py \
     --filename data/data_test_swes_nref_${NREF}_${TFINALMAX}.h5 \
@@ -34,4 +33,4 @@ python data_generator_swes.py \
     --g ${G} \
     --nt ${NT} \
     --tfinalmax ${TFINALMAX} \
-    --nsamples 32 \
+    --nsamples 16 \

@@ -90,6 +90,7 @@ print(f"  nt               = {args.nt}")
 print(f"  tfinalmax        = {args.tfinalmax}")
 print(f"  nsamples         = {args.nsamples}")
 print(f"  regenerate_data  = {args.regenerate_data}")
+print(f"  output_file_path = {args.output_file_path}")
 
 dataset = ShallowWaterEquationsDataset(
     n_ref=args.nref, nsamples=args.nsamples, nt=args.nt, t_final_max=args.tfinalmax,
@@ -105,7 +106,7 @@ elif args.regenerate_data:
     dataset.generate_full_dataset()
     i = 1
 else:
-    print('Opening previously generated data')
+    print('Opening previously generated simulation')
 
 print('Extracting the data for the training, test, and validation sets')
 dataset.prepare_for_model()
