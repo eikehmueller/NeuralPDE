@@ -80,6 +80,23 @@ parser.add_argument(
     default=32,
 )
 
+parser.add_argument(
+    "--t_interval",
+    type=int,
+    action="store",
+    help="expected size of a time interval",
+    default=5,
+)
+
+parser.add_argument(
+    "--t_sigma",
+    type=int,
+    action="store",
+    help="expected standard deviation of a time interval",
+    default=2,
+)
+
+
 args, _ = parser.parse_known_args()
 
 print(f"  filename         = {args.filename}")
@@ -94,7 +111,7 @@ print(f"  output_file_path = {args.output_file_path}")
 
 dataset = ShallowWaterEquationsDataset(
     n_ref=args.nref, nsamples=args.nsamples, nt=args.nt, t_final_max=args.tfinalmax,
-    omega=args.omega, g=args.g
+    omega=args.omega, g=args.g, t_interval=args.t_interval, t_sigma=args.t_sigma
 )
 
 if not os.path.isdir(args.output_file_path):

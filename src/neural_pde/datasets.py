@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+from scipy.stats import truncnorm
 import json
 import h5py
 import tqdm
@@ -343,7 +344,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
     """
 
-    def __init__(self, n_ref, nsamples, nt, t_final_max=1.0, omega=7.292e-5, g=9.8):
+    def __init__(self, n_ref, nsamples, nt, t_final_max=1.0, omega=7.292e-5, g=9.8, t_interval=10, t_sigma=1):
         """Initialise new instance
 
         :arg nref: number of mesh refinements
@@ -367,6 +368,8 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
         self.nt = nt # number of timesteps
         self.t_final_max = t_final_max # final time
+        self.t_interval = t_interval # the expected
+        self.t_sigma = t_sigma
 
         x, y, z = SpatialCoordinate(self._fs.mesh()) # spatial coordinate
         self._x = Function(self._fs).interpolate(x) # collect data on x,y,z coordinates
@@ -479,8 +482,14 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 # randomly sample the generated data
                 lowest = 0
                 highest = self.nt
+
                 start = np.random.randint(lowest, highest)
-                end   = np.random.randint(start, highest + 1)
+                mu, sigma = start + self.t_interval, self.t_sigma
+                t_norm = truncnorm((start - mu) / sigma, (highest - mu) / sigma, loc=mu, scale=sigma)
+                end = round(t_norm.rvs(1)[0])
+                
+                if end > highest:
+                    end = highest
 
                 w1 = afile.load_function(mesh_h5, "u", idx=start)
                 w2 = afile.load_function(mesh_h5, "u", idx=end)

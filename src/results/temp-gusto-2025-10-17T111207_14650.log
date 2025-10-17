@@ -1,0 +1,9 @@
+2025-10-17 11:12:07,744 INFO     Running data_generator_swes.py --filename data/data_valid_swes_nref_3_0.0001.h5 --nref 3 --omega 7.292e-5 --g 9.8 --nt 5 --tfinalmax 0.0001 --nsamples 16 --t_interval 2 --t_sigma 1
+2025-10-17 11:12:07,968 ERROR    Gusto is logging this unhandled exception:
+Traceback (most recent call last):
+  File "/home/katie795/NeuralPDE_workspace/NeuralPDE/src/data_generator_swes.py", line 129, in <module>
+    dataset.prepare_for_model()
+  File "/home/katie795/NeuralPDE_workspace/NeuralPDE/src/neural_pde/datasets.py", line 480, in prepare_for_model
+    mu, sigma = start + self.t_interval, self.t_sigma
+                ^^^^^
+UnboundLocalError: cannot access local variable 'start' where it is not associated with a value
