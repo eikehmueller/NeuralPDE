@@ -100,7 +100,6 @@ Time-step: {config["architecture"]["dt"]}")
 
 
 # main training loop
-#with profile(activities=[ProfilerActivity.CPU], record_shapes=True) as prof:
 for epoch in range(config["optimiser"]["nepoch"]):
     print(f"epoch {epoch + 1} of {config["optimiser"]["nepoch"]}")
     train_loss = 0
