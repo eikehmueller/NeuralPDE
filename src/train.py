@@ -131,7 +131,7 @@ for epoch in range(config["optimiser"]["nepoch"]):
         valid_loss += loss.item() / (
             valid_ds.n_samples // config["optimiser"]["batchsize"]
         )
-    cProfile.run('model(Xv, tv)', sort='cumtime')
+    #cProfile.run('model(Xv, tv)', sort='cumtime')
 
     print(f"    training loss: {train_loss:8.3e}, validation loss: {valid_loss:8.3e}")
     writer.add_scalars(
