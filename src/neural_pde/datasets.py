@@ -3,6 +3,7 @@ import numpy as np
 from scipy.stats import truncnorm
 import json
 import h5py
+import netCDF4
 import tqdm
 from torch.utils.data import Dataset
 import itertools
@@ -346,7 +347,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
     """
 
-    def __init__(self, n_ref, nsamples, nt, t_final_max=1.0, omega=7.292e-5, g=9.8, t_interval=10, t_sigma=1, t_lowest=0, t_highest=10):
+    def __init__(self, n_ref, nsamples, nt, t_final_max=10.0, omega=7.292e-5, g=9.8, t_interval=10, t_sigma=1, t_lowest=0, t_highest=10):
         """Initialise new instance
 
         :arg nref: number of mesh refinements
@@ -363,15 +364,15 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         self.omega = omega
         self.g = g
 
-        self.metadata = {
-            "omega": f"{self.omega:}",
-            "t_final_max": f"{t_final_max:}"
-        }
-
         # initialise with the SphericalFunctionSpaceData
         super().__init__(
             n_func_in_dynamic, n_func_in_ancillary, n_func_target, n_ref, nsamples
         )
+
+        self.metadata = {
+            "omega": f"{self.omega:}",
+            "t_final_max": f"{t_final_max:}"
+        }
 
         self.nt = nt # number of timesteps
         self.t_final_max = t_final_max # final time
@@ -417,7 +418,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         eqns = ShallowWaterEquations(domain, parameters)
 
         # output options 
-        output = OutputParameters(dirname="output", dump_vtus=True, dump_diagnostics=True, dumpfreq=1, checkpoint=True, chkptfreq=1, multichkpt=True) # these have been modified so we get no output
+        output = OutputParameters(dirname="output", dump_vtus=True, dump_nc=True, dump_diagnostics=True, dumpfreq=1, checkpoint=True, chkptfreq=1, multichkpt=True) # these have been modified so we get no output
 
         # choose which fields to record over the simulation
         #diagnostic_fields = [MeridionalComponent('u'), ZonalComponent('u'), SteadyStateError('D')]
@@ -479,6 +480,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         dt = self.t_final_max / self.nt # Timestep
 
         with CheckpointFile("results/output/chkpt.h5", 'r') as afile:
+            netCDF4file = netCDF4.Dataset('results/output/diagnostics.nc','r')
             mesh_h5 = afile.load_mesh("IcosahedralMesh")
             V_BDM = FunctionSpace(mesh_h5, "BDM", 2)
             V_DG = FunctionSpace(mesh_h5, "DG", 1)
@@ -515,8 +517,10 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 h1 = afile.load_function(mesh_h5, "D", idx=start)
                 h2 = afile.load_function(mesh_h5, "D", idx=end)
 
-                #vort1 = afile.load_function(mesh_h5, "RelativeVorticity", idx=start)
-                #vort2 = afile.load_function(mesh_h5, "RelativeVorticity", idx=end)
+                #vort1 = netCDF4file.variables['RelativeVorticity']
+                #vort1 = netCDF4file.load_function(mesh_h5, 'RelativeVorticity', idx=end)
+                #print(type(vort1))
+                #vort2 = afile.load_function(mesh_h5, 'RelativeVorticity', idx=end)
 
                 p1.apply(w1, u_inp)    # input u data
                 p1.apply(w2, u_tar)    # target u data

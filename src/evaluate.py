@@ -122,9 +122,9 @@ mesh = UnitIcosahedralSphereMesh(dataset.n_ref)
 V = FunctionSpace(mesh, "CG", 1)
 V_DG = FunctionSpace(mesh, "DG", 0)
 (X, _), __ = next(iter(dataset))
-dt = 0.001
+dt = 0.1
 t = 0.0
-t_final = 0.001 # float(dataset.metadata["t_final_max"])
+t_final = float(dataset.metadata["t_final_max"])
 animation_file_nn = VTKFile(os.path.join(args.output, f"animation.pvd"))
 animation_file_pde = VTKFile(os.path.join(args.output, f"animation_pde.pvd"))
 f_pred = Function(V, name="input")

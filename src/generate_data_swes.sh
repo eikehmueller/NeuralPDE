@@ -19,7 +19,6 @@ python data_generator_swes.py \
     --nsamples 4096 \
     --t_interval ${TINTERVAL} \
     --t_sigma ${TSIGMA} \
-    --regenerate_data \
     --t_lowest 0 \
     --t_highest 800 \
 

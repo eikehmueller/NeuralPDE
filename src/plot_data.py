@@ -113,8 +113,10 @@ def move_files_and_directories(wsl_folder, windows_folder):
 # Define your WSL and Windows folders
 wsl_folder1 = '/home/katie795/NeuralPDE_workspace/NeuralPDE/src/output_for_visualising_model_dataset'
 wsl_folder2 = '/home/katie795/NeuralPDE_workspace/NeuralPDE/src/results/output/field_output'
+wsl_folder3 = '/home/katie795/NeuralPDE_workspace/NeuralPDE/src/output_for_evaluation/animation'
 windows_folder = 'C:\\Users\\kathe\\OneDrive\\Desktop\\paraview_data'
 
 if args.move_to_windows:
     move_files_and_directories(wsl_folder1, windows_folder)
     move_files_and_directories(wsl_folder2, windows_folder)
+    move_files_and_directories(wsl_folder3, windows_folder)

@@ -1,0 +1,52 @@
+2025-10-22 16:50:22,685 INFO     Running evaluate.py
+2025-10-22 16:50:27,195 ERROR    Gusto is logging this unhandled exception:
+Traceback (most recent call last):
+  File "/home/katie795/NeuralPDE_workspace/NeuralPDE/src/evaluate.py", line 145, in <module>
+    f_pred_dg.assign(time_integration(X, V, V_DG, t, dt, dataset.metadata["omega"]))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/katie795/NeuralPDE_workspace/NeuralPDE/src/evaluate.py", line 32, in time_integration
+    q = Function(V_DG).interpolate(q_cg)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "petsc4py/PETSc/Log.pyx", line 250, in petsc4py.PETSc.Log.EventDecorator.decorator.wrapped_func
+  File "petsc4py/PETSc/Log.pyx", line 251, in petsc4py.PETSc.Log.EventDecorator.decorator.wrapped_func
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/firedrake/function.py", line 406, in interpolate
+    return assemble(interp, tensor=self, ad_block_tag=ad_block_tag)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "petsc4py/PETSc/Log.pyx", line 250, in petsc4py.PETSc.Log.EventDecorator.decorator.wrapped_func
+  File "petsc4py/PETSc/Log.pyx", line 251, in petsc4py.PETSc.Log.EventDecorator.decorator.wrapped_func
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/firedrake/adjoint_utils/assembly.py", line 30, in wrapper
+    output = assemble(form, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/firedrake/assemble.py", line 142, in assemble
+    return get_assembler(expr, *args, **kwargs).assemble(**assemble_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/firedrake/assemble.py", line 406, in assemble
+    result = BaseFormAssembler.base_form_postorder_traversal(self._form, visitor, visited)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/firedrake/assemble.py", line 624, in base_form_postorder_traversal
+    visited[e] = visitor(e, *(visited[arg] for arg in operands))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/firedrake/assemble.py", line 402, in visitor
+    return self.base_form_assembly_visitor(e, t, *operands)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/firedrake/assemble.py", line 562, in base_form_assembly_visitor
+    interpolator = firedrake.Interpolator(expression, expr.function_space(), **interp_data)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/firedrake/interpolation.py", line 832, in __init__
+    self.callable, arguments = make_interpolator(expr, V, subset, access, bcs=bcs)
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "petsc4py/PETSc/Log.pyx", line 250, in petsc4py.PETSc.Log.EventDecorator.decorator.wrapped_func
+  File "petsc4py/PETSc/Log.pyx", line 251, in petsc4py.PETSc.Log.EventDecorator.decorator.wrapped_func
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/firedrake/interpolation.py", line 908, in make_interpolator
+    source_mesh = extract_unique_domain(expr) or target_mesh
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/ufl/domain.py", line 68, in __len__
+    return len(self.meshes)
+               ^^^^^^^^^^^
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/ufl/domain.py", line 166, in meshes
+    @property
+    
+KeyboardInterrupt
