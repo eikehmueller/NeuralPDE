@@ -96,6 +96,22 @@ parser.add_argument(
     default=2,
 )
 
+parser.add_argument(
+    "--t_lowest",
+    type=int,
+    action="store",
+    help="start of time simulation (in nt)",
+    default=0,
+)
+
+parser.add_argument(
+    "--t_highest",
+    type=int,
+    action="store",
+    help="end of time simulation (in nt)",
+    default=10,
+)
+
 
 args, _ = parser.parse_known_args()
 
@@ -105,13 +121,16 @@ print(f"  omega            = {args.omega}")
 print(f"  g                = {args.g}")
 print(f"  nt               = {args.nt}")
 print(f"  tfinalmax        = {args.tfinalmax}")
+print(f"  t_lowest         = {args.t_lowest}")
+print(f"  t_highest        = {args.t_highest}")
 print(f"  nsamples         = {args.nsamples}")
 print(f"  regenerate_data  = {args.regenerate_data}")
 print(f"  output_file_path = {args.output_file_path}")
 
 dataset = ShallowWaterEquationsDataset(
     n_ref=args.nref, nsamples=args.nsamples, nt=args.nt, t_final_max=args.tfinalmax,
-    omega=args.omega, g=args.g, t_interval=args.t_interval, t_sigma=args.t_sigma
+    omega=args.omega, g=args.g, t_interval=args.t_interval, t_sigma=args.t_sigma,
+    t_lowest=args.t_lowest, t_highest=args.t_highest
 )
 
 if not os.path.isdir(args.output_file_path):

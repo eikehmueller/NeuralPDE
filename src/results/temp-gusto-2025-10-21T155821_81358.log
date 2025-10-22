@@ -1,0 +1,28 @@
+2025-10-21 15:58:21,959 INFO     Running train.py
+2025-10-22 09:26:01,738 ERROR    Gusto is logging this unhandled exception:
+Traceback (most recent call last):
+  File "/home/katie795/NeuralPDE_workspace/NeuralPDE/src/train.py", line 111, in <module>
+    y_pred = model(Xb, tb)  # make a prediction
+             ^^^^^^^^^^^^^
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/katie795/NeuralPDE_workspace/NeuralPDE/src/neural_pde/model.py", line 246, in forward
+    y = self.PatchEncoder(x)
+        ^^^^^^^^^^^^^^^^^^^^
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/katie795/NeuralPDE_workspace/NeuralPDE/src/neural_pde/patch_encoder.py", line 108, in forward
+    self._function_to_patch.forward(x),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/katie795/NeuralPDE_workspace/NeuralPDE/src/neural_pde/intergrid.py", line 83, in forward
+    return torch.matmul(x, self.a_sparse)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt

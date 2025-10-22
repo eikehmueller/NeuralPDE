@@ -9,7 +9,7 @@ import time
 import argparse
 
 from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header
-from neural_pde.loss_functions import normalised_absolute_error as metric
+from neural_pde.loss_functions import normalised_rmse as metric
 from neural_pde.model import load_model
 
 
@@ -66,7 +66,7 @@ parser.add_argument(
     type=str,
     action="store",
     help="path to output folder",
-    default="output",
+    default="output_for_evaluation",
 )
 
 parser.add_argument(
@@ -82,7 +82,7 @@ parser.add_argument(
     type=str,
     action="store",
     help="file containing the data",
-    default="data/data_test_nref4_0.h5",
+    default="data/data_test_swes_nref_3_10.h5",
 )
 
 args, _ = parser.parse_known_args()
@@ -108,7 +108,9 @@ avg_loss = 0
 for (Xv, tv), yv in dataloader:
     yv_pred = model(Xv, tv)
     loss = metric(yv_pred, yv)
-    avg_loss += loss.item() / (dataset.n_samples / batch_size)
+    print(dataset.n_samples)
+    print(batch_size)
+    avg_loss += loss.item() #/ (dataset.n_samples / batch_size)
 
 print(f"average relative error: {100*avg_loss:6.3f} %")
 
@@ -120,13 +122,14 @@ mesh = UnitIcosahedralSphereMesh(dataset.n_ref)
 V = FunctionSpace(mesh, "CG", 1)
 V_DG = FunctionSpace(mesh, "DG", 0)
 (X, _), __ = next(iter(dataset))
-dt = 0.01
+dt = 0.001
 t = 0.0
-t_final = float(dataset.metadata["t_final_max"])
+t_final = 0.001 # float(dataset.metadata["t_final_max"])
 animation_file_nn = VTKFile(os.path.join(args.output, f"animation.pvd"))
 animation_file_pde = VTKFile(os.path.join(args.output, f"animation_pde.pvd"))
 f_pred = Function(V, name="input")
 f_pred_dg = Function(V_DG, name="input")
+
 with open("timing.dat", "w", encoding="utf8") as f:
     print("t,nn,pde", file=f)
     while t < t_final:
@@ -152,7 +155,7 @@ for j, ((X, t), y_target) in enumerate(iter(dataset)):
     y_pred = model(X, t)
 
     f_input = Function(V, name="input")
-    f_input.dat.data[:] = X.detach().numpy()[0, :]
+    f_input.dat.data[:] = X.detach().numpy()[3, :]
 
     f_target = Function(V, name="target")
     f_target.dat.data[:] = y_target.detach().numpy()[0, :]

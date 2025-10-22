@@ -11,8 +11,8 @@ sys.path.append("/home/katie795/software/gusto/gusto")
 from gusto import (
     lonlatr_from_xyz, ShallowWaterParameters, ShallowWaterEquations, Domain,
     OutputParameters, MeridionalComponent, ZonalComponent,
-    IO, SSPRK3, DGUpwind, SemiImplicitQuasiNewton,
-    SteadyStateError)
+    IO, SSPRK3, DGUpwind, SemiImplicitQuasiNewton, RelativeVorticity,
+    SteadyStateError, Divergence)
 
 from firedrake import (
     FunctionSpace,
@@ -21,6 +21,8 @@ from firedrake import (
     UnitIcosahedralSphereMesh,
 )
 from firedrake import *
+from timeit import default_timer as timer
+from datetime import timedelta
 
 __all__ = [
     "show_hdf5_header",
@@ -344,7 +346,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
     """
 
-    def __init__(self, n_ref, nsamples, nt, t_final_max=1.0, omega=7.292e-5, g=9.8, t_interval=10, t_sigma=1):
+    def __init__(self, n_ref, nsamples, nt, t_final_max=1.0, omega=7.292e-5, g=9.8, t_interval=10, t_sigma=1, t_lowest=0, t_highest=10):
         """Initialise new instance
 
         :arg nref: number of mesh refinements
@@ -361,6 +363,11 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         self.omega = omega
         self.g = g
 
+        self.metadata = {
+            "omega": f"{self.omega:}",
+            "t_final_max": f"{t_final_max:}"
+        }
+
         # initialise with the SphericalFunctionSpaceData
         super().__init__(
             n_func_in_dynamic, n_func_in_ancillary, n_func_target, n_ref, nsamples
@@ -369,6 +376,8 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         self.nt = nt # number of timesteps
         self.t_final_max = t_final_max # final time
         self.t_interval = t_interval # the expected
+        self.t_lowest = t_lowest
+        self.t_highest = t_highest
         self.t_sigma = t_sigma
 
         x, y, z = SpatialCoordinate(self._fs.mesh()) # spatial coordinate
@@ -382,9 +391,11 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         will be sampled from this data. This may take a while to load.
         '''
 
+        start_timer = timer()
+
         L0 = 5960 # charactersistic length scale (mean height of water)
-        T0 = 82794.2 # characteristic time scale - time for wave to travel halfway around the world
         R = 6371220 / L0 # radius of earth divided by length scale
+        T0 = 12 * 24 * 60 * 60 / (2 * pi * R) # characteristic time scale - scales umax to 1
 
         element_order = 1 # CG method
         dt = self.t_final_max / self.nt # Timestep
@@ -409,7 +420,8 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         output = OutputParameters(dirname="output", dump_vtus=True, dump_diagnostics=True, dumpfreq=1, checkpoint=True, chkptfreq=1, multichkpt=True) # these have been modified so we get no output
 
         # choose which fields to record over the simulation
-        diagnostic_fields = [MeridionalComponent('u'), ZonalComponent('u'), SteadyStateError('D')]
+        #diagnostic_fields = [MeridionalComponent('u'), ZonalComponent('u'), SteadyStateError('D')]
+        diagnostic_fields = [Divergence('u'), RelativeVorticity()]
         io = IO(domain, output, diagnostic_fields=diagnostic_fields)
 
         # the methods to solve the equations
@@ -455,11 +467,15 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
         # run the simulation
         stepper.run(t=0, tmax=self.t_final_max)
+        end_timer = timer()
+        print(f"Gusto runtime: {timedelta(seconds=end_timer-start_timer)}")
+        return
     
     def prepare_for_model(self):
         '''
         Sample the data from the generated dataset and save as a np array
         '''
+        start_timer1 = timer()
         dt = self.t_final_max / self.nt # Timestep
 
         with CheckpointFile("results/output/chkpt.h5", 'r') as afile:
@@ -474,16 +490,18 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
             h_inp = Function(V_CG) # input function for h
             h_tar = Function(V_CG) # target function for h
 
+            vort_inp = Function(V_CG) # input function for h
+            vort_tar = Function(V_CG) # target function for h
+
             p1 = Projector(V_BDM, V_CG)
             p2 = Projector(V_DG, V_CG)
 
             for j in tqdm.tqdm(range(self.n_samples)):
                 
                 # randomly sample the generated data
-                lowest = 0
-                highest = self.nt
+                highest = self.t_highest
 
-                start = np.random.randint(lowest, highest)
+                start = np.random.randint(self.t_lowest, highest)
                 mu, sigma = start + self.t_interval, self.t_sigma
                 t_norm = truncnorm((start - mu) / sigma, (highest - mu) / sigma, loc=mu, scale=sigma)
                 end = round(t_norm.rvs(1)[0])
@@ -497,10 +515,16 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 h1 = afile.load_function(mesh_h5, "D", idx=start)
                 h2 = afile.load_function(mesh_h5, "D", idx=end)
 
+                #vort1 = afile.load_function(mesh_h5, "RelativeVorticity", idx=start)
+                #vort2 = afile.load_function(mesh_h5, "RelativeVorticity", idx=end)
+
                 p1.apply(w1, u_inp)    # input u data
                 p1.apply(w2, u_tar)    # target u data
                 p2.apply(h1, h_inp)
                 p2.apply(h2, h_tar)
+                #p2.apply(vort1, h_inp)
+                #p2.apply(vort2, h_tar)
+
                     
                 # coordinate data
                 self._data[j, 0, :] = self._x.dat.data # x coord data
@@ -519,4 +543,6 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 self._data[j, 10, :] = u_tar[2].dat.data # u in z direction
                 self._t_initial[j] = dt * start
                 self._t_elapsed[j] = (end - start) * dt
+        end_timer1 = timer()
+        print(f"Training, validation and test data runtime: {timedelta(seconds=end_timer1-start_timer1)}")
         return

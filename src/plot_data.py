@@ -23,7 +23,7 @@ parser.add_argument(
     type=str,
     action="store",
     help="file containing the data",
-    default="data/data_valid_swes_nref_3_0.0001.h5",
+    default="data/data_valid_swes_nref_3_10.h5",
 )
 
 parser.add_argument(
