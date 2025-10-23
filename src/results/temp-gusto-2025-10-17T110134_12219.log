@@ -1,9 +1,0 @@
-2025-10-17 11:01:34,299 INFO     Running data_generator_swes.py --filename data/data_valid_swes_nref_3_0.0001.h5 --nref 3 --omega 7.292e-5 --g 9.8 --nt 5 --tfinalmax 0.0001 --nsamples 16 --t_interval 2 --t_sigma 1
-2025-10-17 11:01:34,532 ERROR    Gusto is logging this unhandled exception:
-Traceback (most recent call last):
-  File "/home/katie795/NeuralPDE_workspace/NeuralPDE/src/data_generator_swes.py", line 129, in <module>
-    dataset.prepare_for_model()
-  File "/home/katie795/NeuralPDE_workspace/NeuralPDE/src/neural_pde/datasets.py", line 489, in prepare_for_model
-    if end > highest:
-       ^^^^^^^^^^^^^
-TypeError: '>' not supported between instances of 'rv_continuous_frozen' and 'int'

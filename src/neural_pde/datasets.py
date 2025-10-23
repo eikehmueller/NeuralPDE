@@ -3,7 +3,7 @@ import numpy as np
 from scipy.stats import truncnorm
 import json
 import h5py
-import netCDF4
+
 import tqdm
 from torch.utils.data import Dataset
 import itertools
@@ -15,6 +15,7 @@ from gusto import (
     IO, SSPRK3, DGUpwind, SemiImplicitQuasiNewton, RelativeVorticity,
     SteadyStateError, Divergence)
 
+import diagnostics as dg
 from firedrake import (
     FunctionSpace,
     Function,
@@ -452,12 +453,12 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         mountain_height = 2000 / L0 # height of mountain (m)
 
         rsq1 = min_value(R0**2, (lon - lamda_c)**2 + (lat - phi_c)**2)
-        rsq2 = min_value(R0**2, (lon - lamda_a)**2 + (lat - phi_a)**2)
+        #rsq2 = min_value(R0**2, (lon - lamda_a)**2 + (lat - phi_a)**2)
 
         r1 = sqrt(rsq1)
-        r2 = sqrt(rsq2)
+        #r2 = sqrt(rsq2)
 
-        tpexpr = mountain_height *( (1 - r1/R0) + (1 - r2/R0) )#+ (1 - r3/R0))
+        tpexpr = mountain_height *( (1 - r1/R0) )#+ (1 - r2/R0) )#+ (1 - r3/R0))
         Dexpr = H - ((R * Omega0 * u_max + 0.5*u_max**2)*(sin(lat))**2) / g + tpexpr
 
         D0.interpolate(Dexpr)
@@ -480,7 +481,6 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         dt = self.t_final_max / self.nt # Timestep
 
         with CheckpointFile("results/output/chkpt.h5", 'r') as afile:
-            netCDF4file = netCDF4.Dataset('results/output/diagnostics.nc','r')
             mesh_h5 = afile.load_mesh("IcosahedralMesh")
             V_BDM = FunctionSpace(mesh_h5, "BDM", 2)
             V_DG = FunctionSpace(mesh_h5, "DG", 1)
@@ -492,11 +492,27 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
             h_inp = Function(V_CG) # input function for h
             h_tar = Function(V_CG) # target function for h
 
-            vort_inp = Function(V_CG) # input function for h
-            vort_tar = Function(V_CG) # target function for h
-
             p1 = Projector(V_BDM, V_CG)
             p2 = Projector(V_DG, V_CG)
+            '''
+
+            diagnostics = dg.Diagnostics(V_BDM, V_CG)
+            file = VTKFile(f"diagnostics.pvd")
+
+            for i in range(self.nt):
+                u_func = [Function(V_CG) for _ in range(3)]
+                u = afile.load_function(mesh_h5, "u", idx=i)
+                p1.apply(u, u_func)    # input u data
+
+
+                vorticity = diagnostics.vorticity(u)
+                divergence = diagnostics.divergence(u)
+                vorticity.rename("vorticity")
+                divergence.rename("divergence")
+                file.write(vorticity, divergence, u, t=i)
+            '''
+
+
 
             for j in tqdm.tqdm(range(self.n_samples)):
                 
@@ -517,18 +533,10 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 h1 = afile.load_function(mesh_h5, "D", idx=start)
                 h2 = afile.load_function(mesh_h5, "D", idx=end)
 
-                #vort1 = netCDF4file.variables['RelativeVorticity']
-                #vort1 = netCDF4file.load_function(mesh_h5, 'RelativeVorticity', idx=end)
-                #print(type(vort1))
-                #vort2 = afile.load_function(mesh_h5, 'RelativeVorticity', idx=end)
-
                 p1.apply(w1, u_inp)    # input u data
                 p1.apply(w2, u_tar)    # target u data
                 p2.apply(h1, h_inp)
                 p2.apply(h2, h_tar)
-                #p2.apply(vort1, h_inp)
-                #p2.apply(vort2, h_tar)
-
                     
                 # coordinate data
                 self._data[j, 0, :] = self._x.dat.data # x coord data

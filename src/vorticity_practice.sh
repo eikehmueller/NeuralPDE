@@ -3,20 +3,20 @@ mkdir -p data/
 
 NREF=5
 OMEGA=1e-4
-TFINALMAX=0.05
+TFINALMAX=0.01
 G=9.8
-NT=10
+NT=100
 TINTERVAL=10
 TSIGMA=5
 
 python data_generator_swes.py \
-    --filename data/data_train_swes_vorticity_nref_${NREF}_${TFINALMAX}.h5 \
+    --filename data/data_train_swes_animation_nref_${NREF}_${TFINALMAX}.h5 \
     --nref ${NREF} \
     --omega ${OMEGA} \
     --g ${G} \
     --nt ${NT} \
     --tfinalmax ${TFINALMAX} \
-    --nsamples 8 \
+    --nsamples 1 \
     --t_interval ${TINTERVAL} \
     --t_sigma ${TSIGMA} \
     --t_lowest 0 \

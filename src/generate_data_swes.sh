@@ -1,11 +1,11 @@
 #!/bin/bash
 mkdir -p data/
 
-NREF=3
+NREF=5
 OMEGA=1e-4
-TFINALMAX=10
+TFINALMAX=0.01
 G=9.8
-NT=1000
+NT=100
 TINTERVAL=50
 TSIGMA=25
 
@@ -16,11 +16,12 @@ python data_generator_swes.py \
     --g ${G} \
     --nt ${NT} \
     --tfinalmax ${TFINALMAX} \
-    --nsamples 4096 \
+    --nsamples 128 \
     --t_interval ${TINTERVAL} \
     --t_sigma ${TSIGMA} \
     --t_lowest 0 \
     --t_highest 800 \
+    --regenerate_data \
 
 python data_generator_swes.py \
     --filename data/data_valid_swes_nref_${NREF}_${TFINALMAX}.h5 \

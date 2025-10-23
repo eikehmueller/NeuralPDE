@@ -1,1 +1,0 @@
-2025-10-17 11:43:26,311 INFO     Running data_generator.py --filename data/data_test_nref4_0.h5 --nref 4 --degree 4 --omega 1.0 --tfinalmax 0 --nsamples 128 --seed 515157

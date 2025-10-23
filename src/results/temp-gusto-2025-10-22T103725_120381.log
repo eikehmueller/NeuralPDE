@@ -1,1 +1,0 @@
-2025-10-22 10:37:25,455 INFO     Running data_generator_swes.py --filename data/data_train_swes_vorticity_nref_3_1.h5 --nref 3 --omega 1e-4 --g 9.8 --nt 100 --tfinalmax 1 --nsamples 128 --t_interval 10 --t_sigma 5 --t_lowest 0 --t_highest 100

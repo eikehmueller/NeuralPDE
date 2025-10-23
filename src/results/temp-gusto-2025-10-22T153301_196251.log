@@ -1,1 +1,0 @@
-2025-10-22 15:33:01,128 INFO     Running data_generator_swes.py --filename data/data_train_swes_nref_3_10.h5 --nref 3 --omega 1e-4 --g 9.8 --nt 1000 --tfinalmax 10 --nsamples 4096 --t_interval 50 --t_sigma 25 --t_lowest 0 --t_highest 800

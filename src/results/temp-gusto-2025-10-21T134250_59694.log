@@ -1,7 +1,0 @@
-2025-10-21 13:42:50,883 INFO     Running evaluate.py
-2025-10-21 13:43:02,192 ERROR    Gusto is logging this unhandled exception:
-Traceback (most recent call last):
-  File "/home/katie795/NeuralPDE_workspace/NeuralPDE/src/evaluate.py", line 145, in <module>
-    f_pred_dg.assign(time_integration(X, V, V_DG, t, dt, dataset.metadata["omega"]))
-                                                         ~~~~~~~~~~~~~~~~^^^^^^^^^
-KeyError: 'omega'
