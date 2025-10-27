@@ -1,9 +1,0 @@
-2025-10-23 13:45:49,639 INFO     Running data_generator_swes.py --filename data/data_train_swes_nref_5_0.01.h5 --nref 5 --omega 1e-4 --g 9.8 --nt 100 --tfinalmax 0.01 --nsamples 1 --t_interval 10 --t_sigma 5 --t_lowest 0 --t_highest 10
-2025-10-23 13:45:50,760 ERROR    Gusto is logging this unhandled exception:
-Traceback (most recent call last):
-  File "/home/katie795/NeuralPDE_workspace/NeuralPDE/src/data_generator_swes.py", line 148, in <module>
-    dataset.prepare_for_model()
-  File "/home/katie795/NeuralPDE_workspace/NeuralPDE/src/neural_pde/datasets.py", line 484, in prepare_for_model
-    w1 = afile.load_function(mesh_h5, "u", idx=start)
-         ^^^^^
-UnboundLocalError: cannot access local variable 'afile' where it is not associated with a value

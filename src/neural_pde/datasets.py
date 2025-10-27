@@ -404,6 +404,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
         # BDM means Brezzi-Douglas-Marini finite element basis function
         domain = Domain(self.mesh, dt, 'BDM', element_order)
+        print(domain.spaces("H1"))
 
         # ShallowWaterParameters are the physical parameters for the shallow water equations
         mean_depth = 1           # this is the parameter we nondimensionalise around
@@ -419,7 +420,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         eqns = ShallowWaterEquations(domain, parameters)
 
         # output options 
-        output = OutputParameters(dirname="output", dump_vtus=True, dump_nc=True, dump_diagnostics=True, dumpfreq=1, checkpoint=True, chkptfreq=1, multichkpt=True) # these have been modified so we get no output
+        output = OutputParameters(dirname="gusto_output", dump_vtus=True, dump_nc=True, dump_diagnostics=True, dumpfreq=1, checkpoint=True, chkptfreq=1, multichkpt=True) # these have been modified so we get no output
 
         # choose which fields to record over the simulation
         #diagnostic_fields = [MeridionalComponent('u'), ZonalComponent('u'), SteadyStateError('D')]
@@ -480,11 +481,11 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         start_timer1 = timer()
         dt = self.t_final_max / self.nt # Timestep
 
-        with CheckpointFile("results/output/chkpt.h5", 'r') as afile:
+        with CheckpointFile("results/gusto_output/chkpt.h5", 'r') as afile:
             mesh_h5 = afile.load_mesh("IcosahedralMesh")
             V_BDM = FunctionSpace(mesh_h5, "BDM", 2)
             V_DG = FunctionSpace(mesh_h5, "DG", 1)
-            V_CG = FunctionSpace(mesh_h5, "CG", 1)
+            V_CG = FunctionSpace(mesh_h5, "CG", 3)
 
             u_inp = [Function(V_CG) for _ in range(3)]
             u_tar = [Function(V_CG) for _ in range(3)]
@@ -494,26 +495,22 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
             p1 = Projector(V_BDM, V_CG)
             p2 = Projector(V_DG, V_CG)
-            '''
+            
 
             diagnostics = dg.Diagnostics(V_BDM, V_CG)
-            file = VTKFile(f"diagnostics.pvd")
-
+            file = VTKFile(f"results/gusto_output/diagnostics.pvd")
+            
             for i in range(self.nt):
                 u_func = [Function(V_CG) for _ in range(3)]
                 u = afile.load_function(mesh_h5, "u", idx=i)
                 p1.apply(u, u_func)    # input u data
-
 
                 vorticity = diagnostics.vorticity(u)
                 divergence = diagnostics.divergence(u)
                 vorticity.rename("vorticity")
                 divergence.rename("divergence")
                 file.write(vorticity, divergence, u, t=i)
-            '''
-
-
-
+            
             for j in tqdm.tqdm(range(self.n_samples)):
                 
                 # randomly sample the generated data
@@ -537,6 +534,11 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 p1.apply(w2, u_tar)    # target u data
                 p2.apply(h1, h_inp)
                 p2.apply(h2, h_tar)
+
+                vorticity_inp = diagnostics.vorticity(u_inp)
+                divergence_inp = diagnostics.divergence(u_inp)
+                vorticity_tar = diagnostics.vorticity(u_tar)
+                divergence_tar = diagnostics.divergence(u_tar)
                     
                 # coordinate data
                 self._data[j, 0, :] = self._x.dat.data # x coord data
@@ -544,15 +546,19 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 self._data[j, 2, :] = self._z.dat.data # z coord data
                 # input data
                 self._data[j, 3, :] = h_inp.dat.data # h data
-                self._data[j, 4, :] = u_inp[0].dat.data # u in x direction
-                self._data[j, 5, :] = u_inp[1].dat.data # u in y direction
-                self._data[j, 6, :] = u_inp[2].dat.data # u in z direction
+                self._data[j, 4, :] = divergence_inp.dat.data
+                self._data[j, 5, :] = vorticity_inp.dat.data
+                #self._data[j, 4, :] = u_inp[0].dat.data # u in x direction
+                #self._data[j, 5, :] = u_inp[1].dat.data # u in y direction
+                #self._data[j, 6, :] = u_inp[2].dat.data # u in z direction
                 # output data
-                self._data[j, 7, :]  = h_tar.dat.data # h data
+                self._data[j, 6, :]  = h_tar.dat.data # h data
                 # NEED TO CHECK THAT THESE ARE CORRECT!!
-                self._data[j, 8, :]  = u_tar[0].dat.data # u in x direction
-                self._data[j, 9, :]  = u_tar[1].dat.data # u in y direction
-                self._data[j, 10, :] = u_tar[2].dat.data # u in z direction
+                self._data[j, 7, :] = divergence_tar.dat.data
+                self._data[j, 8, :] = vorticity_tar.dat.data
+                #self._data[j, 8, :]  = u_tar[0].dat.data # u in x direction
+                #self._data[j, 9, :]  = u_tar[1].dat.data # u in y direction
+                #self._data[j, 10, :] = u_tar[2].dat.data # u in z direction
                 self._t_initial[j] = dt * start
                 self._t_elapsed[j] = (end - start) * dt
         end_timer1 = timer()

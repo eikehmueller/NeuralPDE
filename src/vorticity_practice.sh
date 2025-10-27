@@ -1,11 +1,11 @@
 #!/bin/bash
 mkdir -p data/
 
-NREF=5
+NREF=4
 OMEGA=1e-4
-TFINALMAX=0.01
+TFINALMAX=0.001
 G=9.8
-NT=100
+NT=10
 TINTERVAL=10
 TSIGMA=5
 

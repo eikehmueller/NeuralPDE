@@ -1,0 +1,876 @@
+2025-10-27 10:56:32,589 INFO     Running data_generator_swes.py --filename data/data_train_swes_animation_nref_4_0.001.h5 --nref 4 --omega 1e-4 --g 9.8 --nt 10 --tfinalmax 0.001 --nsamples 1 --t_interval 10 --t_sigma 5 --t_lowest 0 --t_highest 10 --regenerate_data
+2025-10-27 10:56:33,168 INFO     Semi-implicit Quasi-Newton: Using solver prognostics ['u', 'D']
+2025-10-27 10:56:33,451 INFO     Physical parameters that take non-default values:
+2025-10-27 10:56:33,451 INFO     
+2025-10-27 10:56:33,729 DEBUG    Dumping output to disk
+2025-10-27 10:56:33,730 DEBUG    Closing temporary logger and moving logfile
+2025-10-27 10:56:33,731 DEBUG    Re-opening logger
+2025-10-27 10:56:33,772 WARNING  Space HDiv has more than one dimension, and coordinates used for netCDF output have not yet been implemented for this.
+2025-10-27 10:56:33,832 WARNING  netCDF outputting for space HDiv not yet implemented, so unable to output u field
+2025-10-27 10:56:33,840 DEBUG    Computing diagnostic RelativeVorticity with solve method
+2025-10-27 10:56:34,108 DEBUG    Computing diagnostic u_divergence with interpolate method
+2025-10-27 10:56:34,220 DEBUG    Computing diagnostic CourantNumber with interpolate method
+2025-10-27 10:56:34,282 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:34,925 DEBUG    u, min: -0.05837676234086906, max: 0.0509070622655802
+2025-10-27 10:56:34,925 DEBUG    D, min: 0.5662321115896423, max: 1.2154308023196663
+2025-10-27 10:56:34,925 DEBUG    coriolis, min: -0.03087228493714408, max: 0.03087228493714408
+2025-10-27 10:56:34,925 DEBUG    D_bar, min: 1.0, max: 1.0
+2025-10-27 10:56:34,925 DEBUG    RelativeVorticity, min: -2.0003116523643385, max: 2.0003116329959383
+2025-10-27 10:56:34,925 DEBUG    u_divergence, min: -0.025929199516265985, max: 0.025929200247648068
+2025-10-27 10:56:34,925 DEBUG    CourantNumber, min: 0.00014735859450352572, max: 0.004272707631135062
+2025-10-27 10:56:34,925 DEBUG    CourantNumber_transporting_velocity, min: 7.367929725176286e-05, max: 0.002136353815567531
+2025-10-27 10:56:34,925 INFO     
+2025-10-27 10:56:34,925 INFO     ========================================
+2025-10-27 10:56:34,925 INFO     at start of timestep 1, t=0.0, dt=0.0001
+2025-10-27 10:56:34,929 DEBUG    Computing diagnostic CourantNumber with interpolate method
+2025-10-27 10:56:34,932 INFO     Max Courant: 4.27e-03
+2025-10-27 10:56:34,932 DEBUG    Finishing spin-up period
+2025-10-27 10:56:34,932 INFO     Semi-implicit Quasi Newton: Explicit forcing
+2025-10-27 10:56:35,055 DEBUG        Residual norms for ExplicitForcingSolver_ solve
+2025-10-27 10:56:35,055 DEBUG        0 KSP preconditioned resid norm 3.001369627051e-03 true resid norm 3.265606912315e-03 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:35,056 DEBUG        1 KSP preconditioned resid norm 1.446131377239e-04 true resid norm 7.681440009573e-05 ||r(i)||/||b|| 2.352224323327e-02
+2025-10-27 10:56:35,058 DEBUG        2 KSP preconditioned resid norm 1.262255049728e-05 true resid norm 9.223230601907e-06 ||r(i)||/||b|| 2.824354201090e-03
+2025-10-27 10:56:35,059 DEBUG        3 KSP preconditioned resid norm 1.052118166620e-06 true resid norm 5.984830276552e-07 ||r(i)||/||b|| 1.832685450898e-04
+2025-10-27 10:56:35,060 DEBUG        4 KSP preconditioned resid norm 8.000318710335e-08 true resid norm 5.790681097991e-08 ||r(i)||/||b|| 1.773232741563e-05
+2025-10-27 10:56:35,061 DEBUG        5 KSP preconditioned resid norm 7.578842371604e-09 true resid norm 4.708756643915e-09 ||r(i)||/||b|| 1.441923896645e-06
+2025-10-27 10:56:35,062 DEBUG        6 KSP preconditioned resid norm 8.219032673353e-10 true resid norm 5.226254569786e-10 ||r(i)||/||b|| 1.600393038757e-07
+2025-10-27 10:56:35,064 DEBUG        7 KSP preconditioned resid norm 7.420227217554e-11 true resid norm 5.075296099420e-11 ||r(i)||/||b|| 1.554166265474e-08
+2025-10-27 10:56:35,071 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:35,073 INFO     Max Courant transporting velocity, outer iteration 0: 4.27e-03
+2025-10-27 10:56:35,073 INFO     Semi-implicit Quasi Newton: Transport 0: u
+2025-10-27 10:56:35,282 INFO     Semi-implicit Quasi Newton: Transport 0: D
+2025-10-27 10:56:35,598 INFO     Semi-implicit Quasi Newton: Implicit forcing (0, 0)
+2025-10-27 10:56:35,661 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:35,661 DEBUG        0 KSP preconditioned resid norm 7.420227033599e-11 true resid norm 5.075296078253e-11 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:35,662 DEBUG        1 KSP preconditioned resid norm 1.024489150541e-11 true resid norm 5.796371211948e-12 ||r(i)||/||b|| 1.142075481426e-01
+2025-10-27 10:56:35,664 DEBUG        2 KSP preconditioned resid norm 1.066327636578e-12 true resid norm 7.755208197012e-13 ||r(i)||/||b|| 1.528030695636e-02
+2025-10-27 10:56:35,665 DEBUG        3 KSP preconditioned resid norm 1.110932964972e-13 true resid norm 6.986015480636e-14 ||r(i)||/||b|| 1.376474470242e-03
+2025-10-27 10:56:35,666 DEBUG        4 KSP preconditioned resid norm 1.051776116255e-14 true resid norm 6.804265077052e-15 ||r(i)||/||b|| 1.340663672058e-04
+2025-10-27 10:56:35,668 DEBUG        5 KSP preconditioned resid norm 1.002756302181e-15 true resid norm 5.972642759463e-16 ||r(i)||/||b|| 1.176806765039e-05
+2025-10-27 10:56:35,669 DEBUG        6 KSP preconditioned resid norm 1.072814362140e-16 true resid norm 6.101935492570e-17 ||r(i)||/||b|| 1.202281679431e-06
+2025-10-27 10:56:35,670 DEBUG        7 KSP preconditioned resid norm 9.283103472050e-18 true resid norm 5.416781776485e-18 ||r(i)||/||b|| 1.067283896933e-07
+2025-10-27 10:56:35,671 DEBUG        8 KSP preconditioned resid norm 8.558719397109e-19 true resid norm 4.796518852724e-19 ||r(i)||/||b|| 9.450717315344e-09
+2025-10-27 10:56:35,673 INFO     Semi-implicit Quasi Newton: Mixed solve (0, 0)
+2025-10-27 10:56:36,680 INFO     Semi-implicit Quasi Newton: Implicit forcing (0, 1)
+2025-10-27 10:56:36,685 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:36,685 DEBUG        0 KSP preconditioned resid norm 5.180973051341e-06 true resid norm 2.368493097329e-06 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:36,687 DEBUG        1 KSP preconditioned resid norm 2.297505904067e-07 true resid norm 1.262297998372e-07 ||r(i)||/||b|| 5.329540541179e-02
+2025-10-27 10:56:36,688 DEBUG        2 KSP preconditioned resid norm 1.771474190656e-08 true resid norm 1.119708827762e-08 ||r(i)||/||b|| 4.727515689302e-03
+2025-10-27 10:56:36,689 DEBUG        3 KSP preconditioned resid norm 1.201610429340e-09 true resid norm 8.618085100338e-10 ||r(i)||/||b|| 3.638636359151e-04
+2025-10-27 10:56:36,691 DEBUG        4 KSP preconditioned resid norm 9.434839007473e-11 true resid norm 6.287765586499e-11 ||r(i)||/||b|| 2.654753604134e-05
+2025-10-27 10:56:36,692 DEBUG        5 KSP preconditioned resid norm 8.130911350811e-12 true resid norm 5.143259871164e-12 ||r(i)||/||b|| 2.171532556698e-06
+2025-10-27 10:56:36,693 DEBUG        6 KSP preconditioned resid norm 7.531817230018e-13 true resid norm 5.276763838832e-13 ||r(i)||/||b|| 2.227899183993e-07
+2025-10-27 10:56:36,695 DEBUG        7 KSP preconditioned resid norm 6.928309944794e-14 true resid norm 4.467123396313e-14 ||r(i)||/||b|| 1.886061395472e-08
+2025-10-27 10:56:36,696 DEBUG    Semi-Implicit Quasi Newton: Zeroing implicit forcing for D
+2025-10-27 10:56:36,698 INFO     Semi-implicit Quasi Newton: Mixed solve (0, 1)
+2025-10-27 10:56:36,870 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:36,872 INFO     Max Courant transporting velocity, outer iteration 1: 4.27e-03
+2025-10-27 10:56:36,873 INFO     Semi-implicit Quasi Newton: Transport 1: u
+2025-10-27 10:56:36,933 INFO     Semi-implicit Quasi Newton: Transport 1: D
+2025-10-27 10:56:36,949 INFO     Semi-implicit Quasi Newton: Implicit forcing (1, 0)
+2025-10-27 10:56:36,955 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:36,955 DEBUG        0 KSP preconditioned resid norm 6.930739940670e-14 true resid norm 4.466158561080e-14 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:36,956 DEBUG        1 KSP preconditioned resid norm 9.644678327856e-15 true resid norm 5.429403686497e-15 ||r(i)||/||b|| 1.215676428018e-01
+2025-10-27 10:56:36,958 DEBUG        2 KSP preconditioned resid norm 8.709150198331e-16 true resid norm 6.200951256770e-16 ||r(i)||/||b|| 1.388430610325e-02
+2025-10-27 10:56:36,960 DEBUG        3 KSP preconditioned resid norm 8.274498117455e-17 true resid norm 5.160589030429e-17 ||r(i)||/||b|| 1.155487195506e-03
+2025-10-27 10:56:36,962 DEBUG        4 KSP preconditioned resid norm 7.390758224113e-18 true resid norm 5.302799273119e-18 ||r(i)||/||b|| 1.187328931698e-04
+2025-10-27 10:56:36,966 DEBUG        5 KSP preconditioned resid norm 6.620003795035e-19 true resid norm 4.232255561287e-19 ||r(i)||/||b|| 9.476276991527e-06
+2025-10-27 10:56:36,969 DEBUG        6 KSP preconditioned resid norm 7.143473961729e-20 true resid norm 4.815466251682e-20 ||r(i)||/||b|| 1.078212111331e-06
+2025-10-27 10:56:36,972 DEBUG        7 KSP preconditioned resid norm 6.155628330909e-21 true resid norm 3.990976951080e-21 ||r(i)||/||b|| 8.936039543825e-08
+2025-10-27 10:56:36,975 INFO     Semi-implicit Quasi Newton: Mixed solve (1, 0)
+2025-10-27 10:56:37,152 INFO     Semi-implicit Quasi Newton: Implicit forcing (1, 1)
+2025-10-27 10:56:37,159 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:37,159 DEBUG        0 KSP preconditioned resid norm 1.354903835560e-07 true resid norm 7.222814674616e-08 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:37,163 DEBUG        1 KSP preconditioned resid norm 5.877483752772e-09 true resid norm 3.558494170630e-09 ||r(i)||/||b|| 4.926741624890e-02
+2025-10-27 10:56:37,165 DEBUG        2 KSP preconditioned resid norm 4.680665242640e-10 true resid norm 2.959629003486e-10 ||r(i)||/||b|| 4.097611716229e-03
+2025-10-27 10:56:37,169 DEBUG        3 KSP preconditioned resid norm 3.291548906643e-11 true resid norm 2.628140721711e-11 ||r(i)||/||b|| 3.638665589672e-04
+2025-10-27 10:56:37,171 DEBUG        4 KSP preconditioned resid norm 2.766815403291e-12 true resid norm 1.819429966258e-12 ||r(i)||/||b|| 2.519004083895e-05
+2025-10-27 10:56:37,173 DEBUG        5 KSP preconditioned resid norm 2.018131644133e-13 true resid norm 1.309960391301e-13 ||r(i)||/||b|| 1.813642534543e-06
+2025-10-27 10:56:37,176 DEBUG        6 KSP preconditioned resid norm 1.693098848796e-14 true resid norm 1.318768774759e-14 ||r(i)||/||b|| 1.825837757396e-07
+2025-10-27 10:56:37,179 DEBUG        7 KSP preconditioned resid norm 1.177609941121e-15 true resid norm 7.196638379047e-16 ||r(i)||/||b|| 9.963758871371e-09
+2025-10-27 10:56:37,181 DEBUG    Semi-Implicit Quasi Newton: Zeroing implicit forcing for D
+2025-10-27 10:56:37,182 INFO     Semi-implicit Quasi Newton: Mixed solve (1, 1)
+2025-10-27 10:56:37,327 DEBUG    Leaving Semi-implicit Quasi-Newton timestep method
+2025-10-27 10:56:37,328 DEBUG    Computing diagnostic RelativeVorticity with solve method
+2025-10-27 10:56:37,343 DEBUG    Computing diagnostic u_divergence with interpolate method
+2025-10-27 10:56:37,352 DEBUG    Computing diagnostic CourantNumber with interpolate method
+2025-10-27 10:56:37,359 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:37,540 DEBUG    u, min: -0.058376729772469306, max: 0.050913237476484685
+2025-10-27 10:56:37,540 DEBUG    D, min: 0.5662323046114665, max: 1.2153303657750896
+2025-10-27 10:56:37,540 DEBUG    coriolis, min: -0.03087228493714408, max: 0.03087228493714408
+2025-10-27 10:56:37,540 DEBUG    D_bar, min: 1.0, max: 1.0
+2025-10-27 10:56:37,540 DEBUG    RelativeVorticity, min: -2.0003116676010566, max: 2.0003116478541942
+2025-10-27 10:56:37,540 DEBUG    u_divergence, min: -0.3539536984683533, max: 0.6523043236951519
+2025-10-27 10:56:37,540 DEBUG    CourantNumber, min: 0.00014768739847959527, max: 0.00427270714941516
+2025-10-27 10:56:37,540 DEBUG    CourantNumber_transporting_velocity, min: 0.00014752299649156052, max: 0.004272707390275111
+2025-10-27 10:56:37,540 INFO     
+2025-10-27 10:56:37,541 INFO     ========================================
+2025-10-27 10:56:37,541 INFO     at start of timestep 2, t=0.0001, dt=0.0001
+2025-10-27 10:56:37,547 DEBUG    Computing diagnostic CourantNumber with interpolate method
+2025-10-27 10:56:37,552 INFO     Max Courant: 4.27e-03
+2025-10-27 10:56:37,554 INFO     Semi-implicit Quasi Newton: Explicit forcing
+2025-10-27 10:56:37,562 DEBUG        Residual norms for ExplicitForcingSolver_ solve
+2025-10-27 10:56:37,562 DEBUG        0 KSP preconditioned resid norm 1.186888136885e-15 true resid norm 7.216446930847e-16 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:37,567 DEBUG        1 KSP preconditioned resid norm 1.235438744744e-16 true resid norm 7.695940226861e-17 ||r(i)||/||b|| 1.066444512183e-01
+2025-10-27 10:56:37,571 DEBUG        2 KSP preconditioned resid norm 1.024982784084e-17 true resid norm 6.521343925555e-18 ||r(i)||/||b|| 9.036779440142e-03
+2025-10-27 10:56:37,574 DEBUG        3 KSP preconditioned resid norm 8.940912105455e-19 true resid norm 5.893097833594e-19 ||r(i)||/||b|| 8.166204075310e-04
+2025-10-27 10:56:37,578 DEBUG        4 KSP preconditioned resid norm 8.836623939732e-20 true resid norm 6.244125360891e-20 ||r(i)||/||b|| 8.652631164238e-05
+2025-10-27 10:56:37,582 DEBUG        5 KSP preconditioned resid norm 8.987621506986e-21 true resid norm 6.895878353623e-21 ||r(i)||/||b|| 9.555780593558e-06
+2025-10-27 10:56:37,586 DEBUG        6 KSP preconditioned resid norm 9.010998211000e-22 true resid norm 6.128284987598e-22 ||r(i)||/||b|| 8.492108438298e-07
+2025-10-27 10:56:37,589 DEBUG        7 KSP preconditioned resid norm 8.431005835771e-23 true resid norm 5.448444418844e-23 ||r(i)||/||b|| 7.550037395209e-08
+2025-10-27 10:56:37,596 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:37,599 INFO     Max Courant transporting velocity, outer iteration 0: 4.27e-03
+2025-10-27 10:56:37,600 INFO     Semi-implicit Quasi Newton: Transport 0: u
+2025-10-27 10:56:37,672 INFO     Semi-implicit Quasi Newton: Transport 0: D
+2025-10-27 10:56:37,687 INFO     Semi-implicit Quasi Newton: Implicit forcing (0, 0)
+2025-10-27 10:56:37,691 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:37,692 DEBUG        0 KSP preconditioned resid norm 1.428680960046e-16 true resid norm 4.931297188257e-17 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:37,693 DEBUG        1 KSP preconditioned resid norm 6.562612345403e-18 true resid norm 3.500904192021e-18 ||r(i)||/||b|| 7.099357549080e-02
+2025-10-27 10:56:37,694 DEBUG        2 KSP preconditioned resid norm 5.936289080852e-19 true resid norm 3.772922366743e-19 ||r(i)||/||b|| 7.650973410662e-03
+2025-10-27 10:56:37,697 DEBUG        3 KSP preconditioned resid norm 4.721071873968e-20 true resid norm 3.410948116226e-20 ||r(i)||/||b|| 6.916938862149e-04
+2025-10-27 10:56:37,700 DEBUG        4 KSP preconditioned resid norm 4.544372213736e-21 true resid norm 2.857523005815e-21 ||r(i)||/||b|| 5.794668008692e-05
+2025-10-27 10:56:37,703 DEBUG        5 KSP preconditioned resid norm 4.695330955396e-22 true resid norm 3.277095017985e-22 ||r(i)||/||b|| 6.645502984060e-06
+2025-10-27 10:56:37,706 DEBUG        6 KSP preconditioned resid norm 5.030592503117e-23 true resid norm 3.382716656823e-23 ||r(i)||/||b|| 6.859689302194e-07
+2025-10-27 10:56:37,709 DEBUG        7 KSP preconditioned resid norm 5.202550682459e-24 true resid norm 3.481499768251e-24 ||r(i)||/||b|| 7.060008016838e-08
+2025-10-27 10:56:37,711 INFO     Semi-implicit Quasi Newton: Mixed solve (0, 0)
+2025-10-27 10:56:37,890 INFO     Semi-implicit Quasi Newton: Implicit forcing (0, 1)
+2025-10-27 10:56:37,897 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:37,898 DEBUG        0 KSP preconditioned resid norm 6.119791563212e-06 true resid norm 2.919557695116e-06 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:37,899 DEBUG        1 KSP preconditioned resid norm 2.706627859973e-07 true resid norm 1.521347222308e-07 ||r(i)||/||b|| 5.210882541740e-02
+2025-10-27 10:56:37,901 DEBUG        2 KSP preconditioned resid norm 2.069956033222e-08 true resid norm 1.317159116662e-08 ||r(i)||/||b|| 4.511502269215e-03
+2025-10-27 10:56:37,903 DEBUG        3 KSP preconditioned resid norm 1.383370911456e-09 true resid norm 1.012040562563e-09 ||r(i)||/||b|| 3.466417410610e-04
+2025-10-27 10:56:37,905 DEBUG        4 KSP preconditioned resid norm 1.073590390444e-10 true resid norm 7.208621262884e-11 ||r(i)||/||b|| 2.469079914038e-05
+2025-10-27 10:56:37,906 DEBUG        5 KSP preconditioned resid norm 9.352186424933e-12 true resid norm 5.874700590197e-12 ||r(i)||/||b|| 2.012188558570e-06
+2025-10-27 10:56:37,907 DEBUG        6 KSP preconditioned resid norm 8.719704986883e-13 true resid norm 6.263561237506e-13 ||r(i)||/||b|| 2.145380188234e-07
+2025-10-27 10:56:37,909 DEBUG        7 KSP preconditioned resid norm 7.736689894900e-14 true resid norm 4.922813535055e-14 ||r(i)||/||b|| 1.686150454670e-08
+2025-10-27 10:56:37,910 DEBUG    Semi-Implicit Quasi Newton: Zeroing implicit forcing for D
+2025-10-27 10:56:37,911 INFO     Semi-implicit Quasi Newton: Mixed solve (0, 1)
+2025-10-27 10:56:38,073 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:38,075 INFO     Max Courant transporting velocity, outer iteration 1: 4.27e-03
+2025-10-27 10:56:38,075 INFO     Semi-implicit Quasi Newton: Transport 1: u
+2025-10-27 10:56:38,151 INFO     Semi-implicit Quasi Newton: Transport 1: D
+2025-10-27 10:56:38,172 INFO     Semi-implicit Quasi Newton: Implicit forcing (1, 0)
+2025-10-27 10:56:38,178 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:38,178 DEBUG        0 KSP preconditioned resid norm 7.740932338997e-14 true resid norm 4.922078135193e-14 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:38,179 DEBUG        1 KSP preconditioned resid norm 1.041608096427e-14 true resid norm 5.890079186855e-15 ||r(i)||/||b|| 1.196665112799e-01
+2025-10-27 10:56:38,181 DEBUG        2 KSP preconditioned resid norm 9.642139139259e-16 true resid norm 6.705019571754e-16 ||r(i)||/||b|| 1.362233468789e-02
+2025-10-27 10:56:38,184 DEBUG        3 KSP preconditioned resid norm 9.497334007983e-17 true resid norm 6.043091891452e-17 ||r(i)||/||b|| 1.227752125315e-03
+2025-10-27 10:56:38,187 DEBUG        4 KSP preconditioned resid norm 9.391034754631e-18 true resid norm 6.576313262292e-18 ||r(i)||/||b|| 1.336084694648e-04
+2025-10-27 10:56:38,191 DEBUG        5 KSP preconditioned resid norm 1.011471416504e-18 true resid norm 6.368012172754e-19 ||r(i)||/||b|| 1.293764950057e-05
+2025-10-27 10:56:38,194 DEBUG        6 KSP preconditioned resid norm 1.093741945824e-19 true resid norm 7.799410552587e-20 ||r(i)||/||b|| 1.584576745505e-06
+2025-10-27 10:56:38,197 DEBUG        7 KSP preconditioned resid norm 9.096818120726e-21 true resid norm 6.018051749584e-21 ||r(i)||/||b|| 1.222664814391e-07
+2025-10-27 10:56:38,199 DEBUG        8 KSP preconditioned resid norm 9.621375266940e-22 true resid norm 5.904992423626e-22 ||r(i)||/||b|| 1.199694978713e-08
+2025-10-27 10:56:38,202 INFO     Semi-implicit Quasi Newton: Mixed solve (1, 0)
+2025-10-27 10:56:38,353 INFO     Semi-implicit Quasi Newton: Implicit forcing (1, 1)
+2025-10-27 10:56:38,357 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:38,357 DEBUG        0 KSP preconditioned resid norm 1.335753777176e-07 true resid norm 7.135495354733e-08 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:38,359 DEBUG        1 KSP preconditioned resid norm 5.807688409961e-09 true resid norm 3.508703150245e-09 ||r(i)||/||b|| 4.917252378166e-02
+2025-10-27 10:56:38,362 DEBUG        2 KSP preconditioned resid norm 4.625075898248e-10 true resid norm 2.925400014826e-10 ||r(i)||/||b|| 4.099785466029e-03
+2025-10-27 10:56:38,364 DEBUG        3 KSP preconditioned resid norm 3.254150538246e-11 true resid norm 2.599606126934e-11 ||r(i)||/||b|| 3.643203446569e-04
+2025-10-27 10:56:38,366 DEBUG        4 KSP preconditioned resid norm 2.738710949284e-12 true resid norm 1.800077054395e-12 ||r(i)||/||b|| 2.522707905907e-05
+2025-10-27 10:56:38,368 DEBUG        5 KSP preconditioned resid norm 1.998106346114e-13 true resid norm 1.300803229744e-13 ||r(i)||/||b|| 1.823003400711e-06
+2025-10-27 10:56:38,372 DEBUG        6 KSP preconditioned resid norm 1.675653551188e-14 true resid norm 1.303563771020e-14 ||r(i)||/||b|| 1.826872145822e-07
+2025-10-27 10:56:38,375 DEBUG        7 KSP preconditioned resid norm 1.167222802262e-15 true resid norm 7.140559582886e-16 ||r(i)||/||b|| 1.000709723418e-08
+2025-10-27 10:56:38,377 DEBUG    Semi-Implicit Quasi Newton: Zeroing implicit forcing for D
+2025-10-27 10:56:38,378 INFO     Semi-implicit Quasi Newton: Mixed solve (1, 1)
+2025-10-27 10:56:38,557 DEBUG    Leaving Semi-implicit Quasi-Newton timestep method
+2025-10-27 10:56:38,558 DEBUG    Computing diagnostic RelativeVorticity with solve method
+2025-10-27 10:56:38,589 DEBUG    Computing diagnostic u_divergence with interpolate method
+2025-10-27 10:56:38,598 DEBUG    Computing diagnostic CourantNumber with interpolate method
+2025-10-27 10:56:38,604 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:38,748 DEBUG    u, min: -0.05837663239249759, max: 0.050919375991920694
+2025-10-27 10:56:38,748 DEBUG    D, min: 0.566232883521632, max: 1.2151516996198637
+2025-10-27 10:56:38,748 DEBUG    coriolis, min: -0.03087228493714408, max: 0.03087228493714408
+2025-10-27 10:56:38,748 DEBUG    D_bar, min: 1.0, max: 1.0
+2025-10-27 10:56:38,749 DEBUG    RelativeVorticity, min: -2.000313002175765, max: 2.000312982431147
+2025-10-27 10:56:38,749 DEBUG    u_divergence, min: -0.701702478347836, max: 1.2977842426089172
+2025-10-27 10:56:38,749 DEBUG    CourantNumber, min: 0.00014801636088340137, max: 0.004272699982442592
+2025-10-27 10:56:38,749 DEBUG    CourantNumber_transporting_velocity, min: 0.0001478518796814983, max: 0.004272703565928876
+2025-10-27 10:56:38,749 INFO     
+2025-10-27 10:56:38,749 INFO     ========================================
+2025-10-27 10:56:38,749 INFO     at start of timestep 3, t=0.0002, dt=0.0001
+2025-10-27 10:56:38,753 DEBUG    Computing diagnostic CourantNumber with interpolate method
+2025-10-27 10:56:38,757 INFO     Max Courant: 4.27e-03
+2025-10-27 10:56:38,757 INFO     Semi-implicit Quasi Newton: Explicit forcing
+2025-10-27 10:56:38,766 DEBUG        Residual norms for ExplicitForcingSolver_ solve
+2025-10-27 10:56:38,766 DEBUG        0 KSP preconditioned resid norm 1.175464020600e-15 true resid norm 7.160907102839e-16 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:38,768 DEBUG        1 KSP preconditioned resid norm 1.221870464834e-16 true resid norm 7.619834643770e-17 ||r(i)||/||b|| 1.064087905951e-01
+2025-10-27 10:56:38,769 DEBUG        2 KSP preconditioned resid norm 1.014909920290e-17 true resid norm 6.462524968505e-18 ||r(i)||/||b|| 9.024729514984e-03
+2025-10-27 10:56:38,771 DEBUG        3 KSP preconditioned resid norm 8.866903735263e-19 true resid norm 5.843512762497e-19 ||r(i)||/||b|| 8.160296843092e-04
+2025-10-27 10:56:38,773 DEBUG        4 KSP preconditioned resid norm 8.862759843696e-20 true resid norm 6.253119120373e-20 ||r(i)||/||b|| 8.732300294601e-05
+2025-10-27 10:56:38,777 DEBUG        5 KSP preconditioned resid norm 9.029316611159e-21 true resid norm 6.924078215207e-21 ||r(i)||/||b|| 9.669275296787e-06
+2025-10-27 10:56:38,780 DEBUG        6 KSP preconditioned resid norm 9.024785475964e-22 true resid norm 6.146332648150e-22 ||r(i)||/||b|| 8.583176069569e-07
+2025-10-27 10:56:38,783 DEBUG        7 KSP preconditioned resid norm 8.426746219975e-23 true resid norm 5.428496965259e-23 ||r(i)||/||b|| 7.580739265709e-08
+2025-10-27 10:56:38,791 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:38,796 INFO     Max Courant transporting velocity, outer iteration 0: 4.27e-03
+2025-10-27 10:56:38,796 INFO     Semi-implicit Quasi Newton: Transport 0: u
+2025-10-27 10:56:38,871 INFO     Semi-implicit Quasi Newton: Transport 0: D
+2025-10-27 10:56:38,888 INFO     Semi-implicit Quasi Newton: Implicit forcing (0, 0)
+2025-10-27 10:56:38,895 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:38,895 DEBUG        0 KSP preconditioned resid norm 1.428088111909e-16 true resid norm 4.928794948473e-17 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:38,899 DEBUG        1 KSP preconditioned resid norm 6.511764035246e-18 true resid norm 3.514229867050e-18 ||r(i)||/||b|| 7.129998110670e-02
+2025-10-27 10:56:38,902 DEBUG        2 KSP preconditioned resid norm 5.884657168877e-19 true resid norm 3.746302302099e-19 ||r(i)||/||b|| 7.600848364081e-03
+2025-10-27 10:56:38,905 DEBUG        3 KSP preconditioned resid norm 4.523559088555e-20 true resid norm 3.322038542691e-20 ||r(i)||/||b|| 6.740062383240e-04
+2025-10-27 10:56:38,907 DEBUG        4 KSP preconditioned resid norm 4.175587944386e-21 true resid norm 2.586245967946e-21 ||r(i)||/||b|| 5.247217616035e-05
+2025-10-27 10:56:38,909 DEBUG        5 KSP preconditioned resid norm 4.036370141545e-22 true resid norm 2.827527816406e-22 ||r(i)||/||b|| 5.736752788390e-06
+2025-10-27 10:56:38,912 DEBUG        6 KSP preconditioned resid norm 4.111401374605e-23 true resid norm 2.693455828114e-23 ||r(i)||/||b|| 5.464735003732e-07
+2025-10-27 10:56:38,915 DEBUG        7 KSP preconditioned resid norm 4.350634844176e-24 true resid norm 2.882360630190e-24 ||r(i)||/||b|| 5.848002727488e-08
+2025-10-27 10:56:38,919 INFO     Semi-implicit Quasi Newton: Mixed solve (0, 0)
+2025-10-27 10:56:39,089 INFO     Semi-implicit Quasi Newton: Implicit forcing (0, 1)
+2025-10-27 10:56:39,094 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:39,095 DEBUG        0 KSP preconditioned resid norm 7.227957914257e-06 true resid norm 3.574091811743e-06 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:39,096 DEBUG        1 KSP preconditioned resid norm 3.189116053465e-07 true resid norm 1.819015890079e-07 ||r(i)||/||b|| 5.089449252822e-02
+2025-10-27 10:56:39,097 DEBUG        2 KSP preconditioned resid norm 2.437202740915e-08 true resid norm 1.555907463131e-08 ||r(i)||/||b|| 4.353294613247e-03
+2025-10-27 10:56:39,099 DEBUG        3 KSP preconditioned resid norm 1.610671593665e-09 true resid norm 1.201102102761e-09 ||r(i)||/||b|| 3.360579878823e-04
+2025-10-27 10:56:39,100 DEBUG        4 KSP preconditioned resid norm 1.241203743847e-10 true resid norm 8.362491367547e-11 ||r(i)||/||b|| 2.339752812189e-05
+2025-10-27 10:56:39,101 DEBUG        5 KSP preconditioned resid norm 1.072496127696e-11 true resid norm 6.746111450599e-12 ||r(i)||/||b|| 1.887503680917e-06
+2025-10-27 10:56:39,105 DEBUG        6 KSP preconditioned resid norm 1.004989682979e-12 true resid norm 7.293032065342e-13 ||r(i)||/||b|| 2.040527342185e-07
+2025-10-27 10:56:39,108 DEBUG        7 KSP preconditioned resid norm 8.748252566950e-14 true resid norm 5.496076088076e-14 ||r(i)||/||b|| 1.537754589857e-08
+2025-10-27 10:56:39,110 DEBUG    Semi-Implicit Quasi Newton: Zeroing implicit forcing for D
+2025-10-27 10:56:39,111 INFO     Semi-implicit Quasi Newton: Mixed solve (0, 1)
+2025-10-27 10:56:39,272 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:39,274 INFO     Max Courant transporting velocity, outer iteration 1: 4.27e-03
+2025-10-27 10:56:39,274 INFO     Semi-implicit Quasi Newton: Transport 1: u
+2025-10-27 10:56:39,339 INFO     Semi-implicit Quasi Newton: Transport 1: D
+2025-10-27 10:56:39,353 INFO     Semi-implicit Quasi Newton: Implicit forcing (1, 0)
+2025-10-27 10:56:39,361 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:39,362 DEBUG        0 KSP preconditioned resid norm 8.753505676927e-14 true resid norm 5.495644139368e-14 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:39,364 DEBUG        1 KSP preconditioned resid norm 1.150579846611e-14 true resid norm 6.530041011134e-15 ||r(i)||/||b|| 1.188221224944e-01
+2025-10-27 10:56:39,367 DEBUG        2 KSP preconditioned resid norm 1.082435862789e-15 true resid norm 7.401522524115e-16 ||r(i)||/||b|| 1.346797997908e-02
+2025-10-27 10:56:39,370 DEBUG        3 KSP preconditioned resid norm 1.096719464534e-16 true resid norm 7.068375118209e-17 ||r(i)||/||b|| 1.286177732575e-03
+2025-10-27 10:56:39,373 DEBUG        4 KSP preconditioned resid norm 1.174631987581e-17 true resid norm 8.091474230210e-18 ||r(i)||/||b|| 1.472343191264e-04
+2025-10-27 10:56:39,376 DEBUG        5 KSP preconditioned resid norm 1.287286452366e-18 true resid norm 8.193661144207e-19 ||r(i)||/||b|| 1.490937356280e-05
+2025-10-27 10:56:39,379 DEBUG        6 KSP preconditioned resid norm 1.305989837913e-19 true resid norm 9.422565458446e-20 ||r(i)||/||b|| 1.714551601139e-06
+2025-10-27 10:56:39,381 DEBUG        7 KSP preconditioned resid norm 1.052129715748e-20 true resid norm 6.985648162584e-21 ||r(i)||/||b|| 1.271124546173e-07
+2025-10-27 10:56:39,383 DEBUG        8 KSP preconditioned resid norm 1.101123551664e-21 true resid norm 6.851898458424e-22 ||r(i)||/||b|| 1.246787143538e-08
+2025-10-27 10:56:39,387 INFO     Semi-implicit Quasi Newton: Mixed solve (1, 0)
+2025-10-27 10:56:39,547 INFO     Semi-implicit Quasi Newton: Implicit forcing (1, 1)
+2025-10-27 10:56:39,551 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:39,551 DEBUG        0 KSP preconditioned resid norm 1.310026065524e-07 true resid norm 7.013079234129e-08 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:39,552 DEBUG        1 KSP preconditioned resid norm 5.703472417142e-09 true resid norm 3.436816532319e-09 ||r(i)||/||b|| 4.900581353186e-02
+2025-10-27 10:56:39,554 DEBUG        2 KSP preconditioned resid norm 4.544916977851e-10 true resid norm 2.875612054117e-10 ||r(i)||/||b|| 4.100355860978e-03
+2025-10-27 10:56:39,555 DEBUG        3 KSP preconditioned resid norm 3.200308887550e-11 true resid norm 2.558095806613e-11 ||r(i)||/||b|| 3.647607165430e-04
+2025-10-27 10:56:39,556 DEBUG        4 KSP preconditioned resid norm 2.696989940199e-12 true resid norm 1.771048627987e-12 ||r(i)||/||b|| 2.525350946227e-05
+2025-10-27 10:56:39,557 DEBUG        5 KSP preconditioned resid norm 1.966123334328e-13 true resid norm 1.280860773313e-13 ||r(i)||/||b|| 1.826388567064e-06
+2025-10-27 10:56:39,559 DEBUG        6 KSP preconditioned resid norm 1.649070403629e-14 true resid norm 1.280560446601e-14 ||r(i)||/||b|| 1.825960329050e-07
+2025-10-27 10:56:39,560 DEBUG        7 KSP preconditioned resid norm 1.151713773885e-15 true resid norm 7.053015851024e-16 ||r(i)||/||b|| 1.005694590858e-08
+2025-10-27 10:56:39,563 DEBUG    Semi-Implicit Quasi Newton: Zeroing implicit forcing for D
+2025-10-27 10:56:39,564 INFO     Semi-implicit Quasi Newton: Mixed solve (1, 1)
+2025-10-27 10:56:39,744 DEBUG    Leaving Semi-implicit Quasi-Newton timestep method
+2025-10-27 10:56:39,745 DEBUG    Computing diagnostic RelativeVorticity with solve method
+2025-10-27 10:56:39,769 DEBUG    Computing diagnostic u_divergence with interpolate method
+2025-10-27 10:56:39,776 DEBUG    Computing diagnostic CourantNumber with interpolate method
+2025-10-27 10:56:39,784 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:39,941 DEBUG    u, min: -0.05837647139842966, max: 0.05092547855354806
+2025-10-27 10:56:39,941 DEBUG    D, min: 0.5662338482473922, max: 1.2148961311953481
+2025-10-27 10:56:39,941 DEBUG    coriolis, min: -0.03087228493714408, max: 0.03087228493714408
+2025-10-27 10:56:39,941 DEBUG    D_bar, min: 1.0, max: 1.0
+2025-10-27 10:56:39,942 DEBUG    RelativeVorticity, min: -2.000315656271307, max: 2.000315636529075
+2025-10-27 10:56:39,942 DEBUG    u_divergence, min: -1.0450399629075402, max: 1.933837835678353
+2025-10-27 10:56:39,942 DEBUG    CourantNumber, min: 0.00014834548287446966, max: 0.004272686326023669
+2025-10-27 10:56:39,942 DEBUG    CourantNumber_transporting_velocity, min: 0.00014818092187893553, max: 0.004272693154233131
+2025-10-27 10:56:39,942 INFO     
+2025-10-27 10:56:39,942 INFO     ========================================
+2025-10-27 10:56:39,942 INFO     at start of timestep 4, t=0.00030000000000000003, dt=0.0001
+2025-10-27 10:56:39,946 DEBUG    Computing diagnostic CourantNumber with interpolate method
+2025-10-27 10:56:39,949 INFO     Max Courant: 4.27e-03
+2025-10-27 10:56:39,950 INFO     Semi-implicit Quasi Newton: Explicit forcing
+2025-10-27 10:56:39,959 DEBUG        Residual norms for ExplicitForcingSolver_ solve
+2025-10-27 10:56:39,960 DEBUG        0 KSP preconditioned resid norm 1.161622124044e-15 true resid norm 7.071794943679e-16 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:39,964 DEBUG        1 KSP preconditioned resid norm 1.208573350477e-16 true resid norm 7.548704553513e-17 ||r(i)||/||b|| 1.067438269016e-01
+2025-10-27 10:56:39,968 DEBUG        2 KSP preconditioned resid norm 1.004114382178e-17 true resid norm 6.424689077946e-18 ||r(i)||/||b|| 9.084948204966e-03
+2025-10-27 10:56:39,970 DEBUG        3 KSP preconditioned resid norm 8.839540512907e-19 true resid norm 5.836452060533e-19 ||r(i)||/||b|| 8.253140973425e-04
+2025-10-27 10:56:39,974 DEBUG        4 KSP preconditioned resid norm 8.982989817676e-20 true resid norm 6.335042279042e-20 ||r(i)||/||b|| 8.958181521800e-05
+2025-10-27 10:56:39,977 DEBUG        5 KSP preconditioned resid norm 9.066187725589e-21 true resid norm 7.006607101121e-21 ||r(i)||/||b|| 9.907819948009e-06
+2025-10-27 10:56:39,978 DEBUG        6 KSP preconditioned resid norm 8.972959533634e-22 true resid norm 6.133074710582e-22 ||r(i)||/||b|| 8.672585615713e-07
+2025-10-27 10:56:39,979 DEBUG        7 KSP preconditioned resid norm 8.292055751584e-23 true resid norm 5.342141156344e-23 ||r(i)||/||b|| 7.554151667136e-08
+2025-10-27 10:56:39,986 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:39,991 INFO     Max Courant transporting velocity, outer iteration 0: 4.27e-03
+2025-10-27 10:56:39,991 INFO     Semi-implicit Quasi Newton: Transport 0: u
+2025-10-27 10:56:40,067 INFO     Semi-implicit Quasi Newton: Transport 0: D
+2025-10-27 10:56:40,086 INFO     Semi-implicit Quasi Newton: Implicit forcing (0, 0)
+2025-10-27 10:56:40,094 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:40,094 DEBUG        0 KSP preconditioned resid norm 1.419310238341e-16 true resid norm 4.901459786243e-17 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:40,097 DEBUG        1 KSP preconditioned resid norm 6.470095585627e-18 true resid norm 3.477319583757e-18 ||r(i)||/||b|| 7.094457029958e-02
+2025-10-27 10:56:40,101 DEBUG        2 KSP preconditioned resid norm 5.725985284620e-19 true resid norm 3.683892785161e-19 ||r(i)||/||b|| 7.515909434779e-03
+2025-10-27 10:56:40,105 DEBUG        3 KSP preconditioned resid norm 4.412865216277e-20 true resid norm 3.211319914620e-20 ||r(i)||/||b|| 6.551762239554e-04
+2025-10-27 10:56:40,107 DEBUG        4 KSP preconditioned resid norm 3.905728826593e-21 true resid norm 2.438195126872e-21 ||r(i)||/||b|| 4.974426463145e-05
+2025-10-27 10:56:40,110 DEBUG        5 KSP preconditioned resid norm 3.530184591623e-22 true resid norm 2.574320713497e-22 ||r(i)||/||b|| 5.252151044312e-06
+2025-10-27 10:56:40,113 DEBUG        6 KSP preconditioned resid norm 3.230715611873e-23 true resid norm 2.140191061015e-23 ||r(i)||/||b|| 4.366436029981e-07
+2025-10-27 10:56:40,115 DEBUG        7 KSP preconditioned resid norm 3.002076968730e-24 true resid norm 2.006629094776e-24 ||r(i)||/||b|| 4.093941768956e-08
+2025-10-27 10:56:40,120 INFO     Semi-implicit Quasi Newton: Mixed solve (0, 0)
+2025-10-27 10:56:40,291 INFO     Semi-implicit Quasi Newton: Implicit forcing (0, 1)
+2025-10-27 10:56:40,296 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:40,296 DEBUG        0 KSP preconditioned resid norm 8.410798668234e-06 true resid norm 4.270175557946e-06 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:40,297 DEBUG        1 KSP preconditioned resid norm 3.704801011153e-07 true resid norm 2.131664961507e-07 ||r(i)||/||b|| 4.991984363593e-02
+2025-10-27 10:56:40,299 DEBUG        2 KSP preconditioned resid norm 2.838450190968e-08 true resid norm 1.814559580155e-08 ||r(i)||/||b|| 4.249379341743e-03
+2025-10-27 10:56:40,300 DEBUG        3 KSP preconditioned resid norm 1.863421570582e-09 true resid norm 1.410127969942e-09 ||r(i)||/||b|| 3.302271653253e-04
+2025-10-27 10:56:40,302 DEBUG        4 KSP preconditioned resid norm 1.431927557983e-10 true resid norm 9.650209442330e-11 ||r(i)||/||b|| 2.259909296791e-05
+2025-10-27 10:56:40,303 DEBUG        5 KSP preconditioned resid norm 1.217121619161e-11 true resid norm 7.704482406271e-12 ||r(i)||/||b|| 1.804254251780e-06
+2025-10-27 10:56:40,305 DEBUG        6 KSP preconditioned resid norm 1.139609425990e-12 true resid norm 8.307184216885e-13 ||r(i)||/||b|| 1.945396413837e-07
+2025-10-27 10:56:40,307 DEBUG        7 KSP preconditioned resid norm 9.842099200721e-14 true resid norm 6.110110172276e-14 ||r(i)||/||b|| 1.430880320812e-08
+2025-10-27 10:56:40,310 DEBUG    Semi-Implicit Quasi Newton: Zeroing implicit forcing for D
+2025-10-27 10:56:40,311 INFO     Semi-implicit Quasi Newton: Mixed solve (0, 1)
+2025-10-27 10:56:40,464 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:40,466 INFO     Max Courant transporting velocity, outer iteration 1: 4.27e-03
+2025-10-27 10:56:40,467 INFO     Semi-implicit Quasi Newton: Transport 1: u
+2025-10-27 10:56:40,532 INFO     Semi-implicit Quasi Newton: Transport 1: D
+2025-10-27 10:56:40,550 INFO     Semi-implicit Quasi Newton: Implicit forcing (1, 0)
+2025-10-27 10:56:40,555 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:40,555 DEBUG        0 KSP preconditioned resid norm 9.848618358666e-14 true resid norm 6.109886497217e-14 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:40,558 DEBUG        1 KSP preconditioned resid norm 1.277760908543e-14 true resid norm 7.268507307506e-15 ||r(i)||/||b|| 1.189630496543e-01
+2025-10-27 10:56:40,560 DEBUG        2 KSP preconditioned resid norm 1.208194165837e-15 true resid norm 8.167236448365e-16 ||r(i)||/||b|| 1.336724741464e-02
+2025-10-27 10:56:40,562 DEBUG        3 KSP preconditioned resid norm 1.240412966779e-16 true resid norm 8.031543774205e-17 ||r(i)||/||b|| 1.314516035259e-03
+2025-10-27 10:56:40,564 DEBUG        4 KSP preconditioned resid norm 1.380056403283e-17 true resid norm 9.417728574417e-18 ||r(i)||/||b|| 1.541391739226e-04
+2025-10-27 10:56:40,565 DEBUG        5 KSP preconditioned resid norm 1.480944788704e-18 true resid norm 9.583685348917e-19 ||r(i)||/||b|| 1.568553745357e-05
+2025-10-27 10:56:40,567 DEBUG        6 KSP preconditioned resid norm 1.477128486901e-19 true resid norm 1.067401993189e-19 ||r(i)||/||b|| 1.747007892332e-06
+2025-10-27 10:56:40,568 DEBUG        7 KSP preconditioned resid norm 1.188880087958e-20 true resid norm 7.908414271806e-21 ||r(i)||/||b|| 1.294363532843e-07
+2025-10-27 10:56:40,569 DEBUG        8 KSP preconditioned resid norm 1.241501266734e-21 true resid norm 7.801562704729e-22 ||r(i)||/||b|| 1.276875226452e-08
+2025-10-27 10:56:40,572 INFO     Semi-implicit Quasi Newton: Mixed solve (1, 0)
+2025-10-27 10:56:40,729 INFO     Semi-implicit Quasi Newton: Implicit forcing (1, 1)
+2025-10-27 10:56:40,734 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:40,734 DEBUG        0 KSP preconditioned resid norm 1.276772332789e-07 true resid norm 6.854429834608e-08 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:40,736 DEBUG        1 KSP preconditioned resid norm 5.569652965897e-09 true resid norm 3.346529394075e-09 ||r(i)||/||b|| 4.882287038929e-02
+2025-10-27 10:56:40,737 DEBUG        2 KSP preconditioned resid norm 4.441961829486e-10 true resid norm 2.807586860046e-10 ||r(i)||/||b|| 4.096018090186e-03
+2025-10-27 10:56:40,739 DEBUG        3 KSP preconditioned resid norm 3.129481118093e-11 true resid norm 2.503138188944e-11 ||r(i)||/||b|| 3.651854711978e-04
+2025-10-27 10:56:40,741 DEBUG        4 KSP preconditioned resid norm 2.640345494169e-12 true resid norm 1.732321136832e-12 ||r(i)||/||b|| 2.527301582526e-05
+2025-10-27 10:56:40,743 DEBUG        5 KSP preconditioned resid norm 1.924301694595e-13 true resid norm 1.254175779376e-13 ||r(i)||/||b|| 1.829730276097e-06
+2025-10-27 10:56:40,744 DEBUG        6 KSP preconditioned resid norm 1.613710591179e-14 true resid norm 1.251519955302e-14 ||r(i)||/||b|| 1.825855666336e-07
+2025-10-27 10:56:40,747 DEBUG        7 KSP preconditioned resid norm 1.130187479429e-15 true resid norm 6.924702324988e-16 ||r(i)||/||b|| 1.010252127759e-08
+2025-10-27 10:56:40,749 DEBUG    Semi-Implicit Quasi Newton: Zeroing implicit forcing for D
+2025-10-27 10:56:40,750 INFO     Semi-implicit Quasi Newton: Mixed solve (1, 1)
+2025-10-27 10:56:40,895 DEBUG    Leaving Semi-implicit Quasi-Newton timestep method
+2025-10-27 10:56:40,895 DEBUG    Computing diagnostic RelativeVorticity with solve method
+2025-10-27 10:56:40,912 DEBUG    Computing diagnostic u_divergence with interpolate method
+2025-10-27 10:56:40,921 DEBUG    Computing diagnostic CourantNumber with interpolate method
+2025-10-27 10:56:40,927 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:41,073 DEBUG    u, min: -0.05837624821383442, max: 0.0509315460424846
+2025-10-27 10:56:41,073 DEBUG    D, min: 0.5662351986953608, max: 1.214565293721383
+2025-10-27 10:56:41,074 DEBUG    coriolis, min: -0.03087228493714408, max: 0.03087228493714408
+2025-10-27 10:56:41,074 DEBUG    D_bar, min: 1.0, max: 1.0
+2025-10-27 10:56:41,074 DEBUG    RelativeVorticity, min: -2.000319631704711, max: 2.0003196119647764
+2025-10-27 10:56:41,074 DEBUG    u_divergence, min: -1.382501198687054, max: 2.5580135811251172
+2025-10-27 10:56:41,074 DEBUG    CourantNumber, min: 0.00014867476550314105, max: 0.004272666429448219
+2025-10-27 10:56:41,074 DEBUG    CourantNumber_transporting_velocity, min: 0.00014851012418880537, max: 0.004272676377735943
+2025-10-27 10:56:41,074 INFO     
+2025-10-27 10:56:41,074 INFO     ========================================
+2025-10-27 10:56:41,074 INFO     at start of timestep 5, t=0.0004, dt=0.0001
+2025-10-27 10:56:41,078 DEBUG    Computing diagnostic CourantNumber with interpolate method
+2025-10-27 10:56:41,080 INFO     Max Courant: 4.27e-03
+2025-10-27 10:56:41,080 INFO     Semi-implicit Quasi Newton: Explicit forcing
+2025-10-27 10:56:41,086 DEBUG        Residual norms for ExplicitForcingSolver_ solve
+2025-10-27 10:56:41,087 DEBUG        0 KSP preconditioned resid norm 1.141115076174e-15 true resid norm 6.945151956904e-16 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:41,090 DEBUG        1 KSP preconditioned resid norm 1.187899113011e-16 true resid norm 7.418897159274e-17 ||r(i)||/||b|| 1.068212359544e-01
+2025-10-27 10:56:41,095 DEBUG        2 KSP preconditioned resid norm 9.896865850169e-18 true resid norm 6.336399009617e-18 ||r(i)||/||b|| 9.123485056821e-03
+2025-10-27 10:56:41,098 DEBUG        3 KSP preconditioned resid norm 8.754875799613e-19 true resid norm 5.782823372466e-19 ||r(i)||/||b|| 8.326417346012e-04
+2025-10-27 10:56:41,100 DEBUG        4 KSP preconditioned resid norm 8.992869961763e-20 true resid norm 6.333291394796e-20 ||r(i)||/||b|| 9.119010547350e-05
+2025-10-27 10:56:41,102 DEBUG        5 KSP preconditioned resid norm 9.010092597896e-21 true resid norm 6.968933839165e-21 ||r(i)||/||b|| 1.003424242178e-05
+2025-10-27 10:56:41,104 DEBUG        6 KSP preconditioned resid norm 8.932296322075e-22 true resid norm 6.086776668249e-22 ||r(i)||/||b|| 8.764065503560e-07
+2025-10-27 10:56:41,106 DEBUG        7 KSP preconditioned resid norm 8.236754304292e-23 true resid norm 5.322616083129e-23 ||r(i)||/||b|| 7.663786359401e-08
+2025-10-27 10:56:41,115 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:41,118 INFO     Max Courant transporting velocity, outer iteration 0: 4.27e-03
+2025-10-27 10:56:41,118 INFO     Semi-implicit Quasi Newton: Transport 0: u
+2025-10-27 10:56:41,176 INFO     Semi-implicit Quasi Newton: Transport 0: D
+2025-10-27 10:56:41,196 INFO     Semi-implicit Quasi Newton: Implicit forcing (0, 0)
+2025-10-27 10:56:41,203 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:41,204 DEBUG        0 KSP preconditioned resid norm 1.444336479524e-16 true resid norm 4.987552369187e-17 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:41,206 DEBUG        1 KSP preconditioned resid norm 6.693551769186e-18 true resid norm 3.555162480049e-18 ||r(i)||/||b|| 7.128070478042e-02
+2025-10-27 10:56:41,209 DEBUG        2 KSP preconditioned resid norm 6.208107028198e-19 true resid norm 3.880052487752e-19 ||r(i)||/||b|| 7.779472175015e-03
+2025-10-27 10:56:41,212 DEBUG        3 KSP preconditioned resid norm 5.175740185605e-20 true resid norm 3.564162871889e-20 ||r(i)||/||b|| 7.146116186986e-04
+2025-10-27 10:56:41,214 DEBUG        4 KSP preconditioned resid norm 5.114274640387e-21 true resid norm 3.158127324213e-21 ||r(i)||/||b|| 6.332018373830e-05
+2025-10-27 10:56:41,216 DEBUG        5 KSP preconditioned resid norm 4.913131810373e-22 true resid norm 3.424347519497e-22 ||r(i)||/||b|| 6.865787596843e-06
+2025-10-27 10:56:41,220 DEBUG        6 KSP preconditioned resid norm 4.922029621973e-23 true resid norm 3.225871967019e-23 ||r(i)||/||b|| 6.467845805386e-07
+2025-10-27 10:56:41,223 DEBUG        7 KSP preconditioned resid norm 5.191822189873e-24 true resid norm 3.430910370274e-24 ||r(i)||/||b|| 6.878946056726e-08
+2025-10-27 10:56:41,225 INFO     Semi-implicit Quasi Newton: Mixed solve (0, 0)
+2025-10-27 10:56:41,398 INFO     Semi-implicit Quasi Newton: Implicit forcing (0, 1)
+2025-10-27 10:56:41,408 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:41,408 DEBUG        0 KSP preconditioned resid norm 9.612297805769e-06 true resid norm 4.975670531224e-06 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:41,411 DEBUG        1 KSP preconditioned resid norm 4.230181822757e-07 true resid norm 2.446004351163e-07 ||r(i)||/||b|| 4.915929090991e-02
+2025-10-27 10:56:41,413 DEBUG        2 KSP preconditioned resid norm 3.252416777267e-08 true resid norm 2.080342238835e-08 ||r(i)||/||b|| 4.181028920184e-03
+2025-10-27 10:56:41,416 DEBUG        3 KSP preconditioned resid norm 2.127752718913e-09 true resid norm 1.627351246056e-09 ||r(i)||/||b|| 3.270616966786e-04
+2025-10-27 10:56:41,418 DEBUG        4 KSP preconditioned resid norm 1.635076470632e-10 true resid norm 1.100284494380e-10 ||r(i)||/||b|| 2.211329081127e-05
+2025-10-27 10:56:41,421 DEBUG        5 KSP preconditioned resid norm 1.365741259326e-11 true resid norm 8.711134729548e-12 ||r(i)||/||b|| 1.750745889400e-06
+2025-10-27 10:56:41,424 DEBUG        6 KSP preconditioned resid norm 1.271088757127e-12 true resid norm 9.295644146482e-13 ||r(i)||/||b|| 1.868219386342e-07
+2025-10-27 10:56:41,427 DEBUG        7 KSP preconditioned resid norm 1.093236655621e-13 true resid norm 6.715279826359e-14 ||r(i)||/||b|| 1.349623087827e-08
+2025-10-27 10:56:41,429 DEBUG    Semi-Implicit Quasi Newton: Zeroing implicit forcing for D
+2025-10-27 10:56:41,430 INFO     Semi-implicit Quasi Newton: Mixed solve (0, 1)
+2025-10-27 10:56:41,595 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:41,597 INFO     Max Courant transporting velocity, outer iteration 1: 4.27e-03
+2025-10-27 10:56:41,597 INFO     Semi-implicit Quasi Newton: Transport 1: u
+2025-10-27 10:56:41,662 INFO     Semi-implicit Quasi Newton: Transport 1: D
+2025-10-27 10:56:41,677 INFO     Semi-implicit Quasi Newton: Implicit forcing (1, 0)
+2025-10-27 10:56:41,687 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:41,688 DEBUG        0 KSP preconditioned resid norm 1.093982178344e-13 true resid norm 6.715337042620e-14 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:41,690 DEBUG        1 KSP preconditioned resid norm 1.410578368287e-14 true resid norm 8.038198179743e-15 ||r(i)||/||b|| 1.196991026471e-01
+2025-10-27 10:56:41,693 DEBUG        2 KSP preconditioned resid norm 1.332588683762e-15 true resid norm 8.926321367269e-16 ||r(i)||/||b|| 1.329243984422e-02
+2025-10-27 10:56:41,695 DEBUG        3 KSP preconditioned resid norm 1.373462990156e-16 true resid norm 8.881590601634e-17 ||r(i)||/||b|| 1.322582998480e-03
+2025-10-27 10:56:41,697 DEBUG        4 KSP preconditioned resid norm 1.546732884418e-17 true resid norm 1.051025864556e-17 ||r(i)||/||b|| 1.565112604007e-04
+2025-10-27 10:56:41,700 DEBUG        5 KSP preconditioned resid norm 1.620766034170e-18 true resid norm 1.066541612562e-18 ||r(i)||/||b|| 1.588217547076e-05
+2025-10-27 10:56:41,702 DEBUG        6 KSP preconditioned resid norm 1.619711977024e-19 true resid norm 1.168610833335e-19 ||r(i)||/||b|| 1.740211736088e-06
+2025-10-27 10:56:41,704 DEBUG        7 KSP preconditioned resid norm 1.319745375820e-20 true resid norm 8.795263065854e-21 ||r(i)||/||b|| 1.309727718808e-07
+2025-10-27 10:56:41,707 DEBUG        8 KSP preconditioned resid norm 1.375784779184e-21 true resid norm 8.710303329573e-22 ||r(i)||/||b|| 1.297076122061e-08
+2025-10-27 10:56:41,710 INFO     Semi-implicit Quasi Newton: Mixed solve (1, 0)
+2025-10-27 10:56:41,881 INFO     Semi-implicit Quasi Newton: Implicit forcing (1, 1)
+2025-10-27 10:56:41,887 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:41,887 DEBUG        0 KSP preconditioned resid norm 1.237122846486e-07 true resid norm 6.665121360232e-08 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:41,888 DEBUG        1 KSP preconditioned resid norm 5.413270140498e-09 true resid norm 3.240216636850e-09 ||r(i)||/||b|| 4.861451820192e-02
+2025-10-27 10:56:41,890 DEBUG        2 KSP preconditioned resid norm 4.319237182168e-10 true resid norm 2.731024031679e-10 ||r(i)||/||b|| 4.097485828201e-03
+2025-10-27 10:56:41,891 DEBUG        3 KSP preconditioned resid norm 3.045771872673e-11 true resid norm 2.437609425466e-11 ||r(i)||/||b|| 3.657261876745e-04
+2025-10-27 10:56:41,893 DEBUG        4 KSP preconditioned resid norm 2.573586090856e-12 true resid norm 1.686809442877e-12 ||r(i)||/||b|| 2.530800793728e-05
+2025-10-27 10:56:41,895 DEBUG        5 KSP preconditioned resid norm 1.874334827780e-13 true resid norm 1.223304871595e-13 ||r(i)||/||b|| 1.835382741706e-06
+2025-10-27 10:56:41,899 DEBUG        6 KSP preconditioned resid norm 1.572939391049e-14 true resid norm 1.217016850578e-14 ||r(i)||/||b|| 1.825948523367e-07
+2025-10-27 10:56:41,902 DEBUG        7 KSP preconditioned resid norm 1.106710547628e-15 true resid norm 6.782660326235e-16 ||r(i)||/||b|| 1.017634932607e-08
+2025-10-27 10:56:41,903 DEBUG    Semi-Implicit Quasi Newton: Zeroing implicit forcing for D
+2025-10-27 10:56:41,904 INFO     Semi-implicit Quasi Newton: Mixed solve (1, 1)
+2025-10-27 10:56:42,053 DEBUG    Leaving Semi-implicit Quasi-Newton timestep method
+2025-10-27 10:56:42,053 DEBUG    Computing diagnostic RelativeVorticity with solve method
+2025-10-27 10:56:42,076 DEBUG    Computing diagnostic u_divergence with interpolate method
+2025-10-27 10:56:42,085 DEBUG    Computing diagnostic CourantNumber with interpolate method
+2025-10-27 10:56:42,093 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:42,283 DEBUG    u, min: -0.0583759644793577, max: 0.05093757947394825
+2025-10-27 10:56:42,283 DEBUG    D, min: 0.566236934736605, max: 1.2141611071544287
+2025-10-27 10:56:42,283 DEBUG    coriolis, min: -0.03087228493714408, max: 0.03087228493714408
+2025-10-27 10:56:42,283 DEBUG    D_bar, min: 1.0, max: 1.0
+2025-10-27 10:56:42,283 DEBUG    RelativeVorticity, min: -2.000324926838868, max: 2.000324907101485
+2025-10-27 10:56:42,283 DEBUG    u_divergence, min: -1.7126711907831347, max: 3.1679616805308632
+2025-10-27 10:56:42,283 DEBUG    CourantNumber, min: 0.00014900420945738075, max: 0.004272640592237334
+2025-10-27 10:56:42,283 DEBUG    CourantNumber_transporting_velocity, min: 0.000148839487481131, max: 0.0042726535108427765
+2025-10-27 10:56:42,283 INFO     
+2025-10-27 10:56:42,283 INFO     ========================================
+2025-10-27 10:56:42,283 INFO     at start of timestep 6, t=0.0005, dt=0.0001
+2025-10-27 10:56:42,287 DEBUG    Computing diagnostic CourantNumber with interpolate method
+2025-10-27 10:56:42,290 INFO     Max Courant: 4.27e-03
+2025-10-27 10:56:42,291 INFO     Semi-implicit Quasi Newton: Explicit forcing
+2025-10-27 10:56:42,296 DEBUG        Residual norms for ExplicitForcingSolver_ solve
+2025-10-27 10:56:42,297 DEBUG        0 KSP preconditioned resid norm 1.117412029203e-15 true resid norm 6.804358859399e-16 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:42,298 DEBUG        1 KSP preconditioned resid norm 1.165531571768e-16 true resid norm 7.286471035937e-17 ||r(i)||/||b|| 1.070853431822e-01
+2025-10-27 10:56:42,300 DEBUG        2 KSP preconditioned resid norm 9.730419646610e-18 true resid norm 6.249091161372e-18 ||r(i)||/||b|| 9.183952949130e-03
+2025-10-27 10:56:42,301 DEBUG        3 KSP preconditioned resid norm 8.686670733467e-19 true resid norm 5.727302232721e-19 ||r(i)||/||b|| 8.417107843761e-04
+2025-10-27 10:56:42,302 DEBUG        4 KSP preconditioned resid norm 9.004955634163e-20 true resid norm 6.345484662002e-20 ||r(i)||/||b|| 9.325617289035e-05
+2025-10-27 10:56:42,303 DEBUG        5 KSP preconditioned resid norm 8.906324128949e-21 true resid norm 6.924652245993e-21 ||r(i)||/||b|| 1.017678871600e-05
+2025-10-27 10:56:42,305 DEBUG        6 KSP preconditioned resid norm 8.808364921079e-22 true resid norm 5.992541219885e-22 ||r(i)||/||b|| 8.806915307835e-07
+2025-10-27 10:56:42,306 DEBUG        7 KSP preconditioned resid norm 8.102235119494e-23 true resid norm 5.249092827061e-23 ||r(i)||/||b|| 7.714309217848e-08
+2025-10-27 10:56:42,315 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:42,320 INFO     Max Courant transporting velocity, outer iteration 0: 4.27e-03
+2025-10-27 10:56:42,320 INFO     Semi-implicit Quasi Newton: Transport 0: u
+2025-10-27 10:56:42,380 INFO     Semi-implicit Quasi Newton: Transport 0: D
+2025-10-27 10:56:42,399 INFO     Semi-implicit Quasi Newton: Implicit forcing (0, 0)
+2025-10-27 10:56:42,406 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:42,406 DEBUG        0 KSP preconditioned resid norm 1.425067484103e-16 true resid norm 4.892389679605e-17 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:42,409 DEBUG        1 KSP preconditioned resid norm 6.536633001425e-18 true resid norm 3.482219511751e-18 ||r(i)||/||b|| 7.117625004949e-02
+2025-10-27 10:56:42,411 DEBUG        2 KSP preconditioned resid norm 5.899604980997e-19 true resid norm 3.753453453260e-19 ||r(i)||/||b|| 7.672024714031e-03
+2025-10-27 10:56:42,413 DEBUG        3 KSP preconditioned resid norm 4.618754169547e-20 true resid norm 3.291436991928e-20 ||r(i)||/||b|| 6.727667269942e-04
+2025-10-27 10:56:42,414 DEBUG        4 KSP preconditioned resid norm 4.416198170921e-21 true resid norm 2.782118280540e-21 ||r(i)||/||b|| 5.686624457037e-05
+2025-10-27 10:56:42,416 DEBUG        5 KSP preconditioned resid norm 4.575860941432e-22 true resid norm 3.129177738532e-22 ||r(i)||/||b|| 6.396010832042e-06
+2025-10-27 10:56:42,417 DEBUG        6 KSP preconditioned resid norm 4.844362443120e-23 true resid norm 3.279957300945e-23 ||r(i)||/||b|| 6.704202886002e-07
+2025-10-27 10:56:42,419 DEBUG        7 KSP preconditioned resid norm 4.857729386143e-24 true resid norm 3.290507663417e-24 ||r(i)||/||b|| 6.725767730919e-08
+2025-10-27 10:56:42,421 INFO     Semi-implicit Quasi Newton: Mixed solve (0, 0)
+2025-10-27 10:56:42,578 INFO     Semi-implicit Quasi Newton: Implicit forcing (0, 1)
+2025-10-27 10:56:42,585 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:42,585 DEBUG        0 KSP preconditioned resid norm 1.079819027570e-05 true resid norm 5.672676958367e-06 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:42,588 DEBUG        1 KSP preconditioned resid norm 4.750608323632e-07 true resid norm 2.754013465272e-07 ||r(i)||/||b|| 4.854874489566e-02
+2025-10-27 10:56:42,590 DEBUG        2 KSP preconditioned resid norm 3.665723346462e-08 true resid norm 2.345265287189e-08 ||r(i)||/||b|| 4.134318425677e-03
+2025-10-27 10:56:42,592 DEBUG        3 KSP preconditioned resid norm 2.394253465350e-09 true resid norm 1.845293668456e-09 ||r(i)||/||b|| 3.252950383036e-04
+2025-10-27 10:56:42,593 DEBUG        4 KSP preconditioned resid norm 1.842753856420e-10 true resid norm 1.237203134257e-10 ||r(i)||/||b|| 2.180986407893e-05
+2025-10-27 10:56:42,594 DEBUG        5 KSP preconditioned resid norm 1.515474689317e-11 true resid norm 9.734186513192e-12 ||r(i)||/||b|| 1.715977586003e-06
+2025-10-27 10:56:42,596 DEBUG        6 KSP preconditioned resid norm 1.398101843021e-12 true resid norm 1.025647914670e-12 ||r(i)||/||b|| 1.808049219439e-07
+2025-10-27 10:56:42,599 DEBUG        7 KSP preconditioned resid norm 1.197074895022e-13 true resid norm 7.288949539254e-14 ||r(i)||/||b|| 1.284922373114e-08
+2025-10-27 10:56:42,602 DEBUG    Semi-Implicit Quasi Newton: Zeroing implicit forcing for D
+2025-10-27 10:56:42,603 INFO     Semi-implicit Quasi Newton: Mixed solve (0, 1)
+2025-10-27 10:56:42,757 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:42,759 INFO     Max Courant transporting velocity, outer iteration 1: 4.27e-03
+2025-10-27 10:56:42,759 INFO     Semi-implicit Quasi Newton: Transport 1: u
+2025-10-27 10:56:42,820 INFO     Semi-implicit Quasi Newton: Transport 1: D
+2025-10-27 10:56:42,835 INFO     Semi-implicit Quasi Newton: Implicit forcing (1, 0)
+2025-10-27 10:56:42,839 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:42,840 DEBUG        0 KSP preconditioned resid norm 1.197984506473e-13 true resid norm 7.289182045849e-14 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:42,841 DEBUG        1 KSP preconditioned resid norm 1.541013938194e-14 true resid norm 8.796836090368e-15 ||r(i)||/||b|| 1.206834461677e-01
+2025-10-27 10:56:42,842 DEBUG        2 KSP preconditioned resid norm 1.452021298503e-15 true resid norm 9.649168476731e-16 ||r(i)||/||b|| 1.323765604431e-02
+2025-10-27 10:56:42,844 DEBUG        3 KSP preconditioned resid norm 1.495519935766e-16 true resid norm 9.626253474978e-17 ||r(i)||/||b|| 1.320621904410e-03
+2025-10-27 10:56:42,847 DEBUG        4 KSP preconditioned resid norm 1.677770349459e-17 true resid norm 1.138662570965e-17 ||r(i)||/||b|| 1.562126674574e-04
+2025-10-27 10:56:42,850 DEBUG        5 KSP preconditioned resid norm 1.719992459550e-18 true resid norm 1.148973570791e-18 ||r(i)||/||b|| 1.576272294427e-05
+2025-10-27 10:56:42,852 DEBUG        6 KSP preconditioned resid norm 1.735243503762e-19 true resid norm 1.248250595744e-19 ||r(i)||/||b|| 1.712470052047e-06
+2025-10-27 10:56:42,854 DEBUG        7 KSP preconditioned resid norm 1.439595275493e-20 true resid norm 9.623524451859e-21 ||r(i)||/||b|| 1.320247510808e-07
+2025-10-27 10:56:42,855 DEBUG        8 KSP preconditioned resid norm 1.496678986706e-21 true resid norm 9.538763460038e-22 ||r(i)||/||b|| 1.308619183886e-08
+2025-10-27 10:56:42,857 INFO     Semi-implicit Quasi Newton: Mixed solve (1, 0)
+2025-10-27 10:56:43,022 INFO     Semi-implicit Quasi Newton: Implicit forcing (1, 1)
+2025-10-27 10:56:43,026 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:43,026 DEBUG        0 KSP preconditioned resid norm 1.190605427306e-07 true resid norm 6.444954372976e-08 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:43,028 DEBUG        1 KSP preconditioned resid norm 5.229714488108e-09 true resid norm 3.117731790971e-09 ||r(i)||/||b|| 4.837476901378e-02
+2025-10-27 10:56:43,029 DEBUG        2 KSP preconditioned resid norm 4.175741520509e-10 true resid norm 2.641145998274e-10 ||r(i)||/||b|| 4.098005735073e-03
+2025-10-27 10:56:43,030 DEBUG        3 KSP preconditioned resid norm 2.947275011896e-11 true resid norm 2.360241105544e-11 ||r(i)||/||b|| 3.662153320185e-04
+2025-10-27 10:56:43,032 DEBUG        4 KSP preconditioned resid norm 2.493765318176e-12 true resid norm 1.632258341283e-12 ||r(i)||/||b|| 2.532614269742e-05
+2025-10-27 10:56:43,033 DEBUG        5 KSP preconditioned resid norm 1.814998491394e-13 true resid norm 1.186079863106e-13 ||r(i)||/||b|| 1.840323134140e-06
+2025-10-27 10:56:43,035 DEBUG        6 KSP preconditioned resid norm 1.523316069912e-14 true resid norm 1.175748190854e-14 ||r(i)||/||b|| 1.824292497375e-07
+2025-10-27 10:56:43,037 DEBUG        7 KSP preconditioned resid norm 1.076311909391e-15 true resid norm 6.600752134183e-16 ||r(i)||/||b|| 1.024173601889e-08
+2025-10-27 10:56:43,039 DEBUG    Semi-Implicit Quasi Newton: Zeroing implicit forcing for D
+2025-10-27 10:56:43,041 INFO     Semi-implicit Quasi Newton: Mixed solve (1, 1)
+2025-10-27 10:56:43,191 DEBUG    Leaving Semi-implicit Quasi-Newton timestep method
+2025-10-27 10:56:43,192 DEBUG    Computing diagnostic RelativeVorticity with solve method
+2025-10-27 10:56:43,212 DEBUG    Computing diagnostic u_divergence with interpolate method
+2025-10-27 10:56:43,219 DEBUG    Computing diagnostic CourantNumber with interpolate method
+2025-10-27 10:56:43,225 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:43,363 DEBUG    u, min: -0.05837562204307657, max: 0.050943579991613835
+2025-10-27 10:56:43,363 DEBUG    D, min: 0.5662390562076685, max: 1.213685762090157
+2025-10-27 10:56:43,363 DEBUG    coriolis, min: -0.03087228493714408, max: 0.03087228493714408
+2025-10-27 10:56:43,363 DEBUG    D_bar, min: 1.0, max: 1.0
+2025-10-27 10:56:43,363 DEBUG    RelativeVorticity, min: -2.0003315418630514, max: 2.000331522128258
+2025-10-27 10:56:43,363 DEBUG    u_divergence, min: -2.034193092235149, max: 3.7614512783645706
+2025-10-27 10:56:43,363 DEBUG    CourantNumber, min: 0.00014933381539021545, max: 0.004272609160483801
+2025-10-27 10:56:43,363 DEBUG    CourantNumber_transporting_velocity, min: 0.0001491690124237981, max: 0.004272624876360568
+2025-10-27 10:56:43,363 INFO     
+2025-10-27 10:56:43,363 INFO     ========================================
+2025-10-27 10:56:43,364 INFO     at start of timestep 7, t=0.0006000000000000001, dt=0.0001
+2025-10-27 10:56:43,367 DEBUG    Computing diagnostic CourantNumber with interpolate method
+2025-10-27 10:56:43,369 INFO     Max Courant: 4.27e-03
+2025-10-27 10:56:43,370 INFO     Semi-implicit Quasi Newton: Explicit forcing
+2025-10-27 10:56:43,375 DEBUG        Residual norms for ExplicitForcingSolver_ solve
+2025-10-27 10:56:43,376 DEBUG        0 KSP preconditioned resid norm 1.084477635445e-15 true resid norm 6.616669858056e-16 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:43,381 DEBUG        1 KSP preconditioned resid norm 1.132468460671e-16 true resid norm 7.099828920880e-17 ||r(i)||/||b|| 1.073021485610e-01
+2025-10-27 10:56:43,384 DEBUG        2 KSP preconditioned resid norm 9.489231376432e-18 true resid norm 6.107543622471e-18 ||r(i)||/||b|| 9.230540065460e-03
+2025-10-27 10:56:43,386 DEBUG        3 KSP preconditioned resid norm 8.562333493900e-19 true resid norm 5.634441779519e-19 ||r(i)||/||b|| 8.515525030554e-04
+2025-10-27 10:56:43,387 DEBUG        4 KSP preconditioned resid norm 8.952518653601e-20 true resid norm 6.309795811134e-20 ||r(i)||/||b|| 9.536210732127e-05
+2025-10-27 10:56:43,389 DEBUG        5 KSP preconditioned resid norm 8.760498513037e-21 true resid norm 6.817671508222e-21 ||r(i)||/||b|| 1.030378068496e-05
+2025-10-27 10:56:43,391 DEBUG        6 KSP preconditioned resid norm 8.660845527848e-22 true resid norm 5.871902466936e-22 ||r(i)||/||b|| 8.874407508463e-07
+2025-10-27 10:56:43,393 DEBUG        7 KSP preconditioned resid norm 7.991762470364e-23 true resid norm 5.174297415138e-23 ||r(i)||/||b|| 7.820093077241e-08
+2025-10-27 10:56:43,401 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:43,403 INFO     Max Courant transporting velocity, outer iteration 0: 4.27e-03
+2025-10-27 10:56:43,403 INFO     Semi-implicit Quasi Newton: Transport 0: u
+2025-10-27 10:56:43,460 INFO     Semi-implicit Quasi Newton: Transport 0: D
+2025-10-27 10:56:43,477 INFO     Semi-implicit Quasi Newton: Implicit forcing (0, 0)
+2025-10-27 10:56:43,484 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:43,484 DEBUG        0 KSP preconditioned resid norm 1.431724090067e-16 true resid norm 4.940635626064e-17 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:43,486 DEBUG        1 KSP preconditioned resid norm 6.569754484186e-18 true resid norm 3.547492844795e-18 ||r(i)||/||b|| 7.180235729346e-02
+2025-10-27 10:56:43,487 DEBUG        2 KSP preconditioned resid norm 6.083706001557e-19 true resid norm 3.845951341455e-19 ||r(i)||/||b|| 7.784324998925e-03
+2025-10-27 10:56:43,488 DEBUG        3 KSP preconditioned resid norm 5.146341630787e-20 true resid norm 3.626353782423e-20 ||r(i)||/||b|| 7.339852717112e-04
+2025-10-27 10:56:43,490 DEBUG        4 KSP preconditioned resid norm 5.614882341935e-21 true resid norm 3.487356620510e-21 ||r(i)||/||b|| 7.058518143116e-05
+2025-10-27 10:56:43,494 DEBUG        5 KSP preconditioned resid norm 5.904915762336e-22 true resid norm 4.089022025657e-22 ||r(i)||/||b|| 8.276307615330e-06
+2025-10-27 10:56:43,497 DEBUG        6 KSP preconditioned resid norm 6.071246789909e-23 true resid norm 4.025208150997e-23 ||r(i)||/||b|| 8.147146350485e-07
+2025-10-27 10:56:43,500 DEBUG        7 KSP preconditioned resid norm 5.907734151392e-24 true resid norm 3.935516236505e-24 ||r(i)||/||b|| 7.965607129056e-08
+2025-10-27 10:56:43,503 INFO     Semi-implicit Quasi Newton: Mixed solve (0, 0)
+2025-10-27 10:56:43,656 INFO     Semi-implicit Quasi Newton: Implicit forcing (0, 1)
+2025-10-27 10:56:43,660 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:43,660 DEBUG        0 KSP preconditioned resid norm 1.194584642154e-05 true resid norm 6.350077975439e-06 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:43,662 DEBUG        1 KSP preconditioned resid norm 5.256437137525e-07 true resid norm 3.050483673092e-07 ||r(i)||/||b|| 4.803852306839e-02
+2025-10-27 10:56:43,663 DEBUG        2 KSP preconditioned resid norm 4.069691314781e-08 true resid norm 2.604190876927e-08 ||r(i)||/||b|| 4.101037636073e-03
+2025-10-27 10:56:43,664 DEBUG        3 KSP preconditioned resid norm 2.656638240392e-09 true resid norm 2.059149831893e-09 ||r(i)||/||b|| 3.242715821533e-04
+2025-10-27 10:56:43,666 DEBUG        4 KSP preconditioned resid norm 2.049468344763e-10 true resid norm 1.372526978379e-10 ||r(i)||/||b|| 2.161433266942e-05
+2025-10-27 10:56:43,667 DEBUG        5 KSP preconditioned resid norm 1.663707358269e-11 true resid norm 1.074994935917e-11 ||r(i)||/||b|| 1.692884622953e-06
+2025-10-27 10:56:43,668 DEBUG        6 KSP preconditioned resid norm 1.520280467797e-12 true resid norm 1.118585027588e-12 ||r(i)||/||b|| 1.761529593676e-07
+2025-10-27 10:56:43,669 DEBUG        7 KSP preconditioned resid norm 1.293570551644e-13 true resid norm 7.824131581901e-14 ||r(i)||/||b|| 1.232131575732e-08
+2025-10-27 10:56:43,670 DEBUG    Semi-Implicit Quasi Newton: Zeroing implicit forcing for D
+2025-10-27 10:56:43,671 INFO     Semi-implicit Quasi Newton: Mixed solve (0, 1)
+2025-10-27 10:56:43,827 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:43,831 INFO     Max Courant transporting velocity, outer iteration 1: 4.27e-03
+2025-10-27 10:56:43,832 INFO     Semi-implicit Quasi Newton: Transport 1: u
+2025-10-27 10:56:43,912 INFO     Semi-implicit Quasi Newton: Transport 1: D
+2025-10-27 10:56:43,932 INFO     Semi-implicit Quasi Newton: Implicit forcing (1, 0)
+2025-10-27 10:56:43,940 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:43,940 DEBUG        0 KSP preconditioned resid norm 1.294560316500e-13 true resid norm 7.824600592751e-14 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:43,942 DEBUG        1 KSP preconditioned resid norm 1.664706747337e-14 true resid norm 9.520509561075e-15 ||r(i)||/||b|| 1.216740643592e-01
+2025-10-27 10:56:43,944 DEBUG        2 KSP preconditioned resid norm 1.565632889007e-15 true resid norm 1.032994274008e-15 ||r(i)||/||b|| 1.320187863602e-02
+2025-10-27 10:56:43,945 DEBUG        3 KSP preconditioned resid norm 1.607309176358e-16 true resid norm 1.028370157435e-16 ||r(i)||/||b|| 1.314278147804e-03
+2025-10-27 10:56:43,947 DEBUG        4 KSP preconditioned resid norm 1.779260521215e-17 true resid norm 1.207852167333e-17 ||r(i)||/||b|| 1.543659836711e-04
+2025-10-27 10:56:43,950 DEBUG        5 KSP preconditioned resid norm 1.787967152596e-18 true resid norm 1.209630648982e-18 ||r(i)||/||b|| 1.545932772726e-05
+2025-10-27 10:56:43,953 DEBUG        6 KSP preconditioned resid norm 1.826084323231e-19 true resid norm 1.308197322879e-19 ||r(i)||/||b|| 1.671903003064e-06
+2025-10-27 10:56:43,955 DEBUG        7 KSP preconditioned resid norm 1.545194994702e-20 true resid norm 1.037552768655e-20 ||r(i)||/||b|| 1.326013713231e-07
+2025-10-27 10:56:43,956 DEBUG        8 KSP preconditioned resid norm 1.600957779101e-21 true resid norm 1.026743984450e-21 ||r(i)||/||b|| 1.312199865386e-08
+2025-10-27 10:56:43,958 INFO     Semi-implicit Quasi Newton: Mixed solve (1, 0)
+2025-10-27 10:56:44,125 INFO     Semi-implicit Quasi Newton: Implicit forcing (1, 1)
+2025-10-27 10:56:44,129 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:44,129 DEBUG        0 KSP preconditioned resid norm 1.140087526962e-07 true resid norm 6.203967116359e-08 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:44,130 DEBUG        1 KSP preconditioned resid norm 5.029229086886e-09 true resid norm 2.983788872791e-09 ||r(i)||/||b|| 4.809485312910e-02
+2025-10-27 10:56:44,132 DEBUG        2 KSP preconditioned resid norm 4.016937806845e-10 true resid norm 2.540342668936e-10 ||r(i)||/||b|| 4.094706856582e-03
+2025-10-27 10:56:44,133 DEBUG        3 KSP preconditioned resid norm 2.837608197750e-11 true resid norm 2.273800349994e-11 ||r(i)||/||b|| 3.665074793834e-04
+2025-10-27 10:56:44,134 DEBUG        4 KSP preconditioned resid norm 2.404932067569e-12 true resid norm 1.572714079922e-12 ||r(i)||/||b|| 2.535013565392e-05
+2025-10-27 10:56:44,136 DEBUG        5 KSP preconditioned resid norm 1.749954915638e-13 true resid norm 1.146753277007e-13 ||r(i)||/||b|| 1.848419334756e-06
+2025-10-27 10:56:44,137 DEBUG        6 KSP preconditioned resid norm 1.469713745721e-14 true resid norm 1.130774091220e-14 ||r(i)||/||b|| 1.822662934880e-07
+2025-10-27 10:56:44,139 DEBUG        7 KSP preconditioned resid norm 1.044400150076e-15 true resid norm 6.406938144542e-16 ||r(i)||/||b|| 1.032716328822e-08
+2025-10-27 10:56:44,140 DEBUG    Semi-Implicit Quasi Newton: Zeroing implicit forcing for D
+2025-10-27 10:56:44,142 INFO     Semi-implicit Quasi Newton: Mixed solve (1, 1)
+2025-10-27 10:56:44,286 DEBUG    Leaving Semi-implicit Quasi-Newton timestep method
+2025-10-27 10:56:44,286 DEBUG    Computing diagnostic RelativeVorticity with solve method
+2025-10-27 10:56:44,304 DEBUG    Computing diagnostic u_divergence with interpolate method
+2025-10-27 10:56:44,312 DEBUG    Computing diagnostic CourantNumber with interpolate method
+2025-10-27 10:56:44,318 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:44,460 DEBUG    u, min: -0.058375222950191416, max: 0.05094954886158988
+2025-10-27 10:56:44,461 DEBUG    D, min: 0.5662415629107358, max: 1.2131417043590715
+2025-10-27 10:56:44,461 DEBUG    coriolis, min: -0.03087228493714408, max: 0.03087228493714408
+2025-10-27 10:56:44,461 DEBUG    D_bar, min: 1.0, max: 1.0
+2025-10-27 10:56:44,461 DEBUG    RelativeVorticity, min: -2.000339477016759, max: 2.000339457284657
+2025-10-27 10:56:44,461 DEBUG    u_divergence, min: -2.345776051516823, max: 4.336339842872509
+2025-10-27 10:56:44,461 DEBUG    CourantNumber, min: 0.00014966358371611791, max: 0.004272572522821498
+2025-10-27 10:56:44,461 DEBUG    CourantNumber_transporting_velocity, min: 0.00014949869955316672, max: 0.00427259084165265
+2025-10-27 10:56:44,461 INFO     
+2025-10-27 10:56:44,461 INFO     ========================================
+2025-10-27 10:56:44,461 INFO     at start of timestep 8, t=0.0007000000000000001, dt=0.0001
+2025-10-27 10:56:44,465 DEBUG    Computing diagnostic CourantNumber with interpolate method
+2025-10-27 10:56:44,466 INFO     Max Courant: 4.27e-03
+2025-10-27 10:56:44,467 INFO     Semi-implicit Quasi Newton: Explicit forcing
+2025-10-27 10:56:44,472 DEBUG        Residual norms for ExplicitForcingSolver_ solve
+2025-10-27 10:56:44,473 DEBUG        0 KSP preconditioned resid norm 1.053046731261e-15 true resid norm 6.424074519742e-16 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:44,475 DEBUG        1 KSP preconditioned resid norm 1.103238210405e-16 true resid norm 6.914969334805e-17 ||r(i)||/||b|| 1.076414869341e-01
+2025-10-27 10:56:44,477 DEBUG        2 KSP preconditioned resid norm 9.264621101928e-18 true resid norm 5.981318141026e-18 ||r(i)||/||b|| 9.310785736754e-03
+2025-10-27 10:56:44,479 DEBUG        3 KSP preconditioned resid norm 8.451638272485e-19 true resid norm 5.560670475302e-19 ||r(i)||/||b|| 8.655986879064e-04
+2025-10-27 10:56:44,481 DEBUG        4 KSP preconditioned resid norm 8.918771502582e-20 true resid norm 6.283706002174e-20 ||r(i)||/||b|| 9.781496125027e-05
+2025-10-27 10:56:44,483 DEBUG        5 KSP preconditioned resid norm 8.581869029793e-21 true resid norm 6.722777103082e-21 ||r(i)||/||b|| 1.046497372100e-05
+2025-10-27 10:56:44,485 DEBUG        6 KSP preconditioned resid norm 8.517498557878e-22 true resid norm 5.761201152421e-22 ||r(i)||/||b|| 8.968141846294e-07
+2025-10-27 10:56:44,487 DEBUG        7 KSP preconditioned resid norm 7.819324125733e-23 true resid norm 5.139266569035e-23 ||r(i)||/||b|| 8.000010823725e-08
+2025-10-27 10:56:44,494 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:44,496 INFO     Max Courant transporting velocity, outer iteration 0: 4.27e-03
+2025-10-27 10:56:44,496 INFO     Semi-implicit Quasi Newton: Transport 0: u
+2025-10-27 10:56:44,556 INFO     Semi-implicit Quasi Newton: Transport 0: D
+2025-10-27 10:56:44,572 INFO     Semi-implicit Quasi Newton: Implicit forcing (0, 0)
+2025-10-27 10:56:44,578 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:44,578 DEBUG        0 KSP preconditioned resid norm 1.412098162382e-16 true resid norm 4.873300740772e-17 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:44,579 DEBUG        1 KSP preconditioned resid norm 6.526939914997e-18 true resid norm 3.477664820799e-18 ||r(i)||/||b|| 7.136158849594e-02
+2025-10-27 10:56:44,581 DEBUG        2 KSP preconditioned resid norm 5.955700491934e-19 true resid norm 3.779171061720e-19 ||r(i)||/||b|| 7.754848844239e-03
+2025-10-27 10:56:44,585 DEBUG        3 KSP preconditioned resid norm 4.934317798213e-20 true resid norm 3.523816451710e-20 ||r(i)||/||b|| 7.230861871972e-04
+2025-10-27 10:56:44,589 DEBUG        4 KSP preconditioned resid norm 5.227404955163e-21 true resid norm 3.309315614866e-21 ||r(i)||/||b|| 6.790706732255e-05
+2025-10-27 10:56:44,592 DEBUG        5 KSP preconditioned resid norm 5.516201560292e-22 true resid norm 3.829372660517e-22 ||r(i)||/||b|| 7.857862389815e-06
+2025-10-27 10:56:44,595 DEBUG        6 KSP preconditioned resid norm 5.693890700988e-23 true resid norm 3.834643277374e-23 ||r(i)||/||b|| 7.868677681417e-07
+2025-10-27 10:56:44,597 DEBUG        7 KSP preconditioned resid norm 5.567941820888e-24 true resid norm 3.695815720799e-24 ||r(i)||/||b|| 7.583803909082e-08
+2025-10-27 10:56:44,602 INFO     Semi-implicit Quasi Newton: Mixed solve (0, 0)
+2025-10-27 10:56:44,753 INFO     Semi-implicit Quasi Newton: Implicit forcing (0, 1)
+2025-10-27 10:56:44,758 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:44,758 DEBUG        0 KSP preconditioned resid norm 1.303918661352e-05 true resid norm 7.000274337849e-06 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:44,760 DEBUG        1 KSP preconditioned resid norm 5.740762608928e-07 true resid norm 3.331751934621e-07 ||r(i)||/||b|| 4.759459092349e-02
+2025-10-27 10:56:44,761 DEBUG        2 KSP preconditioned resid norm 4.458192032544e-08 true resid norm 2.853454146522e-08 ||r(i)||/||b|| 4.076203315481e-03
+2025-10-27 10:56:44,763 DEBUG        3 KSP preconditioned resid norm 2.910447541290e-09 true resid norm 2.265523499411e-09 ||r(i)||/||b|| 3.236335306406e-04
+2025-10-27 10:56:44,764 DEBUG        4 KSP preconditioned resid norm 2.251257082916e-10 true resid norm 1.503907191324e-10 ||r(i)||/||b|| 2.148354648321e-05
+2025-10-27 10:56:44,766 DEBUG        5 KSP preconditioned resid norm 1.808108506700e-11 true resid norm 1.174029353210e-11 ||r(i)||/||b|| 1.677119062124e-06
+2025-10-27 10:56:44,768 DEBUG        6 KSP preconditioned resid norm 1.637233021329e-12 true resid norm 1.207732973113e-12 ||r(i)||/||b|| 1.725265203655e-07
+2025-10-27 10:56:44,771 DEBUG        7 KSP preconditioned resid norm 1.381988851366e-13 true resid norm 8.319979849175e-14 ||r(i)||/||b|| 1.188521970373e-08
+2025-10-27 10:56:44,773 DEBUG    Semi-Implicit Quasi Newton: Zeroing implicit forcing for D
+2025-10-27 10:56:44,775 INFO     Semi-implicit Quasi Newton: Mixed solve (0, 1)
+2025-10-27 10:56:44,928 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:44,931 INFO     Max Courant transporting velocity, outer iteration 1: 4.27e-03
+2025-10-27 10:56:44,931 INFO     Semi-implicit Quasi Newton: Transport 1: u
+2025-10-27 10:56:44,998 INFO     Semi-implicit Quasi Newton: Transport 1: D
+2025-10-27 10:56:45,017 INFO     Semi-implicit Quasi Newton: Implicit forcing (1, 0)
+2025-10-27 10:56:45,024 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:45,024 DEBUG        0 KSP preconditioned resid norm 1.383095486069e-13 true resid norm 8.320634125946e-14 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:45,025 DEBUG        1 KSP preconditioned resid norm 1.779595417278e-14 true resid norm 1.019716521929e-14 ||r(i)||/||b|| 1.225527413528e-01
+2025-10-27 10:56:45,028 DEBUG        2 KSP preconditioned resid norm 1.673172593799e-15 true resid norm 1.097004644513e-15 ||r(i)||/||b|| 1.318414712038e-02
+2025-10-27 10:56:45,031 DEBUG        3 KSP preconditioned resid norm 1.709457656682e-16 true resid norm 1.086968603090e-16 ||r(i)||/||b|| 1.306353081553e-03
+2025-10-27 10:56:45,034 DEBUG        4 KSP preconditioned resid norm 1.857395870877e-17 true resid norm 1.261965210684e-17 ||r(i)||/||b|| 1.516669512902e-04
+2025-10-27 10:56:45,036 DEBUG        5 KSP preconditioned resid norm 1.831777273610e-18 true resid norm 1.252106946400e-18 ||r(i)||/||b|| 1.504821540579e-05
+2025-10-27 10:56:45,038 DEBUG        6 KSP preconditioned resid norm 1.894553028971e-19 true resid norm 1.349906307116e-19 ||r(i)||/||b|| 1.622359890704e-06
+2025-10-27 10:56:45,040 DEBUG        7 KSP preconditioned resid norm 1.634754253843e-20 true resid norm 1.103897322033e-20 ||r(i)||/||b|| 1.326698548842e-07
+2025-10-27 10:56:45,042 DEBUG        8 KSP preconditioned resid norm 1.687922182576e-21 true resid norm 1.089030426563e-21 ||r(i)||/||b|| 1.308831045902e-08
+2025-10-27 10:56:45,046 INFO     Semi-implicit Quasi Newton: Mixed solve (1, 0)
+2025-10-27 10:56:45,211 INFO     Semi-implicit Quasi Newton: Implicit forcing (1, 1)
+2025-10-27 10:56:45,216 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:45,216 DEBUG        0 KSP preconditioned resid norm 1.084306470233e-07 true resid norm 5.939536133067e-08 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:45,217 DEBUG        1 KSP preconditioned resid norm 4.805362934458e-09 true resid norm 2.835891268269e-09 ||r(i)||/||b|| 4.774600582832e-02
+2025-10-27 10:56:45,219 DEBUG        2 KSP preconditioned resid norm 3.840220405720e-10 true resid norm 2.428951155821e-10 ||r(i)||/||b|| 4.089462714602e-03
+2025-10-27 10:56:45,221 DEBUG        3 KSP preconditioned resid norm 2.714477099438e-11 true resid norm 2.176906905955e-11 ||r(i)||/||b|| 3.665112657258e-04
+2025-10-27 10:56:45,223 DEBUG        4 KSP preconditioned resid norm 2.304503316651e-12 true resid norm 1.504924341839e-12 ||r(i)||/||b|| 2.533740528087e-05
+2025-10-27 10:56:45,225 DEBUG        5 KSP preconditioned resid norm 1.675263432019e-13 true resid norm 1.100119372862e-13 ||r(i)||/||b|| 1.852197458211e-06
+2025-10-27 10:56:45,227 DEBUG        6 KSP preconditioned resid norm 1.408808922016e-14 true resid norm 1.079527968131e-14 ||r(i)||/||b|| 1.817529086356e-07
+2025-10-27 10:56:45,228 DEBUG        7 KSP preconditioned resid norm 1.007214687787e-15 true resid norm 6.181007284710e-16 ||r(i)||/||b|| 1.040654883855e-08
+2025-10-27 10:56:45,230 DEBUG    Semi-Implicit Quasi Newton: Zeroing implicit forcing for D
+2025-10-27 10:56:45,232 INFO     Semi-implicit Quasi Newton: Mixed solve (1, 1)
+2025-10-27 10:56:45,384 DEBUG    Leaving Semi-implicit Quasi-Newton timestep method
+2025-10-27 10:56:45,384 DEBUG    Computing diagnostic RelativeVorticity with solve method
+2025-10-27 10:56:45,401 DEBUG    Computing diagnostic u_divergence with interpolate method
+2025-10-27 10:56:45,408 DEBUG    Computing diagnostic CourantNumber with interpolate method
+2025-10-27 10:56:45,412 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:45,563 DEBUG    u, min: -0.05837476943210924, max: 0.05095548746692254
+2025-10-27 10:56:45,563 DEBUG    D, min: 0.566244454614383, max: 1.212531612063429
+2025-10-27 10:56:45,563 DEBUG    coriolis, min: -0.03087228493714408, max: 0.03087228493714408
+2025-10-27 10:56:45,563 DEBUG    D_bar, min: 1.0, max: 1.0
+2025-10-27 10:56:45,563 DEBUG    RelativeVorticity, min: -2.0003487323343387, max: 2.0003487126050183
+2025-10-27 10:56:45,564 DEBUG    u_divergence, min: -2.6462025080400613, max: 4.89073252204823
+2025-10-27 10:56:45,564 DEBUG    CourantNumber, min: 0.00014999351465213963, max: 0.0042725311060683585
+2025-10-27 10:56:45,564 DEBUG    CourantNumber_transporting_velocity, min: 0.0001498285491841288, max: 0.0042725518144449285
+2025-10-27 10:56:45,564 INFO     
+2025-10-27 10:56:45,564 INFO     ========================================
+2025-10-27 10:56:45,564 INFO     at start of timestep 9, t=0.0008000000000000001, dt=0.0001
+2025-10-27 10:56:45,568 DEBUG    Computing diagnostic CourantNumber with interpolate method
+2025-10-27 10:56:45,570 INFO     Max Courant: 4.27e-03
+2025-10-27 10:56:45,570 INFO     Semi-implicit Quasi Newton: Explicit forcing
+2025-10-27 10:56:45,575 DEBUG        Residual norms for ExplicitForcingSolver_ solve
+2025-10-27 10:56:45,576 DEBUG        0 KSP preconditioned resid norm 1.018888009094e-15 true resid norm 6.202755359121e-16 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:45,578 DEBUG        1 KSP preconditioned resid norm 1.065417730564e-16 true resid norm 6.691468681216e-17 ||r(i)||/||b|| 1.078789714216e-01
+2025-10-27 10:56:45,580 DEBUG        2 KSP preconditioned resid norm 9.016889076681e-18 true resid norm 5.809746289911e-18 ||r(i)||/||b|| 9.366395986209e-03
+2025-10-27 10:56:45,581 DEBUG        3 KSP preconditioned resid norm 8.287801024975e-19 true resid norm 5.437144049674e-19 ||r(i)||/||b|| 8.765691591686e-04
+2025-10-27 10:56:45,583 DEBUG        4 KSP preconditioned resid norm 8.771032836084e-20 true resid norm 6.189222364306e-20 ||r(i)||/||b|| 9.978182285079e-05
+2025-10-27 10:56:45,586 DEBUG        5 KSP preconditioned resid norm 8.367248316692e-21 true resid norm 6.533416906130e-21 ||r(i)||/||b|| 1.053308816464e-05
+2025-10-27 10:56:45,588 DEBUG        6 KSP preconditioned resid norm 8.338242059854e-22 true resid norm 5.619991211587e-22 ||r(i)||/||b|| 9.060475363296e-07
+2025-10-27 10:56:45,589 DEBUG        7 KSP preconditioned resid norm 7.719546724233e-23 true resid norm 5.041940357891e-23 ||r(i)||/||b|| 8.128549436464e-08
+2025-10-27 10:56:45,596 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:45,600 INFO     Max Courant transporting velocity, outer iteration 0: 4.27e-03
+2025-10-27 10:56:45,600 INFO     Semi-implicit Quasi Newton: Transport 0: u
+2025-10-27 10:56:45,659 INFO     Semi-implicit Quasi Newton: Transport 0: D
+2025-10-27 10:56:45,676 INFO     Semi-implicit Quasi Newton: Implicit forcing (0, 0)
+2025-10-27 10:56:45,682 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:45,682 DEBUG        0 KSP preconditioned resid norm 1.421089623464e-16 true resid norm 4.908425375500e-17 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:45,684 DEBUG        1 KSP preconditioned resid norm 6.334763774184e-18 true resid norm 3.449248717857e-18 ||r(i)||/||b|| 7.027200077388e-02
+2025-10-27 10:56:45,685 DEBUG        2 KSP preconditioned resid norm 5.685918552872e-19 true resid norm 3.614593166701e-19 ||r(i)||/||b|| 7.364058512009e-03
+2025-10-27 10:56:45,686 DEBUG        3 KSP preconditioned resid norm 4.405998435563e-20 true resid norm 3.208618334160e-20 ||r(i)||/||b|| 6.536960610985e-04
+2025-10-27 10:56:45,687 DEBUG        4 KSP preconditioned resid norm 4.041893154597e-21 true resid norm 2.540022098326e-21 ||r(i)||/||b|| 5.174820648195e-05
+2025-10-27 10:56:45,688 DEBUG        5 KSP preconditioned resid norm 3.863940911056e-22 true resid norm 2.733063236038e-22 ||r(i)||/||b|| 5.568105913722e-06
+2025-10-27 10:56:45,689 DEBUG        6 KSP preconditioned resid norm 3.861432489356e-23 true resid norm 2.506212090623e-23 ||r(i)||/||b|| 5.105939071892e-07
+2025-10-27 10:56:45,691 DEBUG        7 KSP preconditioned resid norm 3.968778761960e-24 true resid norm 2.692835413581e-24 ||r(i)||/||b|| 5.486149238455e-08
+2025-10-27 10:56:45,694 INFO     Semi-implicit Quasi Newton: Mixed solve (0, 0)
+2025-10-27 10:56:45,850 INFO     Semi-implicit Quasi Newton: Implicit forcing (0, 1)
+2025-10-27 10:56:45,855 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:45,856 DEBUG        0 KSP preconditioned resid norm 1.406647558128e-05 true resid norm 7.617872038461e-06 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:45,857 DEBUG        1 KSP preconditioned resid norm 6.198445650037e-07 true resid norm 3.595116988283e-07 ||r(i)||/||b|| 4.719319214252e-02
+2025-10-27 10:56:45,858 DEBUG        2 KSP preconditioned resid norm 4.826740607516e-08 true resid norm 3.090390206139e-08 ||r(i)||/||b|| 4.056763083622e-03
+2025-10-27 10:56:45,860 DEBUG        3 KSP preconditioned resid norm 3.152400995463e-09 true resid norm 2.461927260962e-09 ||r(i)||/||b|| 3.231778177071e-04
+2025-10-27 10:56:45,861 DEBUG        4 KSP preconditioned resid norm 2.445201761638e-10 true resid norm 1.629610428679e-10 ||r(i)||/||b|| 2.139193754439e-05
+2025-10-27 10:56:45,862 DEBUG        5 KSP preconditioned resid norm 1.946692953461e-11 true resid norm 1.269116086449e-11 ||r(i)||/||b|| 1.665971914521e-06
+2025-10-27 10:56:45,864 DEBUG        6 KSP preconditioned resid norm 1.748403088486e-12 true resid norm 1.292322997419e-12 ||r(i)||/||b|| 1.696435685575e-07
+2025-10-27 10:56:45,867 DEBUG        7 KSP preconditioned resid norm 1.462268563341e-13 true resid norm 8.777605165883e-14 ||r(i)||/||b|| 1.152238462600e-08
+2025-10-27 10:56:45,869 DEBUG    Semi-Implicit Quasi Newton: Zeroing implicit forcing for D
+2025-10-27 10:56:45,870 INFO     Semi-implicit Quasi Newton: Mixed solve (0, 1)
+2025-10-27 10:56:46,035 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:46,037 INFO     Max Courant transporting velocity, outer iteration 1: 4.27e-03
+2025-10-27 10:56:46,037 INFO     Semi-implicit Quasi Newton: Transport 1: u
+2025-10-27 10:56:46,096 INFO     Semi-implicit Quasi Newton: Transport 1: D
+2025-10-27 10:56:46,111 INFO     Semi-implicit Quasi Newton: Implicit forcing (1, 0)
+2025-10-27 10:56:46,115 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:46,115 DEBUG        0 KSP preconditioned resid norm 1.463393242179e-13 true resid norm 8.778282312056e-14 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:46,117 DEBUG        1 KSP preconditioned resid norm 1.884757562386e-14 true resid norm 1.082057184544e-14 ||r(i)||/||b|| 1.232652523670e-01
+2025-10-27 10:56:46,118 DEBUG        2 KSP preconditioned resid norm 1.774402407709e-15 true resid norm 1.157158169342e-15 ||r(i)||/||b|| 1.318205690141e-02
+2025-10-27 10:56:46,119 DEBUG        3 KSP preconditioned resid norm 1.802356863399e-16 true resid norm 1.139606587207e-16 ||r(i)||/||b|| 1.298211366069e-03
+2025-10-27 10:56:46,121 DEBUG        4 KSP preconditioned resid norm 1.917491946427e-17 true resid norm 1.304234147876e-17 ||r(i)||/||b|| 1.485750972128e-04
+2025-10-27 10:56:46,122 DEBUG        5 KSP preconditioned resid norm 1.857274448559e-18 true resid norm 1.279698491743e-18 ||r(i)||/||b|| 1.457800565363e-05
+2025-10-27 10:56:46,125 DEBUG        6 KSP preconditioned resid norm 1.942064120086e-19 true resid norm 1.374470740814e-19 ||r(i)||/||b|| 1.565762744866e-06
+2025-10-27 10:56:46,127 DEBUG        7 KSP preconditioned resid norm 1.706891556097e-20 true resid norm 1.159639210258e-20 ||r(i)||/||b|| 1.321032029996e-07
+2025-10-27 10:56:46,129 DEBUG        8 KSP preconditioned resid norm 1.757664408272e-21 true resid norm 1.140661925072e-21 ||r(i)||/||b|| 1.299413580611e-08
+2025-10-27 10:56:46,131 INFO     Semi-implicit Quasi Newton: Mixed solve (1, 0)
+2025-10-27 10:56:46,284 INFO     Semi-implicit Quasi Newton: Implicit forcing (1, 1)
+2025-10-27 10:56:46,288 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:46,288 DEBUG        0 KSP preconditioned resid norm 1.024113678169e-07 true resid norm 5.655650925085e-08 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:46,290 DEBUG        1 KSP preconditioned resid norm 4.563912146773e-09 true resid norm 2.677820862300e-09 ||r(i)||/||b|| 4.734770405335e-02
+2025-10-27 10:56:46,291 DEBUG        2 KSP preconditioned resid norm 3.649102610619e-10 true resid norm 2.308765269872e-10 ||r(i)||/||b|| 4.082227316457e-03
+2025-10-27 10:56:46,293 DEBUG        3 KSP preconditioned resid norm 2.580901515055e-11 true resid norm 2.071604503174e-11 ||r(i)||/||b|| 3.662893149904e-04
+2025-10-27 10:56:46,294 DEBUG        4 KSP preconditioned resid norm 2.195354916710e-12 true resid norm 1.431330893217e-12 ||r(i)||/||b|| 2.530797802370e-05
+2025-10-27 10:56:46,295 DEBUG        5 KSP preconditioned resid norm 1.594026125266e-13 true resid norm 1.049906285617e-13 ||r(i)||/||b|| 1.856384525007e-06
+2025-10-27 10:56:46,297 DEBUG        6 KSP preconditioned resid norm 1.342679407115e-14 true resid norm 1.023889224596e-14 ||r(i)||/||b|| 1.810382638813e-07
+2025-10-27 10:56:46,298 DEBUG        7 KSP preconditioned resid norm 9.666694381060e-16 true resid norm 5.934062730828e-16 ||r(i)||/||b|| 1.049227190545e-08
+2025-10-27 10:56:46,300 DEBUG    Semi-Implicit Quasi Newton: Zeroing implicit forcing for D
+2025-10-27 10:56:46,301 INFO     Semi-implicit Quasi Newton: Mixed solve (1, 1)
+2025-10-27 10:56:46,446 DEBUG    Leaving Semi-implicit Quasi-Newton timestep method
+2025-10-27 10:56:46,446 DEBUG    Computing diagnostic RelativeVorticity with solve method
+2025-10-27 10:56:46,463 DEBUG    Computing diagnostic u_divergence with interpolate method
+2025-10-27 10:56:46,470 DEBUG    Computing diagnostic CourantNumber with interpolate method
+2025-10-27 10:56:46,477 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:46,618 DEBUG    u, min: -0.05837426389497301, max: 0.05096139729869249
+2025-10-27 10:56:46,618 DEBUG    D, min: 0.5662477310543146, max: 1.21185837172582
+2025-10-27 10:56:46,618 DEBUG    coriolis, min: -0.03087228493714408, max: 0.03087228493714408
+2025-10-27 10:56:46,618 DEBUG    D_bar, min: 1.0, max: 1.0
+2025-10-27 10:56:46,618 DEBUG    RelativeVorticity, min: -2.000359308396772, max: 2.000359288670354
+2025-10-27 10:56:46,618 DEBUG    u_divergence, min: -2.934334923895885, max: 5.422841678717318
+2025-10-27 10:56:46,618 DEBUG    CourantNumber, min: 0.00015032360820940607, max: 0.004272485370589943
+2025-10-27 10:56:46,618 DEBUG    CourantNumber_transporting_velocity, min: 0.00015015856143077287, max: 0.004272508238329151
+2025-10-27 10:56:46,618 INFO     
+2025-10-27 10:56:46,618 INFO     ========================================
+2025-10-27 10:56:46,618 INFO     at start of timestep 10, t=0.0009000000000000002, dt=0.0001
+2025-10-27 10:56:46,622 DEBUG    Computing diagnostic CourantNumber with interpolate method
+2025-10-27 10:56:46,624 INFO     Max Courant: 4.27e-03
+2025-10-27 10:56:46,624 INFO     Semi-implicit Quasi Newton: Explicit forcing
+2025-10-27 10:56:46,630 DEBUG        Residual norms for ExplicitForcingSolver_ solve
+2025-10-27 10:56:46,630 DEBUG        0 KSP preconditioned resid norm 9.810717485239e-16 true resid norm 5.960219488661e-16 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:46,634 DEBUG        1 KSP preconditioned resid norm 1.029167852464e-16 true resid norm 6.450828894248e-17 ||r(i)||/||b|| 1.082313982987e-01
+2025-10-27 10:56:46,636 DEBUG        2 KSP preconditioned resid norm 8.743112372191e-18 true resid norm 5.647420109052e-18 ||r(i)||/||b|| 9.475188153382e-03
+2025-10-27 10:56:46,638 DEBUG        3 KSP preconditioned resid norm 8.091990084695e-19 true resid norm 5.298449105619e-19 ||r(i)||/||b|| 8.889687897733e-04
+2025-10-27 10:56:46,639 DEBUG        4 KSP preconditioned resid norm 8.574729848338e-20 true resid norm 6.068076453458e-20 ||r(i)||/||b|| 1.018096139748e-04
+2025-10-27 10:56:46,641 DEBUG        5 KSP preconditioned resid norm 8.096908481434e-21 true resid norm 6.327088962886e-21 ||r(i)||/||b|| 1.061553014100e-05
+2025-10-27 10:56:46,643 DEBUG        6 KSP preconditioned resid norm 8.111460201051e-22 true resid norm 5.439871991249e-22 ||r(i)||/||b|| 9.126965880364e-07
+2025-10-27 10:56:46,646 DEBUG        7 KSP preconditioned resid norm 7.514194697102e-23 true resid norm 4.920571578141e-23 ||r(i)||/||b|| 8.255688548890e-08
+2025-10-27 10:56:46,654 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:46,657 INFO     Max Courant transporting velocity, outer iteration 0: 4.27e-03
+2025-10-27 10:56:46,657 INFO     Semi-implicit Quasi Newton: Transport 0: u
+2025-10-27 10:56:46,719 INFO     Semi-implicit Quasi Newton: Transport 0: D
+2025-10-27 10:56:46,739 INFO     Semi-implicit Quasi Newton: Implicit forcing (0, 0)
+2025-10-27 10:56:46,746 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:46,746 DEBUG        0 KSP preconditioned resid norm 1.429256399225e-16 true resid norm 4.916038206406e-17 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:46,749 DEBUG        1 KSP preconditioned resid norm 6.605208341738e-18 true resid norm 3.524924574246e-18 ||r(i)||/||b|| 7.170254636454e-02
+2025-10-27 10:56:46,751 DEBUG        2 KSP preconditioned resid norm 5.967981776444e-19 true resid norm 3.764422788279e-19 ||r(i)||/||b|| 7.657431920228e-03
+2025-10-27 10:56:46,752 DEBUG        3 KSP preconditioned resid norm 4.780001335735e-20 true resid norm 3.454916679169e-20 ||r(i)||/||b|| 7.027847494487e-04
+2025-10-27 10:56:46,755 DEBUG        4 KSP preconditioned resid norm 4.699875895026e-21 true resid norm 2.930479195857e-21 ||r(i)||/||b|| 5.961058626514e-05
+2025-10-27 10:56:46,758 DEBUG        5 KSP preconditioned resid norm 4.853782877737e-22 true resid norm 3.374333117640e-22 ||r(i)||/||b|| 6.863927772660e-06
+2025-10-27 10:56:46,761 DEBUG        6 KSP preconditioned resid norm 5.193724859220e-23 true resid norm 3.465706145359e-23 ||r(i)||/||b|| 7.049794976863e-07
+2025-10-27 10:56:46,763 DEBUG        7 KSP preconditioned resid norm 5.146563187483e-24 true resid norm 3.423407816072e-24 ||r(i)||/||b|| 6.963753478586e-08
+2025-10-27 10:56:46,766 INFO     Semi-implicit Quasi Newton: Mixed solve (0, 0)
+2025-10-27 10:56:46,937 INFO     Semi-implicit Quasi Newton: Implicit forcing (0, 1)
+2025-10-27 10:56:46,941 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:46,942 DEBUG        0 KSP preconditioned resid norm 1.501888900266e-05 true resid norm 8.198908787445e-06 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:46,943 DEBUG        1 KSP preconditioned resid norm 6.625561174849e-07 true resid norm 3.838529430409e-07 ||r(i)||/||b|| 4.681756475064e-02
+2025-10-27 10:56:46,944 DEBUG        2 KSP preconditioned resid norm 5.171970066415e-08 true resid norm 3.312959010790e-08 ||r(i)||/||b|| 4.040731634755e-03
+2025-10-27 10:56:46,945 DEBUG        3 KSP preconditioned resid norm 3.380060563901e-09 true resid norm 2.646503413541e-09 ||r(i)||/||b|| 3.227872735447e-04
+2025-10-27 10:56:46,947 DEBUG        4 KSP preconditioned resid norm 2.629138154920e-10 true resid norm 1.748337043893e-10 ||r(i)||/||b|| 2.132402114987e-05
+2025-10-27 10:56:46,948 DEBUG        5 KSP preconditioned resid norm 2.077870609012e-11 true resid norm 1.359200722999e-11 ||r(i)||/||b|| 1.657782466223e-06
+2025-10-27 10:56:46,949 DEBUG        6 KSP preconditioned resid norm 1.853168644528e-12 true resid norm 1.371627730984e-12 ||r(i)||/||b|| 1.672939371010e-07
+2025-10-27 10:56:46,951 DEBUG        7 KSP preconditioned resid norm 1.534614146395e-13 true resid norm 9.198211895057e-14 ||r(i)||/||b|| 1.121882452107e-08
+2025-10-27 10:56:46,953 DEBUG    Semi-Implicit Quasi Newton: Zeroing implicit forcing for D
+2025-10-27 10:56:46,954 INFO     Semi-implicit Quasi Newton: Mixed solve (0, 1)
+2025-10-27 10:56:47,102 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:47,104 INFO     Max Courant transporting velocity, outer iteration 1: 4.27e-03
+2025-10-27 10:56:47,104 INFO     Semi-implicit Quasi Newton: Transport 1: u
+2025-10-27 10:56:47,166 INFO     Semi-implicit Quasi Newton: Transport 1: D
+2025-10-27 10:56:47,180 INFO     Semi-implicit Quasi Newton: Implicit forcing (1, 0)
+2025-10-27 10:56:47,187 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:47,188 DEBUG        0 KSP preconditioned resid norm 1.535856646822e-13 true resid norm 9.199039701994e-14 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:47,190 DEBUG        1 KSP preconditioned resid norm 1.979914948240e-14 true resid norm 1.138842911050e-14 ||r(i)||/||b|| 1.238001952316e-01
+2025-10-27 10:56:47,192 DEBUG        2 KSP preconditioned resid norm 1.869329015120e-15 true resid norm 1.213625925442e-15 ||r(i)||/||b|| 1.319296323048e-02
+2025-10-27 10:56:47,195 DEBUG        3 KSP preconditioned resid norm 1.886778143249e-16 true resid norm 1.187324597821e-16 ||r(i)||/||b|| 1.290704939086e-03
+2025-10-27 10:56:47,197 DEBUG        4 KSP preconditioned resid norm 1.963764443826e-17 true resid norm 1.337520070046e-17 ||r(i)||/||b|| 1.453977929627e-04
+2025-10-27 10:56:47,200 DEBUG        5 KSP preconditioned resid norm 1.868723900657e-18 true resid norm 1.295091669191e-18 ||r(i)||/||b|| 1.407855288319e-05
+2025-10-27 10:56:47,203 DEBUG        6 KSP preconditioned resid norm 1.969789723556e-19 true resid norm 1.382806562446e-19 ||r(i)||/||b|| 1.503207516483e-06
+2025-10-27 10:56:47,206 DEBUG        7 KSP preconditioned resid norm 1.760304093509e-20 true resid norm 1.202890557645e-20 ||r(i)||/||b|| 1.307626226881e-07
+2025-10-27 10:56:47,208 DEBUG        8 KSP preconditioned resid norm 1.810160934936e-21 true resid norm 1.181382978198e-21 ||r(i)||/||b|| 1.284245982700e-08
+2025-10-27 10:56:47,211 INFO     Semi-implicit Quasi Newton: Mixed solve (1, 0)
+2025-10-27 10:56:47,362 INFO     Semi-implicit Quasi Newton: Implicit forcing (1, 1)
+2025-10-27 10:56:47,366 DEBUG        Residual norms for ImplicitForcingSolver_ solve
+2025-10-27 10:56:47,367 DEBUG        0 KSP preconditioned resid norm 9.604005339921e-08 true resid norm 5.357550453712e-08 ||r(i)||/||b|| 1.000000000000e+00
+2025-10-27 10:56:47,368 DEBUG        1 KSP preconditioned resid norm 4.307247905823e-09 true resid norm 2.511365918466e-09 ||r(i)||/||b|| 4.687526398798e-02
+2025-10-27 10:56:47,369 DEBUG        2 KSP preconditioned resid norm 3.445757798515e-10 true resid norm 2.181011003666e-10 ||r(i)||/||b|| 4.070910806178e-03
+2025-10-27 10:56:47,371 DEBUG        3 KSP preconditioned resid norm 2.438060150624e-11 true resid norm 1.959191593360e-11 ||r(i)||/||b|| 3.656879408392e-04
+2025-10-27 10:56:47,372 DEBUG        4 KSP preconditioned resid norm 2.078393200999e-12 true resid norm 1.352235089988e-12 ||r(i)||/||b|| 2.523980131725e-05
+2025-10-27 10:56:47,373 DEBUG        5 KSP preconditioned resid norm 1.507147935766e-13 true resid norm 9.963901341030e-14 ||r(i)||/||b|| 1.859786749022e-06
+2025-10-27 10:56:47,375 DEBUG        6 KSP preconditioned resid norm 1.272145423305e-14 true resid norm 9.642070629333e-15 ||r(i)||/||b|| 1.799716253284e-07
+2025-10-27 10:56:47,377 DEBUG        7 KSP preconditioned resid norm 9.231746408353e-16 true resid norm 5.670992001921e-16 ||r(i)||/||b|| 1.058504637692e-08
+2025-10-27 10:56:47,379 DEBUG    Semi-Implicit Quasi Newton: Zeroing implicit forcing for D
+2025-10-27 10:56:47,380 INFO     Semi-implicit Quasi Newton: Mixed solve (1, 1)
+2025-10-27 10:56:47,529 DEBUG    Leaving Semi-implicit Quasi-Newton timestep method
+2025-10-27 10:56:47,530 DEBUG    Computing diagnostic RelativeVorticity with solve method
+2025-10-27 10:56:47,552 DEBUG    Computing diagnostic u_divergence with interpolate method
+2025-10-27 10:56:47,558 DEBUG    Computing diagnostic CourantNumber with interpolate method
+2025-10-27 10:56:47,563 DEBUG    Computing diagnostic CourantNumber_transporting_velocity with interpolate method
+2025-10-27 10:56:47,704 DEBUG    u, min: -0.0583737089076938, max: 0.05096727995053765
+2025-10-27 10:56:47,704 DEBUG    D, min: 0.5662513919436363, max: 1.211125058853527
+2025-10-27 10:56:47,704 DEBUG    coriolis, min: -0.03087228493714408, max: 0.03087228493714408
+2025-10-27 10:56:47,704 DEBUG    D_bar, min: 1.0, max: 1.0
+2025-10-27 10:56:47,704 DEBUG    RelativeVorticity, min: -2.0003711003266837, max: 2.0003710806032218
+2025-10-27 10:56:47,704 DEBUG    u_divergence, min: -3.2091219036870813, max: 5.931054978862139
+2025-10-27 10:56:47,704 DEBUG    CourantNumber, min: 0.00015065385803407768, max: 0.004272435805432511
+2025-10-27 10:56:47,704 DEBUG    CourantNumber_transporting_velocity, min: 0.0001504887331217419, max: 0.004272460588011228
+2025-10-27 10:56:47,704 INFO     TIMELOOP complete. t=0.00100, tmax=0.00100
+2025-10-27 10:56:59,346 ERROR    Gusto is logging this unhandled exception:
+Traceback (most recent call last):
+  File "/home/katie795/NeuralPDE_workspace/NeuralPDE/src/data_generator_swes.py", line 148, in <module>
+    dataset.prepare_for_model()
+  File "/home/katie795/NeuralPDE_workspace/NeuralPDE/src/neural_pde/datasets.py", line 538, in prepare_for_model
+    vorticity_inp = diagnostics.vorticity(u_inp)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/katie795/NeuralPDE_workspace/NeuralPDE/src/diagnostics.py", line 50, in vorticity
+    self._u.assign(u)
+  File "petsc4py/PETSc/Log.pyx", line 250, in petsc4py.PETSc.Log.EventDecorator.decorator.wrapped_func
+  File "petsc4py/PETSc/Log.pyx", line 251, in petsc4py.PETSc.Log.EventDecorator.decorator.wrapped_func
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/firedrake/adjoint_utils/function.py", line 116, in wrapper
+    ret = assign(self, other, *args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/firedrake/function.py", line 461, in assign
+    Assigner(self, expr, subset).assign()
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/firedrake/assign.py", line 147, in __init__
+    expression = as_ufl(expression)
+                 ^^^^^^^^^^^^^^^^^^
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/ufl/constantvalue.py", line 517, in as_ufl
+    raise ValueError(
+ValueError: Invalid type conversion: [Coefficient(WithGeometry(FunctionSpace(<firedrake.mesh.MeshTopology object at 0x747f176ec9e0>, FiniteElement('Lagrange', triangle, 3), name=None), Mesh(VectorElement(FiniteElement('Lagrange', triangle, 1), dim=3), 417)), 1351), Coefficient(WithGeometry(FunctionSpace(<firedrake.mesh.MeshTopology object at 0x747f176ec9e0>, FiniteElement('Lagrange', triangle, 3), name=None), Mesh(VectorElement(FiniteElement('Lagrange', triangle, 1), dim=3), 417)), 1353), Coefficient(WithGeometry(FunctionSpace(<firedrake.mesh.MeshTopology object at 0x747f176ec9e0>, FiniteElement('Lagrange', triangle, 3), name=None), Mesh(VectorElement(FiniteElement('Lagrange', triangle, 1), dim=3), 417)), 1355)] can not be converted to any UFL type.

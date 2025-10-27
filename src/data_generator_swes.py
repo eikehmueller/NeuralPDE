@@ -23,13 +23,19 @@ parser.add_argument(
     type=str,
     action="store",
     help="name of file where the gusto results are saved",
-    default="/home/katie795/NeuralPDE_workspace/NeuralPDE/src/results/output",
+    default="/home/katie795/NeuralPDE_workspace/NeuralPDE/src/results/gusto_output",
 )
 
 parser.add_argument(
     "--regenerate_data",
     action="store_true",
     help="whether to overwrite the full simulation",
+)
+
+parser.add_argument(
+    "--save_diagnostics",
+    action="store_true",
+    help="whether to save the diagnostic functions (div and vort)",
 )
 
 parser.add_argument(

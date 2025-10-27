@@ -28,13 +28,13 @@ class Diagnostics:
         }
         L0 = 5960 # charactersistic length scale (mean height of water)
         a_mass = phi * psi * dx
-        b_vorticity = phi * inner(n, rot(self._u)) * dx / L0
+        b_vorticity = (- inner(cross(n,grad(phi)), self._u)) * dx
 
         lvp_vorticity = LinearVariationalProblem(a_mass, b_vorticity, self._vorticity)
         self._lvs_vorticity = LinearVariationalSolver(
             lvp_vorticity, solver_parameters=solver_parameters
         )
-        b_divergence = phi * div(self._u) * dx / L0
+        b_divergence = phi * div(self._u) * dx 
         lvp_divergence = LinearVariationalProblem(
             a_mass, b_divergence, self._divergence
         )
