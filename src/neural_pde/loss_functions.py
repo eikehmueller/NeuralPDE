@@ -80,7 +80,7 @@ def multivariate_normalised_rmse(y_pred, y_target):
             / torch.sum((y_target) ** 2, dim=2)
         ), dim=0
     )
-    return torch.sum(loss)
+    return torch.mean(loss)
 
 def normalised_absolute_error(y_pred, y_target):
     """Calculate the normalised L2 error between two pytorch tensors

@@ -23,7 +23,7 @@ parser.add_argument(
     type=str,
     action="store",
     help="name of file where the gusto results are saved",
-    default="/home/katie795/NeuralPDE_workspace/NeuralPDE/src/results/gusto_output",
+    default="/home/katie795/NeuralPDE_workspace/src/results/gusto_output",
 )
 
 parser.add_argument(

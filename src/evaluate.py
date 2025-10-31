@@ -9,7 +9,7 @@ import time
 import argparse
 
 from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header
-from neural_pde.loss_functions import normalised_rmse as metric
+from neural_pde.loss_functions import multivariate_normalised_rmse as metric
 from neural_pde.model import load_model
 
 

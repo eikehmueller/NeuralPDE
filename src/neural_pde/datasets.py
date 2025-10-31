@@ -348,7 +348,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
     """
 
-    def __init__(self, n_ref, nsamples, nt, t_final_max=10.0, omega=7.292e-5, g=9.8, t_interval=10, t_sigma=1, t_lowest=0, t_highest=10):
+    def __init__(self, n_ref, nsamples, nt, t_final_max=10.0, omega=7.292e-5, g=9.8, t_interval=10, t_sigma=1, t_lowest=0, t_highest=10, save_diagnostics=False):
         """Initialise new instance
 
         :arg nref: number of mesh refinements
@@ -358,12 +358,13 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         :arg omega: rotation speed
         :arg g: gravitational acceleration 
         """
-        n_func_in_dynamic = 4   # fixed for swes
+        n_func_in_dynamic = 3   # fixed for swes
         n_func_in_ancillary = 3 # x y and z coordinates
-        n_func_target = 4       # fixed for swes
+        n_func_target = 3       # fixed for swes
 
         self.omega = omega
         self.g = g
+        self.save_diagnostics = save_diagnostics
 
         # initialise with the SphericalFunctionSpaceData
         super().__init__(
@@ -485,7 +486,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
             mesh_h5 = afile.load_mesh("IcosahedralMesh")
             V_BDM = FunctionSpace(mesh_h5, "BDM", 2)
             V_DG = FunctionSpace(mesh_h5, "DG", 1)
-            V_CG = FunctionSpace(mesh_h5, "CG", 3)
+            V_CG = FunctionSpace(mesh_h5, "CG", 1)
 
             u_inp = [Function(V_CG) for _ in range(3)]
             u_tar = [Function(V_CG) for _ in range(3)]
@@ -498,18 +499,19 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
             
 
             diagnostics = dg.Diagnostics(V_BDM, V_CG)
-            file = VTKFile(f"results/gusto_output/diagnostics.pvd")
-            
-            for i in range(self.nt):
-                u_func = [Function(V_CG) for _ in range(3)]
-                u = afile.load_function(mesh_h5, "u", idx=i)
-                p1.apply(u, u_func)    # input u data
+            if self.save_diagnostics:
+                file = VTKFile(f"results/gusto_output/diagnostics.pvd")
+                
+                for i in range(self.nt):
+                    u_func = [Function(V_CG) for _ in range(3)]
+                    u = afile.load_function(mesh_h5, "u", idx=i)
+                    p1.apply(u, u_func)    # input u data
 
-                vorticity = diagnostics.vorticity(u)
-                divergence = diagnostics.divergence(u)
-                vorticity.rename("vorticity")
-                divergence.rename("divergence")
-                file.write(vorticity, divergence, u, t=i)
+                    vorticity = diagnostics.vorticity(u)
+                    divergence = diagnostics.divergence(u)
+                    vorticity.rename("vorticity")
+                    divergence.rename("divergence")
+                    file.write(vorticity, divergence, u, t=i)
             
             for j in tqdm.tqdm(range(self.n_samples)):
                 
@@ -535,10 +537,10 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 p2.apply(h1, h_inp)
                 p2.apply(h2, h_tar)
 
-                vorticity_inp = diagnostics.vorticity(u_inp)
-                divergence_inp = diagnostics.divergence(u_inp)
-                vorticity_tar = diagnostics.vorticity(u_tar)
-                divergence_tar = diagnostics.divergence(u_tar)
+                vorticity_inp = diagnostics.vorticity(w1)
+                divergence_inp = diagnostics.divergence(w1)
+                vorticity_tar = diagnostics.vorticity(w2)
+                divergence_tar = diagnostics.divergence(w2)
                     
                 # coordinate data
                 self._data[j, 0, :] = self._x.dat.data # x coord data
