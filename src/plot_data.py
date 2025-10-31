@@ -15,7 +15,7 @@ parser.add_argument(
     type=str,
     action="store",
     help="path to output folder",
-    default="output_for_visualising_model_dataset",
+    default="results/output_for_visualising_model_dataset",
 )
 
 parser.add_argument(
@@ -23,7 +23,7 @@ parser.add_argument(
     type=str,
     action="store",
     help="file containing the data",
-    default="data/data_valid_swes_nref_3_10.h5",
+    default="data/data_valid_swes_nref_3_50.h5",
 )
 
 parser.add_argument(
@@ -51,7 +51,7 @@ if not os.path.exists(args.output):
 
 mesh = UnitIcosahedralSphereMesh(dataset.n_ref)
 V = FunctionSpace(mesh, "CG", 1)
-
+'''
 for j, ((X, t), y_target) in enumerate(iter(dataset)):
     
     t_init = dataset._t_initial[j] 
@@ -77,7 +77,7 @@ for j, ((X, t), y_target) in enumerate(iter(dataset)):
 
     file = VTKFile(os.path.join(args.output, f"output_{j:04d}.pvd"))
     file.write(f_input_d, f_input_u1, f_input_u2, f_input_u3, f_target_d, f_target_u1, f_target_u2, f_target_u3)
-
+'''
 
 ### Move from wsl to windows for paraview ####
 def move_files_and_directories(wsl_folder, windows_folder):
@@ -111,12 +111,12 @@ def move_files_and_directories(wsl_folder, windows_folder):
                 print(f'Moved: {wsl_path} -> {windows_path}')
 
 # Define your WSL and Windows folders
-wsl_folder1 = '/home/katie795/NeuralPDE_workspace/NeuralPDE/src/output_for_visualising_model_dataset'
-wsl_folder2 = '/home/katie795/NeuralPDE_workspace/NeuralPDE/src/results/output/field_output'
-wsl_folder3 = '/home/katie795/NeuralPDE_workspace/NeuralPDE/src/output_for_evaluation/animation'
+wsl_folder1 = '/home/katie795/NeuralPDE_workspace/src/output_for_visualising_model_dataset'
+wsl_folder2 = '/home/katie795/NeuralPDE_workspace/src/results/gusto_output/field_output'
+wsl_folder3 = '/home/katie795/NeuralPDE_workspace/src/results/output_for_evaluation/animation'
 windows_folder = 'C:\\Users\\kathe\\OneDrive\\Desktop\\paraview_data'
 
 if args.move_to_windows:
-    move_files_and_directories(wsl_folder1, windows_folder)
+    #move_files_and_directories(wsl_folder1, windows_folder)
     move_files_and_directories(wsl_folder2, windows_folder)
     move_files_and_directories(wsl_folder3, windows_folder)

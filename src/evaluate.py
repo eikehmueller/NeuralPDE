@@ -8,15 +8,14 @@ import time
 import tomllib
 import argparse
 import numpy as np
-import diagnostics
+from diagnostics import Diagnostics
 
-from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header
+from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header, Projector
 from neural_pde.loss_functions import multivariate_normalised_rmse as metric
 from neural_pde.model import load_model
 
 # Create argparse arguments
 parser = argparse.ArgumentParser()
-args, _ = parser.parse_known_args()
 
 parser.add_argument(
     "--config",
@@ -25,6 +24,8 @@ parser.add_argument(
     help="name of parameter file",
     default="config.toml",
 )
+
+args, _ = parser.parse_known_args()
 
 with open(args.config, "rb") as f:
     config = tomllib.load(f)
@@ -135,14 +136,14 @@ mesh = UnitIcosahedralSphereMesh(dataset.n_ref)
 V = FunctionSpace(mesh, "CG", 1)
 V_DG = FunctionSpace(mesh, "DG", 0)
 (X, _), __ = next(iter(dataset))
-dt = config["architecture"]["dt"]
-t = float(dataset.metadata["t_lowest"])
-t_final = float(dataset.metadata["t_highest"])
+dt = 0.01# config["architecture"]["dt"]
+t = 45#float(dataset.metadata["t_lowest"]) 
+t_final = 50#float(dataset.metadata["t_highest"]) 
 animation_file_nn = VTKFile(os.path.join(args.output, f"animation.pvd"))
 #animation_file_pde = VTKFile(os.path.join(args.output, f"animation_pde.pvd"))
 h_pred   = Function(V, name="h")
-div_pred = Function(V, name="h")
-vor_pred = Function(V, name="h")
+div_pred = Function(V, name="div")
+vor_pred = Function(V, name="vor")
 #f_pred_dg = Function(V_DG, name="input")
 
 # for the animation, we don't need any testing data, only the inital state!
@@ -150,19 +151,22 @@ with CheckpointFile("results/gusto_output/chkpt.h5", 'r') as afile:
     
     mesh_h5 = afile.load_mesh("IcosahedralMesh")
     x, y, z = SpatialCoordinate(mesh_h5) # spatial coordinate
-    x_fun = Function(mesh_h5).interpolate(x) # collect data on x,y,z coordinates
-    y_fun = Function(mesh_h5).interpolate(y)
-    z_fun = Function(mesh_h5).interpolate(z)
     V_DG = FunctionSpace(mesh_h5, "DG", 1)
     V_CG = FunctionSpace(mesh_h5, "CG", 1)
+    V_BDM = FunctionSpace(mesh_h5, "BDM", 2)
+    x_fun = Function(V_CG).interpolate(x) # collect data on x,y,z coordinates
+    y_fun = Function(V_CG).interpolate(y)
+    z_fun = Function(V_CG).interpolate(z)
+
     h_inp = Function(V_CG) # input function for h
     w1 = afile.load_function(mesh_h5, "u", idx=4500)
     h1 = afile.load_function(mesh_h5, "D", idx=4500)
     p2 = Projector(V_DG, V_CG)
     p2.apply(h1, h_inp)
+    diagnostics = Diagnostics(V_BDM, V_CG)
     vorticity_inp = diagnostics.vorticity(w1)
     divergence_inp = diagnostics.divergence(w1)
-    X = torch.tensor(np.empty((1,6, mesh_h5.dof_count), dtype=np.float64))
+    X = np.zeros((1, 6, mesh_h5.num_vertices()), dtype=np.float64)
 
     X[0, 0, :] = x_fun.dat.data # x coord data
     X[0, 1, :] = y_fun.dat.data # y coord data
@@ -171,19 +175,20 @@ with CheckpointFile("results/gusto_output/chkpt.h5", 'r') as afile:
     X[0, 3, :] = h_inp.dat.data # h data
     X[0, 4, :] = divergence_inp.dat.data
     X[0, 5, :] = vorticity_inp.dat.data
+    X = torch.tensor(X, dtype=torch.float32)
 
 
-
+t_elapsed = 0
 while t < t_final:
-    print(f"{t:8.4f},", file=f, end="")
-    y_pred = model(X, torch.tensor(t))
+    y_pred = model(X, torch.tensor(t_elapsed))
 
-    h_pred.dat.data[:] = y_pred.detach().numpy()[0, :]
-    div_pred.dat.data[:] = y_pred.detach().numpy()[1, :]
-    vor_pred.dat.data[:] = y_pred.detach().numpy()[2, :]
+    h_pred.dat.data[:] = y_pred.detach().numpy()[0, 0, :]
+    div_pred.dat.data[:] = y_pred.detach().numpy()[0, 1, :]
+    vor_pred.dat.data[:] = y_pred.detach().numpy()[0, 2, :]
     animation_file_nn.write(h_pred, div_pred, vor_pred, time=t)
 
     t += dt
+    t_elapsed += dt
     print(f"time = {t:8.4f}")
 
 '''
