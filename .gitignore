@@ -7,6 +7,9 @@ tb_logs/
 *.pvd
 *.txt
 *.vtu
+*.h5
+*.nc
 src/runs/
 src/data/
-output/
+src/results/
+

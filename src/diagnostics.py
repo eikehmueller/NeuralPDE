@@ -26,7 +26,6 @@ class Diagnostics:
             "pc_type": "jacobi",
             "ksp_rtol": 1e-12,
         }
-        L0 = 5960 # charactersistic length scale (mean height of water)
         a_mass = phi * psi * dx
         b_vorticity = (- inner(cross(n,grad(phi)), self._u)) * dx
 

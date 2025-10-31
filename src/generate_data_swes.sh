@@ -8,6 +8,7 @@ G=9.8
 NT=100
 TINTERVAL=50
 TSIGMA=25
+TSPLIT=100
 
 python data_generator_swes.py \
     --filename data/data_train_swes_nref_${NREF}_${TFINALMAX}.h5 \
@@ -20,7 +21,7 @@ python data_generator_swes.py \
     --t_interval ${TINTERVAL} \
     --t_sigma ${TSIGMA} \
     --t_lowest 0 \
-    --t_highest 800 \
+    --t_highest ${TSPLIT} \
     --regenerate_data \
 
 python data_generator_swes.py \
@@ -34,7 +35,7 @@ python data_generator_swes.py \
     --t_interval ${TINTERVAL} \
     --t_sigma ${TSIGMA} \
     --t_lowest 0 \
-    --t_highest 800 \
+    --t_highest ${TSPLIT} \
 
 python data_generator_swes.py \
     --filename data/data_test_swes_nref_${NREF}_${TFINALMAX}.h5 \
@@ -46,5 +47,5 @@ python data_generator_swes.py \
     --nsamples 128 \
     --t_interval ${TINTERVAL} \
     --t_sigma ${TSIGMA} \
-    --t_lowest 800 \
+    --t_lowest ${TSPLIT} \
     --t_highest ${NT} \
