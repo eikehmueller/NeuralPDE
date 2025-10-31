@@ -5,13 +5,27 @@ from torch.utils.data import DataLoader
 from firedrake import *
 import os
 import time
-
+import tomllib
 import argparse
 
 from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header
 from neural_pde.loss_functions import multivariate_normalised_rmse as metric
 from neural_pde.model import load_model
 
+# Create argparse arguments
+parser = argparse.ArgumentParser()
+args, _ = parser.parse_known_args()
+
+parser.add_argument(
+    "--config",
+    type=str,
+    action="store",
+    help="name of parameter file",
+    default="config.toml",
+)
+
+with open(args.config, "rb") as f:
+    config = tomllib.load(f)
 
 def time_integration(X_initial, V, V_DG, t_final, dt, omega):
     """Integrate PDE using very simple forward Euler method
@@ -66,7 +80,7 @@ parser.add_argument(
     type=str,
     action="store",
     help="path to output folder",
-    default="output_for_evaluation",
+    default="results/output_for_evaluation",
 )
 
 parser.add_argument(
@@ -82,7 +96,7 @@ parser.add_argument(
     type=str,
     action="store",
     help="file containing the data",
-    default="data/data_test_swes_nref_3_10.h5",
+    default="data/data_test_swes_nref_3_50.h5",
 )
 
 args, _ = parser.parse_known_args()
@@ -108,12 +122,9 @@ avg_loss = 0
 for (Xv, tv), yv in dataloader:
     yv_pred = model(Xv, tv)
     loss = metric(yv_pred, yv)
-    print(dataset.n_samples)
-    print(batch_size)
-    avg_loss += loss.item() #/ (dataset.n_samples / batch_size)
+    avg_loss += loss.item() / (dataset.n_samples / batch_size)
 
 print(f"average relative error: {100*avg_loss:6.3f} %")
-
 if not os.path.exists(args.output):
     os.makedirs(args.output)
 
@@ -122,13 +133,13 @@ mesh = UnitIcosahedralSphereMesh(dataset.n_ref)
 V = FunctionSpace(mesh, "CG", 1)
 V_DG = FunctionSpace(mesh, "DG", 0)
 (X, _), __ = next(iter(dataset))
-dt = 0.1
-t = 0.0
-t_final = float(dataset.metadata["t_final_max"])
+dt = 
+t = float(dataset.metadata["t_lowest"])
+t_final = float(dataset.metadata["t_highest"])
 animation_file_nn = VTKFile(os.path.join(args.output, f"animation.pvd"))
-animation_file_pde = VTKFile(os.path.join(args.output, f"animation_pde.pvd"))
-f_pred = Function(V, name="input")
-f_pred_dg = Function(V_DG, name="input")
+#animation_file_pde = VTKFile(os.path.join(args.output, f"animation_pde.pvd"))
+#f_pred = Function(V, name="input")
+#f_pred_dg = Function(V_DG, name="input")
 
 with open("timing.dat", "w", encoding="utf8") as f:
     print("t,nn,pde", file=f)
@@ -150,7 +161,8 @@ with open("timing.dat", "w", encoding="utf8") as f:
         t += dt
         print(f"time = {t:8.4f}")
 
-
+'''
+'''
 for j, ((X, t), y_target) in enumerate(iter(dataset)):
     y_pred = model(X, t)
 
@@ -165,3 +177,4 @@ for j, ((X, t), y_target) in enumerate(iter(dataset)):
 
     file = VTKFile(os.path.join(args.output, f"output_{j:04d}_t{t:6.3f}.pvd"))
     file.write(f_input, f_target, f_pred)
+'''

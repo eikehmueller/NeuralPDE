@@ -373,7 +373,9 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
         self.metadata = {
             "omega": f"{self.omega:}",
-            "t_final_max": f"{t_final_max:}"
+            "t_final_max": f"{t_final_max:}",
+            "t_lowest": f"{t_lowest}",
+            "t_highest": f"{t_highest}"
         }
 
         self.nt = nt # number of timesteps
