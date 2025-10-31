@@ -490,8 +490,8 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
             V_DG = FunctionSpace(mesh_h5, "DG", 1)
             V_CG = FunctionSpace(mesh_h5, "CG", 1)
 
-            u_inp = [Function(V_CG) for _ in range(3)]
-            u_tar = [Function(V_CG) for _ in range(3)]
+            #u_inp = [Function(V_CG) for _ in range(3)]
+            #u_tar = [Function(V_CG) for _ in range(3)]
 
             h_inp = Function(V_CG) # input function for h
             h_tar = Function(V_CG) # target function for h
@@ -534,8 +534,8 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 h1 = afile.load_function(mesh_h5, "D", idx=start)
                 h2 = afile.load_function(mesh_h5, "D", idx=end)
 
-                p1.apply(w1, u_inp)    # input u data
-                p1.apply(w2, u_tar)    # target u data
+                #p1.apply(w1, u_inp)    # input u data
+                #p1.apply(w2, u_tar)    # target u data
                 p2.apply(h1, h_inp)
                 p2.apply(h2, h_tar)
 
