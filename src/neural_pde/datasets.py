@@ -348,7 +348,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
     """
 
-    def __init__(self, n_ref, nsamples, nt, t_final_max=10.0, omega=7.292e-5, g=9.8, t_interval=10, t_sigma=1, t_lowest=0, t_highest=10, save_diagnostics=False):
+    def __init__(self, n_ref, nsamples, dt, t_final_max=10.0, omega=7.292e-5, g=9.8, t_interval=10, t_sigma=1, t_lowest=0, t_highest=10, save_diagnostics=False):
         """Initialise new instance
 
         :arg nref: number of mesh refinements
@@ -378,7 +378,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
             "t_highest": f"{t_highest}"
         }
 
-        self.nt = nt # number of timesteps
+        self.dt = dt # number of timesteps
         self.t_final_max = t_final_max # final time
         self.t_interval = t_interval # the expected
         self.t_lowest = t_lowest
@@ -403,10 +403,10 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         T0 = 12 * 24 * 60 * 60 / (2 * pi * R) # characteristic time scale - scales umax to 1
 
         element_order = 1 # CG method
-        dt = self.t_final_max / self.nt # Timestep
+        #dt = self.t_final_max / self.nt # Timestep
 
         # BDM means Brezzi-Douglas-Marini finite element basis function
-        domain = Domain(self.mesh, dt, 'BDM', element_order)
+        domain = Domain(self.mesh, self.dt, 'BDM', element_order)
         print(domain.spaces("H1"))
 
         # ShallowWaterParameters are the physical parameters for the shallow water equations
@@ -482,7 +482,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         Sample the data from the generated dataset and save as a np array
         '''
         start_timer1 = timer()
-        dt = self.t_final_max / self.nt # Timestep
+        #dt = self.t_final_max / self.nt # Timestep
 
         with CheckpointFile("results/gusto_output/chkpt.h5", 'r') as afile:
             mesh_h5 = afile.load_mesh("IcosahedralMesh")
@@ -498,13 +498,14 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
             p1 = Projector(V_BDM, V_CG)
             p2 = Projector(V_DG, V_CG)
-            
+
+            nt = int(self.t_final_max / self.dt)           
 
             diagnostics = dg.Diagnostics(V_BDM, V_CG)
             if self.save_diagnostics:
                 file = VTKFile(f"results/gusto_output/diagnostics.pvd")
                 
-                for i in range(self.nt):
+                for i in range(nt):
                     u_func = [Function(V_CG) for _ in range(3)]
                     u = afile.load_function(mesh_h5, "u", idx=i)
                     p1.apply(u, u_func)    # input u data
@@ -563,8 +564,8 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 #self._data[j, 8, :]  = u_tar[0].dat.data # u in x direction
                 #self._data[j, 9, :]  = u_tar[1].dat.data # u in y direction
                 #self._data[j, 10, :] = u_tar[2].dat.data # u in z direction
-                self._t_initial[j] = dt * start
-                self._t_elapsed[j] = (end - start) * dt
+                self._t_initial[j] = self.dt * start
+                self._t_elapsed[j] = (end - start) * self.dt
         end_timer1 = timer()
         print(f"Training, validation and test data runtime: {timedelta(seconds=end_timer1-start_timer1)}")
         return

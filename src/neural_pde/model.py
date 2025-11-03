@@ -8,7 +8,6 @@ import json
 from neural_pde.patch_encoder import PatchEncoder
 from neural_pde.patch_decoder import PatchDecoder
 from neural_pde.decoder import Decoder
-#from neural_pde.katies_decoder import KatiesDecoder
 from neural_pde.neural_solver import NeuralSolver
 from neural_pde.spherical_patch_covering import SphericalPatchCovering
 
