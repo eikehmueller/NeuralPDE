@@ -450,19 +450,15 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         # adding mountain ranges - these could all be varied!
         lamda_c = -pi/2.  # longitudinal centre of mountain (rad)
         phi_c = pi/6.     # latitudinal centre of mountain (rad)
-        lamda_a = - pi/4
-        phi_a = pi/4
 
         R0 = pi/9.                  # radius of mountain (rad)
         mountain_height = 2000 / L0 # height of mountain (m)
 
         rsq1 = min_value(R0**2, (lon - lamda_c)**2 + (lat - phi_c)**2)
-        #rsq2 = min_value(R0**2, (lon - lamda_a)**2 + (lat - phi_a)**2)
 
         r1 = sqrt(rsq1)
-        #r2 = sqrt(rsq2)
 
-        tpexpr = mountain_height *( (1 - r1/R0) )#+ (1 - r2/R0) )#+ (1 - r3/R0))
+        tpexpr = mountain_height *( (1 - r1/R0) )
         Dexpr = H - ((R * Omega0 * u_max + 0.5*u_max**2)*(sin(lat))**2) / g + tpexpr
 
         D0.interpolate(Dexpr)
@@ -482,16 +478,12 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         Sample the data from the generated dataset and save as a np array
         '''
         start_timer1 = timer()
-        #dt = self.t_final_max / self.nt # Timestep
 
         with CheckpointFile("results/gusto_output/chkpt.h5", 'r') as afile:
             mesh_h5 = afile.load_mesh("IcosahedralMesh")
             V_BDM = FunctionSpace(mesh_h5, "BDM", 2)
             V_DG = FunctionSpace(mesh_h5, "DG", 1)
             V_CG = FunctionSpace(mesh_h5, "CG", 1)
-
-            #u_inp = [Function(V_CG) for _ in range(3)]
-            #u_tar = [Function(V_CG) for _ in range(3)]
 
             h_inp = Function(V_CG) # input function for h
             h_tar = Function(V_CG) # target function for h
@@ -516,13 +508,17 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                     divergence.rename("divergence")
                     file.write(vorticity, divergence, u, t=i)
             
+            interval = self.t_interval / self.dt
+            sigma    = self.t_sigma    / self.dt
+            
             for j in tqdm.tqdm(range(self.n_samples)):
                 
                 # randomly sample the generated data
-                highest = self.t_highest
+                highest  = self.t_highest  / self.dt
+                lowest   = self.t_lowest   / self.dt
+                start = np.random.randint(lowest, highest)
 
-                start = np.random.randint(self.t_lowest, highest)
-                mu, sigma = start + self.t_interval, self.t_sigma
+                mu =  start + interval
                 t_norm = truncnorm((start - mu) / sigma, (highest - mu) / sigma, loc=mu, scale=sigma)
                 end = round(t_norm.rvs(1)[0])
                 
@@ -535,8 +531,6 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 h1 = afile.load_function(mesh_h5, "D", idx=start)
                 h2 = afile.load_function(mesh_h5, "D", idx=end)
 
-                #p1.apply(w1, u_inp)    # input u data
-                #p1.apply(w2, u_tar)    # target u data
                 p2.apply(h1, h_inp)
                 p2.apply(h2, h_tar)
 
@@ -553,19 +547,13 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 self._data[j, 3, :] = h_inp.dat.data # h data
                 self._data[j, 4, :] = divergence_inp.dat.data
                 self._data[j, 5, :] = vorticity_inp.dat.data
-                #self._data[j, 4, :] = u_inp[0].dat.data # u in x direction
-                #self._data[j, 5, :] = u_inp[1].dat.data # u in y direction
-                #self._data[j, 6, :] = u_inp[2].dat.data # u in z direction
                 # output data
                 self._data[j, 6, :]  = h_tar.dat.data # h data
-                # NEED TO CHECK THAT THESE ARE CORRECT!!
                 self._data[j, 7, :] = divergence_tar.dat.data
                 self._data[j, 8, :] = vorticity_tar.dat.data
-                #self._data[j, 8, :]  = u_tar[0].dat.data # u in x direction
-                #self._data[j, 9, :]  = u_tar[1].dat.data # u in y direction
-                #self._data[j, 10, :] = u_tar[2].dat.data # u in z direction
-                self._t_initial[j] = self.dt * start
-                self._t_elapsed[j] = (end - start) * self.dt
+                # time data
+                self._t_initial[j]  = self.dt * start
+                self._t_elapsed[j]  = (end - start) * self.dt
         end_timer1 = timer()
         print(f"Training, validation and test data runtime: {timedelta(seconds=end_timer1-start_timer1)}")
         return

@@ -99,7 +99,7 @@ parser.add_argument(
     type=str,
     action="store",
     help="file containing the data",
-    default="data/data_test_swes_nref_3_50.h5",
+    default="data/data_test_swes_nref_3_100_100.h5",
 )
 
 args, _ = parser.parse_known_args()
@@ -136,9 +136,9 @@ mesh = UnitIcosahedralSphereMesh(dataset.n_ref)
 V = FunctionSpace(mesh, "CG", 1)
 V_DG = FunctionSpace(mesh, "DG", 0)
 (X, _), __ = next(iter(dataset))
-dt = 0.01# config["architecture"]["dt"]
-t = 45#float(dataset.metadata["t_lowest"]) 
-t_final = 50#float(dataset.metadata["t_highest"]) 
+dt = config["architecture"]["dt"]
+t = float(dataset.metadata["t_lowest"]) 
+t_final = float(dataset.metadata["t_highest"]) 
 animation_file_nn = VTKFile(os.path.join(args.output, f"animation.pvd"))
 #animation_file_pde = VTKFile(os.path.join(args.output, f"animation_pde.pvd"))
 h_pred   = Function(V, name="h")
@@ -159,8 +159,8 @@ with CheckpointFile("results/gusto_output/chkpt.h5", 'r') as afile:
     z_fun = Function(V_CG).interpolate(z)
 
     h_inp = Function(V_CG) # input function for h
-    w1 = afile.load_function(mesh_h5, "u", idx=4500)
-    h1 = afile.load_function(mesh_h5, "D", idx=4500)
+    w1 = afile.load_function(mesh_h5, "u", idx=0)
+    h1 = afile.load_function(mesh_h5, "D", idx=0)
     p2 = Projector(V_DG, V_CG)
     p2.apply(h1, h_inp)
     diagnostics = Diagnostics(V_BDM, V_CG)
@@ -214,7 +214,7 @@ with open("timing.dat", "w", encoding="utf8") as f:
         print(f"time = {t:8.4f}")
 
 '''
-'''
+
 for j, ((X, t), y_target) in enumerate(iter(dataset)):
     y_pred = model(X, t)
 
@@ -229,4 +229,3 @@ for j, ((X, t), y_target) in enumerate(iter(dataset)):
 
     file = VTKFile(os.path.join(args.output, f"output_{j:04d}_t{t:6.3f}.pvd"))
     file.write(f_input, f_target, f_pred)
-'''

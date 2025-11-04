@@ -63,11 +63,11 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--nt",
-    type=int,
+    "--dt",
+    type=float,
     action="store",
-    help="number of time-steps in full dataset",
-    default=10,
+    help="length of time-steps in full dataset",
+    default=0.1,
 )
 
 parser.add_argument(
@@ -75,7 +75,7 @@ parser.add_argument(
     type=float,
     action="store",
     help="maximal final time",
-    default=0.0001,
+    default=1,
 )
 
 parser.add_argument(
@@ -88,34 +88,34 @@ parser.add_argument(
 
 parser.add_argument(
     "--t_interval",
-    type=int,
+    type=float,
     action="store",
     help="expected size of a time interval",
-    default=5,
+    default=1,
 )
 
 parser.add_argument(
     "--t_sigma",
-    type=int,
+    type=float,
     action="store",
     help="expected standard deviation of a time interval",
-    default=2,
+    default=0.5,
 )
 
 parser.add_argument(
     "--t_lowest",
-    type=int,
+    type=float,
     action="store",
-    help="start of time simulation (in nt)",
+    help="start of time simulation",
     default=0,
 )
 
 parser.add_argument(
     "--t_highest",
-    type=int,
+    type=float,
     action="store",
-    help="end of time simulation (in nt)",
-    default=10,
+    help="end of time simulation",
+    default=10
 )
 
 
@@ -125,7 +125,7 @@ print(f"  filename         = {args.filename}")
 print(f"  nref             = {args.nref}")
 print(f"  omega            = {args.omega}")
 print(f"  g                = {args.g}")
-print(f"  nt               = {args.nt}")
+print(f"  nt               = {args.dt}")
 print(f"  tfinalmax        = {args.tfinalmax}")
 print(f"  t_lowest         = {args.t_lowest}")
 print(f"  t_highest        = {args.t_highest}")
@@ -134,7 +134,7 @@ print(f"  regenerate_data  = {args.regenerate_data}")
 print(f"  output_file_path = {args.output_file_path}")
 
 dataset = ShallowWaterEquationsDataset(
-    n_ref=args.nref, nsamples=args.nsamples, nt=args.nt, t_final_max=args.tfinalmax,
+    n_ref=args.nref, nsamples=args.nsamples, dt=args.dt, t_final_max=args.tfinalmax,
     omega=args.omega, g=args.g, t_interval=args.t_interval, t_sigma=args.t_sigma,
     t_lowest=args.t_lowest, t_highest=args.t_highest
 )
@@ -146,7 +146,6 @@ elif args.regenerate_data:
     print('Regenerating the full simulation')
     shutil.rmtree(args.output_file_path)
     dataset.generate_full_dataset()
-    i = 1
 else:
     print('Opening previously generated simulation')
 
