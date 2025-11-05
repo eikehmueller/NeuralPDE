@@ -55,38 +55,3 @@ class Solver(torch.autograd.Function):
         Solver._backward_step(q, p, ctx.F_q, grad_p, grad_q, theta_q, ctx.dt / 2)
         grad_input = torch.cat([grad_q, grad_p], dim=-1)
         return grad_input, None, None, None, None
-
-
-dt = 0.1
-m = 4
-n = 8
-linear_q = torch.nn.Linear(m // 2, m // 2, bias=True)
-linear_p = torch.nn.Linear(m // 2, m // 2, bias=True)
-
-X = torch.tensor(np.arange(m, dtype=np.float32), requires_grad=True)
-F = Solver.apply
-Y = F(X, linear_q, linear_p, n, dt)
-loss = torch.sum(Y**2)
-loss.backward()
-print(loss, X.grad)
-
-for p in list(linear_q.parameters()) + list(linear_p.parameters()):
-    print("dtheta/dp = ", p.grad)
-
-linear_q.zero_grad()
-linear_p.zero_grad()
-q0, p0 = torch.split(X.clone().detach(), m // 2, dim=-1)
-q0.requires_grad = True
-p0.requires_grad = True
-q = q0
-p = p0
-q = q + dt / 2 * linear_q(p)
-for j in range(n):
-    p = p + dt * linear_p(q)
-    rho = 1 / 2 if j == n - 1 else 1
-    q = q + rho * dt * linear_q(p)
-loss2 = torch.sum(q**2) + torch.sum(p**2)
-loss2.backward()
-print(loss2, q0.grad, p0.grad)
-for p in list(linear_q.parameters()) + list(linear_p.parameters()):
-    print("dtheta/dp = ", p.grad)
