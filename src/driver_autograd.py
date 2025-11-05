@@ -23,11 +23,13 @@ class Solver(torch.autograd.Function):
         return output
 
     @staticmethod
-    def update_gradients(z_1, F_2, grad_1, grad_2, theta_2, scaling_factor):
-        _z_1 = z_1.detach()
+    def _backward_step(z_1, z_2, F, grad_1, grad_2, theta_2, scaling_factor):
+        with torch.no_grad():
+            z_1 = z_1 - scaling_factor * F(z_2)
+        _z_1 = z_2.detach()
         _z_1.requires_grad = True
         with torch.enable_grad():
-            dz_2 = F_2(_z_1)
+            dz_2 = F(_z_1)
         (dF_2, *dtheta_2) = torch.autograd.grad(
             dz_2, [_z_1] + theta_2, grad_outputs=grad_2
         )
@@ -48,16 +50,9 @@ class Solver(torch.autograd.Function):
         theta_p = list(ctx.F_p.parameters())
         for j in range(ctx.n - 1, -1, -1):
             rho = 1 / 2 if j == ctx.n - 1 else 1
-            with torch.no_grad():
-                q = q - rho * ctx.dt * ctx.F_q(p)
-
-            Solver.update_gradients(p, ctx.F_q, grad_p, grad_q, theta_q, rho * ctx.dt)
-            with torch.no_grad():
-                p = p - ctx.dt * ctx.F_p(q)
-            Solver.update_gradients(q, ctx.F_p, grad_q, grad_p, theta_p, ctx.dt)
-        with torch.no_grad():
-            q = q - 1 / 2 * ctx.dt * ctx.F_q(p)
-        Solver.update_gradients(p, ctx.F_q, grad_p, grad_q, theta_q, ctx.dt / 2)
+            Solver._backward_step(q, p, ctx.F_q, grad_p, grad_q, theta_q, rho * ctx.dt)
+            Solver._backward_step(p, q, ctx.F_p, grad_q, grad_p, theta_p, ctx.dt)
+        Solver._backward_step(q, p, ctx.F_q, grad_p, grad_q, theta_q, ctx.dt / 2)
         grad_input = torch.cat([grad_q, grad_p], dim=-1)
         return grad_input, None, None, None, None
 
