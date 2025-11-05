@@ -48,8 +48,8 @@ class Solver(torch.autograd.Function):
         grad_q, grad_p = torch.split(grad_output.clone().detach(), m // 2, dim=-1)
         theta_q = list(ctx.F_q.parameters())
         theta_p = list(ctx.F_p.parameters())
-        for j in range(ctx.n - 1, -1, -1):
-            rho = 1 / 2 if j == ctx.n - 1 else 1
+        for j in range(ctx.n):
+            rho = 1 / 2 if j == 0 else 1
             Solver._backward_step(q, p, ctx.F_q, grad_p, grad_q, theta_q, rho * ctx.dt)
             Solver._backward_step(p, q, ctx.F_p, grad_q, grad_p, theta_p, ctx.dt)
         Solver._backward_step(q, p, ctx.F_q, grad_p, grad_q, theta_q, ctx.dt / 2)
