@@ -25,13 +25,13 @@ class Solver(torch.autograd.Function):
     @staticmethod
     def _backward_step(z_1, z_2, F, grad_1, grad_2, theta_2, scaling_factor):
         with torch.no_grad():
-            z_1 = z_1 - scaling_factor * F(z_2)
-        _z_1 = z_2.detach()
-        _z_1.requires_grad = True
+            z_1 -= scaling_factor * F(z_2)
+        _z_2 = z_2.detach()
+        _z_2.requires_grad = True
         with torch.enable_grad():
-            dz_2 = F(_z_1)
+            dz_1 = F(_z_2)
         (dF_2, *dtheta_2) = torch.autograd.grad(
-            dz_2, [_z_1] + theta_2, grad_outputs=grad_2
+            dz_1, [_z_2] + theta_2, grad_outputs=grad_2
         )
         for x, y in zip(theta_2, dtheta_2):
             if x.grad is None:
