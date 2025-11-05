@@ -1,16 +1,16 @@
 ### Configuration file for Neural PDE training
 
 [data]
-train = "data/data_train_swes_nref3_tlength0.1_tfinalmax100.h5" # file containing the training data
-valid = "data/data_valid_swes_nref3_tlength0.1_tfinalmax100.h5" # file containing the validation data
+train = "data/data_train_swes_nref3_tlength0.0_tfinalmax100.h5" # file containing the training data
+valid = "data/data_valid_swes_nref3_tlength0.0_tfinalmax100.h5" # file containing the validation data
 
 [architecture]
 dual_ref = 1              # number of refinements of dual mesh
 n_radial = 8              # number of radial points on each patch
 decoder = "nearest_neighbour"         # decoder to use ('patch' or 'nearest_neighbour')
-latent_dynamic_dim = 10   # dimension of dynamic latent space
-latent_ancillary_dim = 5  # dimension of ancillary latent space
-nu = 8                    # number of nearest neighours in decoder
+latent_dynamic_dim = 4   # dimension of dynamic latent space
+latent_ancillary_dim = 2  # dimension of ancillary latent space
+nu = 3                   # number of nearest neighours in decoder
 dt = 0.01                 # Stepsize
 
 [optimiser]

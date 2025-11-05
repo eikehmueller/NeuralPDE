@@ -84,7 +84,7 @@ print(f"Running on device {device}")
 
 optimiser = torch.optim.Adam(
     model.parameters(), lr=config["optimiser"]["initial_learning_rate"]
-)
+) # is this the best learning rate?
 gamma = (
     config["optimiser"]["final_learning_rate"]
     / config["optimiser"]["initial_learning_rate"]

@@ -99,7 +99,7 @@ parser.add_argument(
     type=str,
     action="store",
     help="file containing the data",
-    default="data/data_test_swes_nref_3_100_100.h5",
+    default="data/data_test_swes_nref3_tlength0.0_tfinalmax100.h5",
 )
 
 args, _ = parser.parse_known_args()
@@ -176,7 +176,7 @@ with CheckpointFile("results/gusto_output/chkpt.h5", 'r') as afile:
     X[0, 4, :] = divergence_inp.dat.data
     X[0, 5, :] = vorticity_inp.dat.data
     X = torch.tensor(X, dtype=torch.float32)
-
+'''
 
 t_elapsed = 0
 while t < t_final:
@@ -190,7 +190,7 @@ while t < t_final:
     t += dt
     t_elapsed += dt
     print(f"time = {t:8.4f}")
-
+'''
 '''
 
 with open("timing.dat", "w", encoding="utf8") as f:
@@ -227,5 +227,5 @@ for j, ((X, t), y_target) in enumerate(iter(dataset)):
     f_pred = Function(V, name="predicted")
     f_pred.dat.data[:] = y_pred.detach().numpy()[0, :]
 
-    file = VTKFile(os.path.join(args.output, f"output_{j:04d}_t{t:6.3f}.pvd"))
+    file = VTKFile(os.path.join(args.output, f"dataset/output_{j:04d}.pvd"))
     file.write(f_input, f_target, f_pred)

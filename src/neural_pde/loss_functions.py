@@ -106,7 +106,7 @@ def normalised_absolute_error(y_pred, y_target):
     )
     return loss
 
-
+'''
 test_tensor = torch.rand((16, 3, 7))
 test_tensor2 = torch.rand((16, 3, 7))
 
@@ -119,3 +119,4 @@ normalised = summed / torch.sum(test_tensor**2, dim=2)
 mean = torch.mean(torch.sqrt(normalised), dim=0)
 
 print(torch.mean(mean))
+'''

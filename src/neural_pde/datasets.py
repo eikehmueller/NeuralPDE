@@ -519,8 +519,8 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 start = np.random.randint(lowest, highest)
 
                 mu =  start + interval
-                t_norm = truncnorm((start - mu) / sigma, (highest - mu) / sigma, loc=mu, scale=sigma)
-                end = round(t_norm.rvs(1)[0])
+                #t_norm = truncnorm((start - mu) / sigma, (highest - mu) / sigma, loc=mu, scale=sigma)
+                end = start #round(t_norm.rvs(1)[0]) CHANGE THIS BACK
                 
                 if end > highest:
                     end = highest

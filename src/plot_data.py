@@ -23,7 +23,7 @@ parser.add_argument(
     type=str,
     action="store",
     help="file containing the data",
-    default="data/data_valid_swes_nref_3_50.h5",
+    default="data/data_test_swes_nref3_tlength0.0_tfinalmax100.h5",
 )
 
 parser.add_argument(
@@ -111,12 +111,12 @@ def move_files_and_directories(wsl_folder, windows_folder):
                 print(f'Moved: {wsl_path} -> {windows_path}')
 
 # Define your WSL and Windows folders
-wsl_folder1 = '/home/katie795/NeuralPDE_workspace/src/output_for_visualising_model_dataset'
+wsl_folder1 = '/home/katie795/NeuralPDE_workspace/src/results/output_for_visualising_model_dataset'
 wsl_folder2 = '/home/katie795/NeuralPDE_workspace/src/results/gusto_output/field_output'
-wsl_folder3 = '/home/katie795/NeuralPDE_workspace/src/results/output_for_evaluation/animation'
+wsl_folder3 = '/home/katie795/NeuralPDE_workspace/src/results/output_for_evaluation'
 windows_folder = 'C:\\Users\\kathe\\OneDrive\\Desktop\\paraview_data'
 
 if args.move_to_windows:
     #move_files_and_directories(wsl_folder1, windows_folder)
-    move_files_and_directories(wsl_folder2, windows_folder)
+    #move_files_and_directories(wsl_folder2, windows_folder)
     move_files_and_directories(wsl_folder3, windows_folder)
