@@ -57,7 +57,7 @@ class Solver(torch.autograd.Function):
             Solver.update_gradients(q, ctx.F_p, grad_q, grad_p, theta_p, ctx.dt)
         with torch.no_grad():
             q = q - 1 / 2 * ctx.dt * ctx.F_q(p)
-        Solver.update_gradients(p, ctx.F_q, grad_p, grad_q, theta_q, rho * ctx.dt)
+        Solver.update_gradients(p, ctx.F_q, grad_p, grad_q, theta_q, ctx.dt / 2)
         grad_input = torch.cat([grad_q, grad_p], dim=-1)
         return grad_input, None, None, None, None
 
