@@ -23,6 +23,22 @@ class Solver(torch.autograd.Function):
         return output
 
     @staticmethod
+    def update_gradients(z_1, F_2, grad_1, grad_2, theta_2, scaling_factor):
+        _z_1 = z_1.detach()
+        _z_1.requires_grad = True
+        with torch.enable_grad():
+            dz_2 = F_2(_z_1)
+        (dF_2, *dtheta_2) = torch.autograd.grad(
+            dz_2, [_z_1] + theta_2, grad_outputs=grad_2
+        )
+        for x, y in zip(theta_2, dtheta_2):
+            if x.grad is None:
+                x.grad = scaling_factor * y
+            else:
+                x.grad += scaling_factor * y
+        grad_1 += scaling_factor * dF_2
+
+    @staticmethod
     def backward(ctx, grad_output):
         (output,) = ctx.saved_tensors
         m = output.shape[-1]
@@ -34,49 +50,14 @@ class Solver(torch.autograd.Function):
             rho = 1 / 2 if j == ctx.n - 1 else 1
             with torch.no_grad():
                 q = q - rho * ctx.dt * ctx.F_q(p)
-            z_p = p.detach()
-            z_p.requires_grad = True
-            with torch.enable_grad():
-                dq = ctx.F_q(z_p)
-            (dJ_q, *dtheta_q) = torch.autograd.grad(
-                dq, [z_p] + theta_q, grad_outputs=grad_q
-            )
-            for x, y in zip(theta_q, dtheta_q):
-                if x.grad is None:
-                    x.grad = rho * ctx.dt * y
-                else:
-                    x.grad += rho * ctx.dt * y
-            grad_p = grad_p + rho * ctx.dt * dJ_q
+
+            Solver.update_gradients(p, ctx.F_q, grad_p, grad_q, theta_q, rho * ctx.dt)
             with torch.no_grad():
                 p = p - ctx.dt * ctx.F_p(q)
-            z_q = q.detach()
-            z_q.requires_grad = True
-            with torch.enable_grad():
-                dp = ctx.F_p(z_q)
-            (dJ_p, *dtheta_p) = torch.autograd.grad(
-                dp, [z_q] + theta_p, grad_outputs=grad_p
-            )
-            for x, y in zip(theta_p, dtheta_p):
-                if x.grad is None:
-                    x.grad = ctx.dt * y
-                else:
-                    x.grad += ctx.dt * y
-            grad_q = grad_q + ctx.dt * dJ_p
+            Solver.update_gradients(q, ctx.F_p, grad_q, grad_p, theta_p, ctx.dt)
         with torch.no_grad():
             q = q - 1 / 2 * ctx.dt * ctx.F_q(p)
-        z_p = p.detach()
-        z_p.requires_grad = True
-        with torch.enable_grad():
-            dp = ctx.F_q(z_p)
-        (dJ_q, *dtheta_q) = torch.autograd.grad(
-            dp, [z_p] + theta_q, grad_outputs=grad_q
-        )
-        for x, y in zip(theta_q, dtheta_q):
-            if x.grad is None:
-                x.grad = ctx.dt / 2 * y
-            else:
-                x.grad += ctx.dt / 2 * y
-        grad_p = grad_p + ctx.dt / 2 * dJ_q
+        Solver.update_gradients(p, ctx.F_q, grad_p, grad_q, theta_q, rho * ctx.dt)
         grad_input = torch.cat([grad_q, grad_p], dim=-1)
         return grad_input, None, None, None, None
 
