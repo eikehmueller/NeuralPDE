@@ -6,8 +6,9 @@ OMEGA=1e-4
 TFINALMAX=100
 G=9.8
 DT=0.01
+
 TINTERVAL=0.0
-TSIGMA=0.00
+TSIGMA=0.0
 TSPLIT=80
 
 python data_generator_swes.py \
