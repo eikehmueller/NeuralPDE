@@ -80,16 +80,16 @@ def naive_solver(hamiltonian, X, t_final, dt):
     t_p = torch.zeros(1)
     # position half-step
     dt_q = masked_stepsize(t_q, t_final, dt / 2)
-    q += dt_q * hamiltonian.F_q(p, xi)
+    q = q + dt_q * hamiltonian.F_q(p, xi)
     t_q += dt / 2
     while True:
         # momentum-step
         dt_p = masked_stepsize(t_p, t_final, dt)
-        p += dt_p * hamiltonian.F_p(q, xi)
+        p = p + dt_p * hamiltonian.F_p(q, xi)
         t_p += dt
         # position-step
         dt_q = masked_stepsize(t_q, t_final, dt)
-        q += dt_q * hamiltonian.F_q(p, xi)
+        q = q + dt_q * hamiltonian.F_q(p, xi)
         t_q += dt
         if torch.count_nonzero(dt_q) == 0 and torch.count_nonzero(dt_p) == 0:
             break
@@ -113,8 +113,9 @@ def test_hamiltonian_loss():
     T = torch.rand((batch_size,)) + 4
     X.requires_grad = True
 
-    loss_autograd = autograd_solver(hamiltonian, X, T, dt)
     loss_naive = naive_solver(hamiltonian, X, T, dt)
+    loss_autograd = autograd_solver(hamiltonian, X, T, dt)
+
     assert np.allclose(loss_autograd.detach(), loss_naive.detach())
 
 
