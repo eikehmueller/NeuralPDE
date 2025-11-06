@@ -9,7 +9,15 @@ tb_logs/
 *.vtu
 *.h5
 *.nc
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+
 src/runs/
 src/data/
 src/results/
+doc/hamiltonian_solver.pdf
 
