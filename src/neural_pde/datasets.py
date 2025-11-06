@@ -520,7 +520,11 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
                 mu =  start + interval
                 #t_norm = truncnorm((start - mu) / sigma, (highest - mu) / sigma, loc=mu, scale=sigma)
-                end = start #round(t_norm.rvs(1)[0]) CHANGE THIS BACK
+                end = start #+ interval #round(t_norm.rvs(1)[0]) CHANGE THIS BACK
+
+                if j == 100:
+                    print(f'Start timestep is {start}')
+                    print(f'End timestep is {end}')
                 
                 if end > highest:
                     end = highest
@@ -539,20 +543,21 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 vorticity_tar = diagnostics.vorticity(w2)
                 divergence_tar = diagnostics.divergence(w2)
                     
-                # coordinate data
-                self._data[j, 0, :] = self._x.dat.data # x coord data
-                self._data[j, 1, :] = self._y.dat.data # y coord data
-                self._data[j, 2, :] = self._z.dat.data # z coord data
-                # input data
-                self._data[j, 3, :] = h_inp.dat.data # h data
-                self._data[j, 4, :] = divergence_inp.dat.data
-                self._data[j, 5, :] = vorticity_inp.dat.data
-                # output data
-                self._data[j, 6, :]  = h_tar.dat.data # h data
+                
+                # input data - dynamic variables
+                self._data[j, 0, :] = h_inp.dat.data # h data
+                self._data[j, 1, :] = divergence_inp.dat.data
+                self._data[j, 2, :] = vorticity_inp.dat.data
+                # coordinate data - auxiliary variables
+                self._data[j, 3, :] = self._x.dat.data # x coord data
+                self._data[j, 4, :] = self._y.dat.data # y coord data
+                self._data[j, 5, :] = self._z.dat.data # z coord data
+                # output data - target data
+                self._data[j, 6, :] = h_tar.dat.data # h data
                 self._data[j, 7, :] = divergence_tar.dat.data
                 self._data[j, 8, :] = vorticity_tar.dat.data
                 # time data
-                self._t_initial[j]  = self.dt * start
+                self._t_initial[j]  = start * self.dt
                 self._t_elapsed[j]  = (end - start) * self.dt
         end_timer1 = timer()
         print(f"Training, validation and test data runtime: {timedelta(seconds=end_timer1-start_timer1)}")

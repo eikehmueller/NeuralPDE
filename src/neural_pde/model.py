@@ -92,6 +92,7 @@ class NeuralPDEModel(torch.nn.Module):
         mesh = UnitIcosahedralSphereMesh(n_ref)  # create the mesh
         V = FunctionSpace(mesh, "CG", 1)  # define the function space
         print(f"  number of unknowns of function space = {V.dof_count}")
+        print(f"  total number of unknowns             = {V.dof_count * spherical_patch_covering.n_patches}")
 
         # encoder models
         # dynamic encoder model: map all fields to the latent space
@@ -238,7 +239,7 @@ class NeuralPDEModel(torch.nn.Module):
 
     def forward(self, x, t_final):
         """Forward pass of the model
-        :arg x: input tensor of shape (batch_size, n_func_in_dynamic+n_func_in_ancillary, n_vertex)
+        :arg x: input tensor of shape (batch_size, n_func_in_dynamic + n_func_in_ancillary, n_vertex)
         :arg t_final: final time for each sample, tensor of shape (batch_size,)
         """
 
