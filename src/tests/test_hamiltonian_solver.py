@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from hamiltonian_solver import SymplecticIntegratorFunction, Hamiltonian
+from neural_pde.hamiltonian_solver import SymplecticIntegratorFunction, Hamiltonian
 
 
 class SimpleHamiltonian(Hamiltonian):
