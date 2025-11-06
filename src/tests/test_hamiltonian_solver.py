@@ -1,6 +1,10 @@
 import numpy as np
 import torch
-from neural_pde.hamiltonian_solver import SymplecticIntegratorFunction, Hamiltonian
+from neural_pde.hamiltonian_solver import (
+    masked_stepsize,
+    SymplecticIntegratorFunction,
+    Hamiltonian,
+)
 
 
 class SimpleHamiltonian(Hamiltonian):
@@ -52,13 +56,13 @@ def autograd_solver(hamiltonian, X, n_t, dt):
     return loss
 
 
-def naive_solver(hamiltonian, X, n_t, dt):
-    """Naive solver relying on PyTorchs automated differentiation
+def naive_solver(hamiltonian, X, t_final, dt):
+    """Naive solver relying on PyTorch's automated differentiation
 
     Returns the square loss
 
-    :arg X: initial state (q,p,xi)
-    :arg n_t: number of time steps
+    :arg X: initial state (q,p,xi), tensor of shape (B,d_lat + d_ancil)
+    :arg t_final: final time, can be tensor of shape (B,)
     :arg dt: timestep size
     """
     d_lat = hamiltonian.d_lat
@@ -72,11 +76,23 @@ def naive_solver(hamiltonian, X, n_t, dt):
     xi.requires_grad = True
     q = q0
     p = p0
-    q = q + dt / 2 * hamiltonian.F_q(p, xi)
-    for j in range(n_t):
-        p = p + dt * hamiltonian.F_p(q, xi)
-        rho = 1 / 2 if j == n_t - 1 else 1
-        q = q + rho * dt * hamiltonian.F_q(p, xi)
+    t_q = torch.zeros(1)
+    t_p = torch.zeros(1)
+    # position half-step
+    dt_q = masked_stepsize(t_q, t_final, dt / 2)
+    q += dt_q * hamiltonian.F_q(p, xi)
+    t_q += dt / 2
+    while True:
+        # momentum-step
+        dt_p = masked_stepsize(t_p, t_final, dt)
+        p += dt_p * hamiltonian.F_p(q, xi)
+        t_p += dt
+        # position-step
+        dt_q = masked_stepsize(t_q, t_final, dt)
+        q += dt_q * hamiltonian.F_q(p, xi)
+        t_q += dt
+        if torch.count_nonzero(dt_q) == 0 and torch.count_nonzero(dt_p) == 0:
+            break
     loss = torch.sum(q**2) + torch.sum(p**2) + torch.sum(xi**2)
     loss.backward()
     return loss
@@ -94,10 +110,11 @@ def test_hamiltonian_loss():
     batch_size = 4
     hamiltonian = SimpleHamiltonian(d_lat, d_ancil)
     X = torch.normal(0, 1, size=(batch_size, d_lat + d_ancil))
+    T = torch.rand((batch_size,)) + 4
     X.requires_grad = True
 
-    loss_autograd = autograd_solver(hamiltonian, X, n_t, dt)
-    loss_naive = naive_solver(hamiltonian, X, n_t, dt)
+    loss_autograd = autograd_solver(hamiltonian, X, T, dt)
+    loss_naive = naive_solver(hamiltonian, X, T, dt)
     assert np.allclose(loss_autograd.detach(), loss_naive.detach())
 
 

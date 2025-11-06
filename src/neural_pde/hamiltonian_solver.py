@@ -1,7 +1,25 @@
 from abc import ABC, abstractmethod
 import torch
 
-__all__ = ["Hamiltonian", "SymplecticIntegratorFunction"]
+__all__ = ["masked_stepsize", "Hamiltonian", "SymplecticIntegratorFunction"]
+
+
+def masked_stepsize(t, t_final, dt):
+    """Compute the masked stepsize
+
+    The masked stepsize dt_{masked} is the largest possible positive step size which neither exeeds
+    dt nor t_final - t.
+
+    More specifically is defined as
+
+        dt_{masked} = { 0                     if t > t_{final}
+                      { min(t - t_{final},dt) if t <= t_{final}
+
+    :arg t: current time, scalar
+    :arg t_final: final integration time, can be a vector over batches
+    :arg dt: maximum stepsize dt
+    """
+    return torch.minimum(torch.maximum(t_final - t, torch.tensor(0)), torch.tensor(dt))
 
 
 class Hamiltonian(ABC, torch.nn.Module):
@@ -61,7 +79,7 @@ class SymplecticIntegratorFunction(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx, x, hamiltonian, n_t, dt):
+    def forward(ctx, x, hamiltonian, t_final, dt):
         """Forward pass, compute state at time T = n_t*dt
 
         The input x in R^{d_lat+d_ancil} is split as x = (q_0,p_0,xi) where q, p are vectors
@@ -77,8 +95,8 @@ class SymplecticIntegratorFunction(torch.autograd.Function):
 
         :arg x: input state of shape (B,d_{lat}+d_{ancil})
         :arg hamiltonian: hamiltonian object which provides forcing functions F_q, F_p
-        :arg d_lat: dimension of dynamic latent space
-        :arg d_ancil: dimension of ancillary space
+        :arg t_final: final time can be a vector of batchsize
+        :arg dt: size of timesteps
         """
         d_lat = hamiltonian.d_lat
         d_ancil = hamiltonian.d_ancil
@@ -90,19 +108,30 @@ class SymplecticIntegratorFunction(torch.autograd.Function):
             x.clone().detach(), [d_lat // 2, d_lat // 2, d_ancil], dim=-1
         )
         ctx.hamiltonian = hamiltonian
-        ctx.n_t = n_t
         ctx.dt = dt
+        ctx.t_final = t_final
+        t_q = torch.zeros(1)
+        t_p = torch.zeros(1)
         with torch.no_grad():
             # initial position update
-            q += dt / 2 * hamiltonian.F_q(p, xi)
-            for j in range(n_t):
+            dt_q = masked_stepsize(t_q, t_final, dt / 2)
+            q += dt_q * hamiltonian.F_q(p, xi)
+            t_q += dt / 2
+            while True:
                 # momentum update
-                p += dt * hamiltonian.F_p(q, xi)
-                rho = 1 / 2 if j == n_t - 1 else 1
-                # position update, only take half-step in final step
-                q += rho * dt * hamiltonian.F_q(p, xi)
+                dt_p = masked_stepsize(t_p, t_final, dt)
+                q += dt_p * hamiltonian.F_q(p, xi)
+                t_q += dt
+                # position update
+                dt_q = masked_stepsize(t_q, t_final, dt)
+                q += dt_q * hamiltonian.F_q(p, xi)
+                t_p += dt
+                if torch.count_nonzero(dt_q) == 0 and torch.count_nonzero(dt_p) == 0:
+                    break
             output = torch.cat([q, p, xi], dim=-1)
             ctx.save_for_backward(output)
+            ctx.t_q = t_q
+            ctx.t_p = t_p
         return output
 
     @staticmethod
@@ -174,19 +203,24 @@ class SymplecticIntegratorFunction(torch.autograd.Function):
             grad_output.clone().detach(), split, dim=-1
         )
         theta = list(ctx.hamiltonian.parameters())
-        for j in range(ctx.n_t - 1, -1, -1):
-            rho = 1 / 2 if j == ctx.n_t - 1 else 1
+        t_q = ctx.t_q
+        t_p = ctx.t_p
+        dt = ctx.dt
+        t_final = ctx.t_final
+        while t_q > 0 and t_p > 0:
+            t_q = torch.maximum(t_q - dt, torch.tensor(0))
+            dt_q = masked_stepsize(t_q, t_final, dt)
             # position update, only take a half-step in the final state
             SymplecticIntegratorFunction._backward_step(
-                q, p, xi, F_q, grad_p, grad_q, grad_xi, theta, rho * ctx.dt
+                q, p, xi, F_q, grad_p, grad_q, grad_xi, theta, dt_q
             )
+
             # momentum update
+            t_p = torch.maximum(t_p - dt, torch.tensor(0))
+            dt_p = masked_stepsize(t_p, t_final, dt)
             SymplecticIntegratorFunction._backward_step(
-                p, q, xi, F_p, grad_q, grad_p, grad_xi, theta, ctx.dt
+                p, q, xi, F_p, grad_q, grad_p, grad_xi, theta, dt_p
             )
-        # final position update
-        SymplecticIntegratorFunction._backward_step(
-            q, p, xi, F_q, grad_p, grad_q, grad_xi, theta, ctx.dt / 2
-        )
+
         grad_input = torch.cat([grad_q, grad_p, grad_xi], dim=-1)
         return grad_input, None, None, None
