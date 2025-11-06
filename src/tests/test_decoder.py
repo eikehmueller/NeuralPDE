@@ -3,7 +3,6 @@ from firedrake import *
 import sys
 sys.path.append("..")
 from neural_pde.icosahedral_dual_mesh import IcosahedralDualMesh
-from neural_pde.katies_decoder import KatiesDecoder
 from neural_pde.decoder import Decoder
 import sys
 
@@ -40,7 +39,6 @@ decoder_model = 1 # not used in function, so we set it equal to one
 nu = 1 # only one closest variable
 
 decoder_test = Decoder(V, dualmesh, decoder_model, nu) # initialise first class
-#decoder_test = KatiesDecoder(V, dualmesh, decoder_model, nu) # initialise second class
 
 z = decoder_test.test_forward(z_prime) # decode from z prime
 z_new = z[0].squeeze().detach().numpy() # change to numpy array
