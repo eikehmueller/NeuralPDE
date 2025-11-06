@@ -3,7 +3,7 @@ import torch
 from hamiltonian_solver import SymplecticIntegratorFunction, Hamiltonian
 
 
-class LinearHamiltonian(Hamiltonian):
+class SimpleHamiltonian(Hamiltonian):
     """Simple Hamiltonian where the forcing functions are linear maps"""
 
     def __init__(self, d_lat, d_ancil):
@@ -23,7 +23,7 @@ class LinearHamiltonian(Hamiltonian):
         :arg xi: ancillary vector, d_ancil-dimensional
         """
         x = torch.cat((p, xi), dim=-1)
-        return self.linear_q(x)
+        return torch.sigmoid(self.linear_q(x))
 
     def F_p(self, q, xi):
         """Forcing function F_p which determines rate of change of p
@@ -32,7 +32,7 @@ class LinearHamiltonian(Hamiltonian):
         :arg xi: ancillary vector, d_ancil-dimensional
         """
         x = torch.cat((q, xi), dim=-1)
-        return self.linear_p(x)
+        return torch.sigmoid(self.linear_p(x))
 
 
 def autograd_solver(hamiltonian, X, n_t, dt):
@@ -91,7 +91,7 @@ def test_hamiltonian_loss():
     n_t = 8
     d_lat = 8
     d_ancil = 3
-    hamiltonian = LinearHamiltonian(d_lat, d_ancil)
+    hamiltonian = SimpleHamiltonian(d_lat, d_ancil)
     X = torch.tensor(np.arange(d_lat + d_ancil, dtype=np.float32), requires_grad=True)
     loss_autograd = autograd_solver(hamiltonian, X, n_t, dt)
     loss_naive = naive_solver(hamiltonian, X, n_t, dt)
@@ -107,7 +107,7 @@ def test_hamiltonian_input_gradients():
     n_t = 8
     d_lat = 8
     d_ancil = 3
-    hamiltonian = LinearHamiltonian(d_lat, d_ancil)
+    hamiltonian = SimpleHamiltonian(d_lat, d_ancil)
     X = torch.tensor(np.arange(d_lat + d_ancil, dtype=np.float32), requires_grad=True)
     autograd_solver(hamiltonian, X, n_t, dt)
     grad_autograd = X.grad
@@ -125,7 +125,7 @@ def test_hamiltonian_parameter_gradients():
     n_t = 8
     d_lat = 8
     d_ancil = 3
-    hamiltonian = LinearHamiltonian(d_lat, d_ancil)
+    hamiltonian = SimpleHamiltonian(d_lat, d_ancil)
     X = torch.tensor(np.arange(d_lat + d_ancil, dtype=np.float32), requires_grad=True)
     autograd_solver(hamiltonian, X, n_t, dt)
     grad_autograd = []
