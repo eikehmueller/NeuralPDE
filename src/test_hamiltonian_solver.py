@@ -1,26 +1,51 @@
 import numpy as np
 import torch
-from hamiltonian_solver import Solver, Hamiltonian
+from hamiltonian_solver import SymplecticIntegratorFunction, Hamiltonian
 
 
 class LinearHamiltonian(Hamiltonian):
+    """Simple Hamiltonian where the forcing functions are linear maps"""
+
     def __init__(self, d_lat, d_ancil):
+        """Initialise new instance
+
+        :arg d_lat: total dimension of state space
+        :arg d_ancil: dimension of ancillary space
+        """
         super().__init__(d_lat, d_ancil)
         self.linear_q = torch.nn.Linear(d_lat // 2 + d_ancil, d_lat // 2)
         self.linear_p = torch.nn.Linear(d_lat // 2 + d_ancil, d_lat // 2)
 
     def F_q(self, p, xi):
+        """Forcing function F_q which determines rate of change of q
+
+        :arg p: momentum vector, d_lat/2-dimensional
+        :arg xi: ancillary vector, d_ancil-dimensional
+        """
         x = torch.cat((p, xi), dim=-1)
         return self.linear_q(x)
 
     def F_p(self, q, xi):
+        """Forcing function F_p which determines rate of change of p
+
+        :arg q: position vector, d_lat/2-dimensional
+        :arg xi: ancillary vector, d_ancil-dimensional
+        """
         x = torch.cat((q, xi), dim=-1)
         return self.linear_p(x)
 
 
 def autograd_solver(hamiltonian, X, n_t, dt):
+    """Solve with the autograd function SymplecticIntegratorFunction
+
+    Returns the square loss
+
+    :arg X: initial state (q,p,xi)
+    :arg n_t: number of time steps
+    :arg dt: timestep size
+    """
     hamiltonian.zero_grad()
-    F = Solver.apply
+    F = SymplecticIntegratorFunction.apply
     Y = F(X, hamiltonian, n_t, dt)
     loss = torch.sum(Y**2)
     loss.backward()
@@ -28,6 +53,14 @@ def autograd_solver(hamiltonian, X, n_t, dt):
 
 
 def naive_solver(hamiltonian, X, n_t, dt):
+    """Naive solver relying on PyTorchs automated differentiation
+
+    Returns the square loss
+
+    :arg X: initial state (q,p,xi)
+    :arg n_t: number of time steps
+    :arg dt: timestep size
+    """
     d_lat = hamiltonian.d_lat
     d_ancil = hamiltonian.d_ancil
     hamiltonian.zero_grad()
@@ -50,6 +83,10 @@ def naive_solver(hamiltonian, X, n_t, dt):
 
 
 def test_hamiltonian_loss():
+    """Check that the loss is computed correctly
+
+    This will verify that the forward operator is correct
+    """
     dt = 0.1
     n_t = 8
     d_lat = 8
@@ -62,6 +99,10 @@ def test_hamiltonian_loss():
 
 
 def test_hamiltonian_input_gradients():
+    """Check that gradients with respect to inputs is computed correctly
+
+    This will verify that the the backward method works as behaved
+    """
     dt = 0.1
     n_t = 8
     d_lat = 8
@@ -76,6 +117,10 @@ def test_hamiltonian_input_gradients():
 
 
 def test_hamiltonian_parameter_gradients():
+    """Check that gradients with respect to model parameters are computed correctly
+
+    This will verify that the the backward method works as behaved
+    """
     dt = 0.1
     n_t = 8
     d_lat = 8
