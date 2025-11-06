@@ -91,8 +91,11 @@ def test_hamiltonian_loss():
     n_t = 8
     d_lat = 8
     d_ancil = 3
+    batch_size = 4
     hamiltonian = SimpleHamiltonian(d_lat, d_ancil)
-    X = torch.tensor(np.arange(d_lat + d_ancil, dtype=np.float32), requires_grad=True)
+    X = torch.normal(0, 1, size=(batch_size, d_lat + d_ancil))
+    X.requires_grad = True
+
     loss_autograd = autograd_solver(hamiltonian, X, n_t, dt)
     loss_naive = naive_solver(hamiltonian, X, n_t, dt)
     assert np.allclose(loss_autograd.detach(), loss_naive.detach())
@@ -107,8 +110,10 @@ def test_hamiltonian_input_gradients():
     n_t = 8
     d_lat = 8
     d_ancil = 3
+    batch_size = 4
     hamiltonian = SimpleHamiltonian(d_lat, d_ancil)
-    X = torch.tensor(np.arange(d_lat + d_ancil, dtype=np.float32), requires_grad=True)
+    X = torch.normal(0, 1, size=(batch_size, d_lat + d_ancil))
+    X.requires_grad = True
     autograd_solver(hamiltonian, X, n_t, dt)
     grad_autograd = X.grad
     naive_solver(hamiltonian, X, n_t, dt)
@@ -125,8 +130,10 @@ def test_hamiltonian_parameter_gradients():
     n_t = 8
     d_lat = 8
     d_ancil = 3
+    batch_size = 4
     hamiltonian = SimpleHamiltonian(d_lat, d_ancil)
-    X = torch.tensor(np.arange(d_lat + d_ancil, dtype=np.float32), requires_grad=True)
+    X = torch.normal(0, 1, size=(batch_size, d_lat + d_ancil))
+    X.requires_grad = True
     autograd_solver(hamiltonian, X, n_t, dt)
     grad_autograd = []
     for p in hamiltonian.parameters():
