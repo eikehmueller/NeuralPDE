@@ -40,13 +40,13 @@ frametitlebackgroundcolor   =black!15,%
 We consider the following coupled system of time-dependent equations:
 \begin{equation}
     \begin{aligned}
-    \frac{\partial q}{\partial t} &= F_q(p,\xi;\theta_q) \\
-    \frac{\partial p}{\partial t} &= F_p(p,\xi;\theta_p)
+    \frac{\partial q}{\partial t} &= F_q(p,\xi;\theta) \\
+    \frac{\partial p}{\partial t} &= F_p(p,\xi;\theta)
     \end{aligned}
 \end{equation}
-with initial conditions $q(0)=q_0$, $p(0)=p_0$. Here $q(t),p(t)\in\mathbb{R}^{n/2}$ are the dynamic variables, which are obtained by splitting the state $z(t)\in\mathbb{R}^n$ into two parts of equal size and $\xi\in \mathbb{R}^{n_{\text{ancil}}}$ are the ancillary variables. $\theta_q\in V_q$ and $\theta_p\in V_p$ are learnable parameters. The functions $F_q$ and $F_p$ could arise from a separable Hamiltonian
+with initial conditions $q(0)=q_0$, $p(0)=p_0$. Here $q(t),p(t)\in\mathbb{R}^{n/2}$ are the dynamic variables, which are obtained by splitting the state $z(t)\in\mathbb{R}^n$ into two parts of equal size and $\xi\in \mathbb{R}^{n_{\text{ancil}}}$ are the ancillary variables. $\theta\in V$ are learnable parameters. The functions $F_q$ and $F_p$ could arise from a separable Hamiltonian
 \begin{equation}
-  H(q,p,\xi;\theta_q,\theta_p) = H_q(q,\xi;\theta_q) + H_p(p,\xi;\theta_p)
+  H(q,p,\xi;\theta) = H_q(q,\xi;\theta) + H_p(p,\xi;\theta)
 \end{equation}
 i.e.
 \begin{equation}
@@ -63,39 +63,39 @@ A symplectic integrator is given by \cref{alg:symplectic_integrator}.
 \caption{Symplectic integrator to compute $q(T), p(T)$ from $q_0,p_0$. \textbf{Input:} initial states $q_0,p_0$, final time $T$, number of timesteps $N_t$ \textbf{Output:} approximation $q_T,p_T\approx q(T), p(T)$ at final time $T$.}\label{alg:symplectic_integrator}
 \begin{algorithmic}[1]
     \State{Set $\Delta t = T/N_t$}
-    \State{Set $q^{(1/2)}=q_{0}+ \frac{\Delta t}{2} F_q(p_0,\xi;\theta_q)$, $p^{(0)} = p_0$}
+    \State{Set $q^{(1/2)}=q_{0}+ \frac{\Delta t}{2} F_q(p_0,\xi;\theta)$, $p^{(0)} = p_0$}
     \For{$k=1,2,\dots,N_t$}
-    \State{Set $p^{(k)} = p^{(k-1)}+\Delta t F_p(q^{(k-1/2)},\xi;\theta_p)$}    
+    \State{Set $p^{(k)} = p^{(k-1)}+\Delta t F_p(q^{(k-1/2)},\xi;\theta)$}    
     \If {$k<N_t$}
-    \State{Set $q^{(k+1/2)} = q^{(k-1/2)}+\Delta t F_q(p^{(k)},\xi;\theta_q)$}
+    \State{Set $q^{(k+1/2)} = q^{(k-1/2)}+\Delta t F_q(p^{(k)},\xi;\theta)$}
     \EndIf
     \EndFor
-    \State{Set $q_T = q^{(N_t-1/2)}+\frac{\Delta t}{2} F_q(p^{(N_t)},\xi;\theta_q)$, $p_T=p^{(N_t)}$}
+    \State{Set $q_T = q^{(N_t-1/2)}+\frac{\Delta t}{2} F_q(p^{(N_t)},\xi;\theta)$, $p_T=p^{(N_t)}$}
     \State {\Return $q_T, p_T$}
 \end{algorithmic}
 \end{algorithm}
 For a given final time $T$ and number of timesteps $N_t$ the algorithm defines a mapping
 \begin{equation}
     \begin{aligned}
-\Phi_{T}: \mathbb{R}^{n/2}\times \mathbb{R}^{n/2} \times \mathbb{R}^{m} \times V_q \times V_p &\rightarrow \mathbb{R}^{n/2}\times \mathbb{R}^{n/2}\\
-    q_0,p_0,\xi;\theta_q,\theta_p &\mapsto q_T, p_T
+\Phi_{T}: \mathbb{R}^{n/2}\times \mathbb{R}^{n/2} \times \mathbb{R}^{m} \times V &\rightarrow \mathbb{R}^{n/2}\times \mathbb{R}^{n/2}\\
+    q_0,p_0,\xi;\theta &\mapsto q_T, p_T
     \end{aligned}
 \end{equation}
-from the initial state $q_0,p_0$ to the (approximate) final state $q_T,p_T\approx q(T),p(T)$. This mapping is parameterised by the auxilliary state $\xi$ and the parameters $\theta_q,\theta_p$.
+from the initial state $q_0,p_0$ to the (approximate) final state $q_T,p_T\approx q(T),p(T)$. This mapping is parameterised by the auxilliary state $\xi$ and the parameters $\theta$.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Differentiable implementation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-We want to implement $\Phi_T$ in such a way that it is possible to back-propagate the output gradients $G_{q,T}=\frac{\partial J}{\partial q_T}$, $G_{p,T}=\frac{\partial J}{\partial p_T}$ to the gradients with respect to all inputs, i.e. $G_{q,0}=\frac{\partial J}{\partial q_0}$, $G_{p,0}=\frac{\partial J}{\partial p_0}$, $G_{\xi}=\frac{\partial J}{\partial \xi}$, $G_{\theta_q}=\frac{\partial J}{\partial \theta_q}$, $G_{\theta_p}=\frac{\partial J}{\partial \theta_p}$. The forward pass is given by \cref{alg:symplectic_integrator_forward_pass}, which is essentially identical to \cref{alg:symplectic_integrator}.
+We want to implement $\Phi_T$ in such a way that it is possible to back-propagate the output gradients $G_{q,T}=\frac{\partial J}{\partial q_T}$, $G_{p,T}=\frac{\partial J}{\partial p_T}$ to the gradients with respect to all inputs, i.e. $G_{q,0}=\frac{\partial J}{\partial q_0}$, $G_{p,0}=\frac{\partial J}{\partial p_0}$, $G_{\xi}=\frac{\partial J}{\partial \xi}$, $G_{\theta}=\frac{\partial J}{\partial \theta}$. The forward pass is given by \cref{alg:symplectic_integrator_forward_pass}, which is essentially identical to \cref{alg:symplectic_integrator}.
 
 \begin{algorithm}
-\caption{Forward pass of function $\Phi_T(q_0,p_0,\xi;\theta_q,\theta_p)$ for given number of timesteps. \textbf{Input:} initial states $q_0,p_0$, final time $T$, number of timesteps $N_t$ \textbf{Output:} approximation to $q(T), p(T)$ at final time $T$.}\label{alg:symplectic_integrator_forward_pass}
+\caption{Forward pass of function $\Phi_T(q_0,p_0,\xi;\theta)$ for given number of timesteps. \textbf{Input:} initial states $q_0,p_0$, final time $T$, number of timesteps $N_t$ \textbf{Output:} approximation to $q(T), p(T)$ at final time $T$.}\label{alg:symplectic_integrator_forward_pass}
 \begin{algorithmic}[1]
     \State{Set $\Delta t = T/N_t$}
-    \State{Initialise $q\gets q_{0}+ \frac{\Delta t}{2} F_q(p_0,\xi;\theta_q)$, $p \gets p_0$}
+    \State{Initialise $q\gets q_{0}+ \frac{\Delta t}{2} F_q(p_0,\xi;\theta)$, $p \gets p_0$}
     \For{$k=1,2,\dots,N_t$}
-    \State{Update $p \gets p +\Delta t F_p(q,\xi;\theta_p)$}   
+    \State{Update $p \gets p +\Delta t F_p(q,\xi;\theta)$}   
     \If {$k=N_t$} \State{Set $\rho=\frac{1}{2}$} \Else \State{Set $\rho=1$} \EndIf
-    \State{Update $q \gets q+\rho \Delta t F_q(p,\xi;\theta_q)$}
+    \State{Update $q \gets q+\rho \Delta t F_q(p,\xi;\theta)$}
     \EndFor
     \State {\Return $q_T=q$, $p_T=p$}
 \end{algorithmic}
@@ -110,81 +110,79 @@ The algorithm is shown schematically in \cref{fig:symplectic_dataflow}.
 \end{figure}
 
 \begin{algorithm}
-\caption{Backward pass of function $\Phi_T(q_0,p_0,\xi;\theta_q,\theta_p)$ for given number of timesteps. \textbf{Input:} final states $q_T,p_T$ (as computed with \cref{alg:symplectic_integrator_forward_pass}) and corresponding gradients $G_{q,T}=\partial J/\partial q_T$, $G_{p,T}=\partial J/\partial p_T$, final time $T$, number of timesteps $N_t$. \textbf{Output:} gradients $G_{0,T}, G_{0,p}, G_{\xi}, G_{\theta_q}, G_{\theta_p}$.}\label{alg:symplectic_integrator_backward_pass}
+\caption{Backward pass of function $\Phi_T(q_0,p_0,\xi;\theta)$ for given number of timesteps. \textbf{Input:} final states $q_T,p_T$ (as computed with \cref{alg:symplectic_integrator_forward_pass}) and corresponding gradients $G_{q,T}=\partial J/\partial q_T$, $G_{p,T}=\partial J/\partial p_T$, final time $T$, number of timesteps $N_t$. \textbf{Output:} gradients $G_{0,T}, G_{0,p}, G_{\xi}, G_{\theta}$.}\label{alg:symplectic_integrator_backward_pass}
 \begin{algorithmic}[1]
     \State{Set $\Delta t = T/N_t$}
     \State{Initialise $q\gets q_{T}$, $p \gets p_T$}    
     \State{Initialise $G_q\gets G_{q,T}$, $G_p \gets G_{p,T}$}    
-    \State{Initialise $G_\xi\gets 0$, $G_{\theta_q}\gets 0$, $G_{\theta_p}\gets 0$}
+    \State{Initialise $G_\xi\gets 0$, $G_{\theta}\gets 0$}
     \For{$k=N_t,N_t-1,\dots,2,1$}
     \If {$k=N_t$} \State{Set $\rho=\frac{1}{2}$} \Else \State{Set $\rho=1$} \EndIf
-    \State{Update $q \gets q-\rho \Delta t F_q(p,\xi;\theta_q)$}
-    \For {all variables $v\in \{p,\xi,\theta_q,\theta_p\}$}
-        \State{Update $G_v\gets G_v + \rho \Delta t \frac{\partial F_q}{\partial v}(p,\xi;\theta_q,\theta_p)$}
+    \State{Update $q \gets q-\rho \Delta t F_q(p,\xi;\theta)$}
+    \For {all variables $v\in \{p,\xi,\theta\}$}
+        \State{Update $G_v\gets G_v + \rho \Delta t \frac{\partial F_q}{\partial v}(p,\xi;\theta)$}
     \EndFor    
-    \State{Update $p \gets p -\Delta t F_p(q,\xi;\theta_p)$}
-    \For {all variables $v\in \{q,\xi,\theta_q,\theta_p\}$}
-        \State{Update $G_v\gets G_v + \Delta t \frac{\partial F_p}{\partial v}(q,\xi;\theta_q,\theta_p)$}
+    \State{Update $p \gets p -\Delta t F_p(q,\xi;\theta)$}
+    \For {all variables $v\in \{q,\xi,\theta\}$}
+        \State{Update $G_v\gets G_v + \Delta t \frac{\partial F_p}{\partial v}(q,\xi;\theta)$}
     \EndFor    
     \EndFor
-    \State{Update $q \gets q-\frac{\Delta t}{2} F_q(p,\xi;\theta_q)$}
-    \For {all variables $v\in \{p,\xi,\theta_q,\theta_p\}$}
-        \State{Update $G_v\gets G_v + \frac{\Delta t}{2} \frac{\partial F_q}{\partial v}(p,\xi;\theta_q,\theta_p)$}
+    \State{Update $q \gets q-\frac{\Delta t}{2} F_q(p,\xi;\theta)$}
+    \For {all variables $v\in \{p,\xi,\theta\}$}
+        \State{Update $G_v\gets G_v + \frac{\Delta t}{2} \frac{\partial F_q}{\partial v}(p,\xi;\theta)$}
     \EndFor      
     \State {Set $G_{q,0}\gets G_q$, $G_{p,0}\gets G_p$}
-    \State {\Return gradients $G_{q,0}$, $G_{p,0}$, $G_\xi$, $G_{\theta_q}$, $G_{\theta_p}$}
+    \State {\Return gradients $G_{q,0}$, $G_{p,0}$, $G_\xi$, $G_{\theta}$}
 \end{algorithmic}
 \end{algorithm}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Fractional timesteps}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-In \cref{alg:symplectic_integrator_forward_pass} and \cref{alg:symplectic_integrator_backward_pass} the number of timesteps $N_t$ is given and the timestep size is chosen such that $\Delta t=T/N_t$. It is also possible to adapt the algorithms for the case where $\Delta t$ is given instead. In this setup some of the steps will be of a size which is not $\Delta t$ or $\frac{\Delta t}{2}$ (for the first and final position-update). Instead, the stepsize $\Delta t^*$ for each update at time $t$ is chosen such that $\Delta t^*\le \Delta t$ and $t+\Delta t^*\le T$. This can be achieved by setting
+In \cref{alg:symplectic_integrator_forward_pass} and \cref{alg:symplectic_integrator_backward_pass} the number of timesteps $N_t$ is given and the timestep size is chosen such that $\Delta t=T/N_t$. It is also possible to adapt the algorithms for the case where $\Delta t$ is given instead. In this setup some of the steps will be of a size which is not $\Delta t$ or $\frac{\Delta t}{2}$ (for the first and final position-update). Instead, the stepsize $\Delta t^*$ for each update at time $t$ is chosen such that $\Delta t^*$ is the largest number which satisfies both $\Delta t^*\le \Delta t$ and $t+\Delta t^*\le T$. This can be achieved by setting
 \begin{equation}
 \Delta t^* = \max\{0,\min\{\Delta t,T-t\}\}
 \end{equation}
-where for the very first position update $\frac{\Delta t}{2}$ is used in the right-hand side expression instead. Since the times when the position and momentum are stored are offset by $\frac{\Delta t}{2}$, it is necessary to keep track of the corresponding times separately.
-
-The resulting algorithms for the forward- and backward-pass are shown in \cref{alg:symplectic_integrator_forward_pass_given_dt} \cref{alg:symplectic_integrator_backward_pass_given_dt} respectively.
+where for the very first position update $\frac{\Delta t}{2}$ is used in the right-hand side expression instead. Since the times when the position and momentum are stored are offset by $\frac{\Delta t}{2}$, it is necessary to keep track of the corresponding times separately. The resulting algorithms for the forward- and backward-pass are shown in \cref{alg:symplectic_integrator_forward_pass_given_dt} and \cref{alg:symplectic_integrator_backward_pass_given_dt} respectively.
 \begin{algorithm}
-\caption{Forward pass of function $\Phi_T(q_0,p_0,\xi;\theta_q,\theta_p)$ for given timestep size. \textbf{Input:} initial states $q_0,p_0$, final time $T$, timestep size $\Delta t$ \textbf{Output:} approximation to $q(T), p(T)$ at final time $T$.}\label{alg:symplectic_integrator_forward_pass_given_dt}
+\caption{Forward pass of function $\Phi_T(q_0,p_0,\xi;\theta)$ for given timestep size. \textbf{Input:} initial states $q_0,p_0$, final time $T$, timestep size $\Delta t$ \textbf{Output:} approximation to $q(T), p(T)$ at final time $T$.}\label{alg:symplectic_integrator_forward_pass_given_dt}
 \begin{algorithmic}[1]
     \State{Initialise $q\gets q_{0}$, $p \gets p_0$}
-    \State{Initialise $t_q=0$, $t_p=0$}
+    \State{Set $t_q=0$, $t_p=0$}
     \For {$k=0,1,2,\dots$}
     \If {$k=0$} \State{Set $\rho=\frac{1}{2}$} \Else \State{Set $\rho=1$} \EndIf
     \State {Set $\Delta t_q = \max\{0,\min\{\rho\Delta t,T-t_q\}\}$}
     \State{Update $t_q\gets t_q+\rho\Delta t$}
-    \State{Update $q \gets q + \Delta t_q F_q(p,\xi;\theta_q)$}
+    \State{Update $q \gets q + \Delta t_q F_q(p,\xi;\theta)$}
     \State {Set $\Delta t_p = \max\{0,\min\{\Delta t,T-t_p\}\}$}
     \State{Update $t_p\gets t_p+\Delta t$}
-    \State{Update $p \gets p +\Delta t_p F_p(q,\xi;\theta_p)$}   
+    \State{Update $p \gets p +\Delta t_p F_p(q,\xi;\theta)$}   
     \If{$\Delta t_q = 0$ and $\Delta t_p=0$} \State{\textbf{break}} \EndIf
     \EndFor
     \State {\Return $q_T=q$, $p_T=p$ and $t_q$, $t_p$}
 \end{algorithmic}
 \end{algorithm}
 \begin{algorithm}
-\caption{Backward pass of function $\Phi_T(q_0,p_0,\xi;\theta_q,\theta_p)$ for given timestep size. \textbf{Input:} final states $q_T,p_T$ and stopping times $t_q$, $t_p$ (as computed with \cref{alg:symplectic_integrator_forward_pass_given_dt}), gradients $G_{q,T}=\partial J/\partial q_T$, $G_{p,T}=\partial J/\partial p_T$, final time $T$. \textbf{Output:} gradients $G_{0,T}, G_{0,p}, G_{\xi}, G_{\theta_q}, G_{\theta_p}$.}\label{alg:symplectic_integrator_backward_pass_given_dt}
+\caption{Backward pass of function $\Phi_T(q_0,p_0,\xi;\theta)$ for given timestep size. \textbf{Input:} final states $q_T,p_T$ and stopping times $t_q$, $t_p$ (as computed with \cref{alg:symplectic_integrator_forward_pass_given_dt}), gradients $G_{q,T}=\partial J/\partial q_T$, $G_{p,T}=\partial J/\partial p_T$, final time $T$. \textbf{Output:} gradients $G_{0,T}, G_{0,p}, G_{\xi}, G_{\theta}$.}\label{alg:symplectic_integrator_backward_pass_given_dt}
 \begin{algorithmic}[1]
     \State{Initialise $q\gets q_{T}$, $p \gets p_T$}    
     \State{Initialise $G_q\gets G_{q,T}$, $G_p \gets G_{p,T}$}    
-    \State{Initialise $G_\xi\gets 0$, $G_{\theta_q}\gets 0$, $G_{\theta_p}\gets 0$}
+    \State{Initialise $G_\xi\gets 0$, $G_{\theta}\gets 0$}
     \While {$t_q>0$ and $t_p>0$}
-    \State{Set $t_q = \max\{t_q-\Delta t,0\}$}
-    \State{Set $\Delta t_q = \max\{0,\min\{\Delta t, T-t_q\}\}$}
-    \State{Update $q \gets q-\Delta t_q F_q(p,\xi;\theta_q)$}
-    \For {all variables $v\in \{p,\xi,\theta_q,\theta_p\}$}
-        \State{Update $G_v\gets G_v + \Delta t_q \frac{\partial F_q}{\partial v}(p,\xi;\theta_q,\theta_p)$}
-    \EndFor
     \State{Set $t_p = \max\{t_p-\Delta t,0\}$}
     \State{Set $\Delta t_p = \max\{0,\min\{\Delta t, T-t_p\}\}$}    
-    \State{Update $p \gets p -\Delta t_p F_p(q,\xi;\theta_p)$}
-    \For {all variables $v\in \{q,\xi,\theta_q,\theta_p\}$}
-        \State{Update $G_v\gets G_v + \Delta t_p \frac{\partial F_p}{\partial v}(q,\xi;\theta_q,\theta_p)$}
-    \EndFor    
+    \State{Update $p \gets p -\Delta t_p F_p(q,\xi;\theta)$}
+    \For {all variables $v\in \{q,\xi,\theta\}$}
+        \State{Update $G_v\gets G_v + \Delta t_p \frac{\partial F_p}{\partial v}(q,\xi;\theta)$}
+    \EndFor
+    \State{Set $t_q = \max\{t_q-\Delta t,0\}$}
+    \State{Set $\Delta t_q = \max\{0,\min\{\Delta t, T-t_q\}\}$}
+    \State{Update $q \gets q-\Delta t_q F_q(p,\xi;\theta)$}
+    \For {all variables $v\in \{p,\xi,\theta\}$}
+        \State{Update $G_v\gets G_v + \Delta t_q \frac{\partial F_q}{\partial v}(p,\xi;\theta)$}
+    \EndFor  
     \EndWhile
     \State {Set $G_{q,0}\gets G_q$, $G_{p,0}\gets G_p$}
-    \State {\Return gradients $G_{q,0}$, $G_{p,0}$, $G_\xi$, $G_{\theta_q}$, $G_{\theta_p}$}
+    \State {\Return gradients $G_{q,0}$, $G_{p,0}$, $G_\xi$, $G_{\theta}$}
 \end{algorithmic}
 \end{algorithm}
 \end{document}
