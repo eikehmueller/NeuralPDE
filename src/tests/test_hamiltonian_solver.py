@@ -112,7 +112,7 @@ def naive_solver(hamiltonian, X, t_final, dt):
     return loss
 
 
-def test_hamiltonian_loss_scalar(rng):
+def test_loss_scalar(rng):
     """Check that the loss is computed correctly
 
     This will verify that the forward operator is correct for the scalar version
@@ -130,7 +130,7 @@ def test_hamiltonian_loss_scalar(rng):
     assert np.allclose(loss_autograd.detach(), loss_naive.detach())
 
 
-def test_hamiltonian_loss_batched(rng):
+def test_loss_batched(rng):
     """Check that the loss is computed correctly
 
     This will verify that the forward operator is correct for the batched version
@@ -149,7 +149,7 @@ def test_hamiltonian_loss_batched(rng):
     assert np.allclose(loss_autograd.detach(), loss_naive.detach())
 
 
-def test_hamiltonian_input_gradients_scalar(rng):
+def test_input_gradients_scalar(rng):
     """Check that gradients with respect to inputs is computed correctly
 
     This will verify that the the backward method works as behaved
@@ -170,7 +170,7 @@ def test_hamiltonian_input_gradients_scalar(rng):
     assert np.allclose(grad_autograd, grad_naive)
 
 
-def test_hamiltonian_input_gradients_batched(rng):
+def test_input_gradients_batched(rng):
     """Check that gradients with respect to inputs is computed correctly
 
     This will verify that the the backward method works as behaved
@@ -192,7 +192,7 @@ def test_hamiltonian_input_gradients_batched(rng):
     assert np.allclose(grad_autograd, grad_naive)
 
 
-def test_hamiltonian_parameter_gradients_scalar(rng):
+def test_parameter_gradients_scalar(rng):
     """Check that gradients with respect to model parameters are computed correctly
 
     This will verify that the the backward method works as behaved (scalar version)
@@ -220,7 +220,7 @@ def test_hamiltonian_parameter_gradients_scalar(rng):
         assert np.allclose(g1, g2, rtol=1e-4)
 
 
-def test_hamiltonian_parameter_gradients_batched(rng):
+def test_parameter_gradients_batched(rng):
     """Check that gradients with respect to model parameters are computed correctly
 
     This will verify that the the backward method works as behaved (batched version)
