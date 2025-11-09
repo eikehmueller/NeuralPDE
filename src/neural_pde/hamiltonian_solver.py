@@ -41,10 +41,14 @@ class Hamiltonian(ABC, torch.nn.Module):
     where q, p are d_lat/2 dimensional state vectors and xi is a d_ancil-dimensional ancillary state
     vector.
 
+    We further assume that the Hamiltonian is separable, i.e.
+
+        H(q,p,xi) = H_q(q,xi) + H_p(p,xi)
+
     The equations of motion are
 
-        dq/dt = + dH/dp = F_q
-        dp/dt = - dH/dq = F_p
+        dq/dt = + dH/dp = + dH_p(p,xi) = F_q(p,xi)
+        dp/dt = - dH/dq = - dH_q(q,xi) = F_p(q,xi)
 
     """
 
@@ -60,22 +64,54 @@ class Hamiltonian(ABC, torch.nn.Module):
         self.d_ancil = d_ancil
 
     @abstractmethod
+    def H_q(self, q, xi):
+        """User-defined position-dependent part of Hamiltonian
+
+        :arg q: position
+        :arg xi: ancillary variable
+        """
+        pass
+
+    @abstractmethod
+    def H_p(self, q, xi):
+        """User-defined momentum-dependent part of Hamiltonian
+
+        :arg p: momentum
+        :arg xi: ancillary variable
+        """
+        pass
+
     def F_q(self, p, xi):
         """Forcing function F_q which determines rate of change of q
 
         :arg p: momentum vector, d_lat/2-dimensional
         :arg xi: ancillary vector, d_ancil-dimensional
         """
-        pass
+        p_shape = list(p.shape)
+        p_shape[-1] = 1
+        grad_outputs = torch.ones(size=p_shape)
+        _p = p.detach()
+        _p.requires_grad = True
+        with torch.enable_grad():
+            _H = self.H_p(_p, xi)
+        dH = torch.autograd.grad(_H, _p, grad_outputs=grad_outputs, create_graph=True)
+        return dH[0]
 
-    @abstractmethod
     def F_p(self, q, xi):
         """Forcing function F_p which determines rate of change of p
 
         :arg q: position vector, d_lat/2-dimensional
         :arg xi: ancillary vector, d_ancil-dimensional
         """
-        pass
+        q_shape = list(q.shape)
+        q_shape[-1] = 1
+        grad_outputs = torch.ones(size=q_shape)
+        _q = q.detach()
+        _q.requires_grad = True
+        with torch.enable_grad():
+            _H = self.H_q(_q, xi)
+        dH = torch.autograd.grad(_H, _q, grad_outputs=grad_outputs, create_graph=True)
+        return dH[0]
 
 
 class SymplecticIntegratorFunction(torch.autograd.Function):

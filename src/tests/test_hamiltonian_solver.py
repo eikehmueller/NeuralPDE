@@ -24,8 +24,8 @@ class SimpleHamiltonian(Hamiltonian):
         :arg d_ancil: dimension of ancillary space
         """
         super().__init__(d_lat, d_ancil)
-        self.linear_q = torch.nn.Linear(d_lat // 2 + d_ancil, d_lat // 2)
-        self.linear_p = torch.nn.Linear(d_lat // 2 + d_ancil, d_lat // 2)
+        self.linear_q = torch.nn.Linear(d_lat // 2 + d_ancil, 1)
+        self.linear_p = torch.nn.Linear(d_lat // 2 + d_ancil, 1)
         if rng is not None:
             C_0 = 0.1 / np.sqrt(d_lat // 2 + d_ancil)
             with torch.no_grad():
@@ -36,23 +36,31 @@ class SimpleHamiltonian(Hamiltonian):
                         ).float()
                     )
 
-    def F_q(self, p, xi):
-        """Forcing function F_q which determines rate of change of q
-
-        :arg p: momentum vector, d_lat/2-dimensional
-        :arg xi: ancillary vector, d_ancil-dimensional
-        """
-        x = torch.cat((p, xi), dim=-1)
-        return torch.sigmoid(self.linear_q(x))
-
-    def F_p(self, q, xi):
-        """Forcing function F_p which determines rate of change of p
+    def H_q(self, q, xi):
+        """Position-dependent part of Hamiltonian
 
         :arg q: position vector, d_lat/2-dimensional
         :arg xi: ancillary vector, d_ancil-dimensional
         """
         x = torch.cat((q, xi), dim=-1)
-        return torch.sigmoid(self.linear_p(x))
+        return (
+            1
+            / 2
+            * torch.sum(torch.sigmoid(self.linear_q(x)) ** 2, axis=-1, keepdim=True)
+        )
+
+    def H_p(self, p, xi):
+        """Momentum-dependent part of Hamiltonian
+
+        :arg p: momentum vector, d_lat/2-dimensional
+        :arg xi: ancillary vector, d_ancil-dimensional
+        """
+        x = torch.cat((p, xi), dim=-1)
+        return (
+            1
+            / 2
+            * torch.sum(torch.sigmoid(self.linear_p(x)) ** 2, axis=-1, keepdim=True)
+        )
 
 
 def autograd_solver(hamiltonian, X, t_final, dt):
@@ -217,7 +225,7 @@ def test_parameter_gradients_scalar(rng):
         grad_autograd.append(p.grad.detach())
 
     for g1, g2 in zip(grad_autograd, grad_naive):
-        assert np.allclose(g1, g2, rtol=1e-4)
+        assert np.allclose(g1, g2)
 
 
 def test_parameter_gradients_batched(rng):
@@ -246,4 +254,4 @@ def test_parameter_gradients_batched(rng):
         grad_autograd.append(p.grad.detach())
 
     for g1, g2 in zip(grad_autograd, grad_naive):
-        assert np.allclose(g1, g2, rtol=1e-3)
+        assert np.allclose(g1, g2)
