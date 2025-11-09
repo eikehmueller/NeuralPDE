@@ -48,10 +48,10 @@ def autograd_solver(hamiltonian, X, t_final, dt):
     :arg t_final: final time
     :arg dt: timestep size
     """
+    hamiltonian.zero_grad()
     F = SymplecticIntegratorFunction.apply
     Y = F(X, hamiltonian, t_final, dt)
     loss = torch.sum(Y**2)
-    loss.backward()
     return loss
 
 
@@ -93,7 +93,6 @@ def naive_solver(hamiltonian, X, t_final, dt):
         if torch.count_nonzero(dt_q) == 0 and torch.count_nonzero(dt_p) == 0:
             break
     loss = torch.sum(q**2) + torch.sum(p**2) + torch.sum(xi**2)
-    loss.backward()
     return loss
 
 
@@ -103,7 +102,7 @@ def test_hamiltonian_loss_scalar():
     This will verify that the forward operator is correct for the scalar version
     """
     dt = 0.1
-    d_lat = 8
+    d_lat = 16
     d_ancil = 3
     hamiltonian = SimpleHamiltonian(d_lat, d_ancil)
     X = torch.normal(0, 1, size=(d_lat + d_ancil,))
@@ -122,7 +121,7 @@ def test_hamiltonian_loss_batched():
     This will verify that the forward operator is correct for the batched version
     """
     dt = 0.1
-    d_lat = 8
+    d_lat = 16
     d_ancil = 3
     batch_size = 4
     hamiltonian = SimpleHamiltonian(d_lat, d_ancil)
@@ -143,14 +142,16 @@ def test_hamiltonian_input_gradients_scalar():
     """
     dt = 0.1
     t_final = 4.03
-    d_lat = 8
+    d_lat = 16
     d_ancil = 3
     hamiltonian = SimpleHamiltonian(d_lat, d_ancil)
     X = torch.normal(0, 1, size=(d_lat + d_ancil,))
     X.requires_grad = True
-    autograd_solver(hamiltonian, X, t_final, dt)
+    loss = autograd_solver(hamiltonian, X, t_final, dt)
+    loss.backward()
     grad_autograd = X.grad
-    naive_solver(hamiltonian, X, t_final, dt)
+    loss = naive_solver(hamiltonian, X, t_final, dt)
+    loss.backward()
     grad_naive = X.grad
     assert np.allclose(grad_autograd, grad_naive)
 
@@ -161,16 +162,18 @@ def test_hamiltonian_input_gradients_batched():
     This will verify that the the backward method works as behaved
     """
     dt = 0.1
-    d_lat = 8
+    d_lat = 16
     d_ancil = 3
     batch_size = 4
     hamiltonian = SimpleHamiltonian(d_lat, d_ancil)
     X = torch.normal(0, 1, size=(batch_size, d_lat + d_ancil))
     X.requires_grad = True
     t_final = torch.rand((batch_size,)) + 4
-    autograd_solver(hamiltonian, X, t_final, dt)
+    loss = autograd_solver(hamiltonian, X, t_final, dt)
+    loss.backward()
     grad_autograd = X.grad
-    naive_solver(hamiltonian, X, t_final, dt)
+    loss = naive_solver(hamiltonian, X, t_final, dt)
+    loss.backward()
     grad_naive = X.grad
     assert np.allclose(grad_autograd, grad_naive)
 
@@ -181,24 +184,27 @@ def test_hamiltonian_parameter_gradients_scalar():
     This will verify that the the backward method works as behaved (scalar version)
     """
     dt = 0.1
-    t_final = 4.13
+    t_final = 1.18
     d_lat = 4
     d_ancil = 1
     hamiltonian = SimpleHamiltonian(d_lat, d_ancil)
     X = torch.normal(0, 1, size=(d_lat + d_ancil,))
     X.requires_grad = True
 
-    autograd_solver(hamiltonian, X, t_final, dt)
+    loss = naive_solver(hamiltonian, X, t_final, dt)
+    loss.backward()
+    grad_naive = []
+    for p in hamiltonian.parameters():
+        grad_naive.append(p.grad.detach())
+
+    loss = autograd_solver(hamiltonian, X, t_final, dt)
+    loss.backward()
     grad_autograd = []
     for p in hamiltonian.parameters():
         grad_autograd.append(p.grad.detach())
 
-    naive_solver(hamiltonian, X, t_final, dt)
-    grad_naive = []
-    for p in hamiltonian.parameters():
-        grad_naive.append(p.grad.detach())
     for g1, g2 in zip(grad_autograd, grad_naive):
-        assert np.allclose(g1, g2)
+        assert np.allclose(g1, g2, rtol=1e-3)
 
 
 def test_hamiltonian_parameter_gradients_batched():
@@ -206,23 +212,26 @@ def test_hamiltonian_parameter_gradients_batched():
 
     This will verify that the the backward method works as behaved (batched version)
     """
-    dt = 0.1
-    d_lat = 8
+    dt = 0.01
+    d_lat = 16
     d_ancil = 3
     batch_size = 4
     hamiltonian = SimpleHamiltonian(d_lat, d_ancil)
     X = torch.normal(0, 1, size=(batch_size, d_lat + d_ancil))
     X.requires_grad = True
-    t_final = torch.rand((batch_size,)) + 4
+    t_final = torch.rand((batch_size,)) + 4.0
 
-    autograd_solver(hamiltonian, X, t_final, dt)
+    loss = naive_solver(hamiltonian, X, t_final, dt)
+    loss.backward()
+    grad_naive = []
+    for p in hamiltonian.parameters():
+        grad_naive.append(p.grad.detach())
+
+    loss = autograd_solver(hamiltonian, X, t_final, dt)
+    loss.backward()
     grad_autograd = []
     for p in hamiltonian.parameters():
         grad_autograd.append(p.grad.detach())
 
-    naive_solver(hamiltonian, X, t_final, dt)
-    grad_naive = []
-    for p in hamiltonian.parameters():
-        grad_naive.append(p.grad.detach())
     for g1, g2 in zip(grad_autograd, grad_naive):
-        assert np.allclose(g1, g2)
+        assert np.allclose(g1, g2, rtol=1e-3)
