@@ -36,7 +36,7 @@ class Hamiltonian(ABC, torch.nn.Module):
     separable such that the forcing function can be written as
 
         F_q = F_q(p,xi) = + dH/dp(p,xi)
-        F_p = p_q(p,xi) = - dH/dq(q,xi)
+        F_p = F_q(p,xi) = - dH/dq(q,xi)
 
     where q, p are d_lat/2 dimensional state vectors and xi is a d_ancil-dimensional ancillary state
     vector.
@@ -111,7 +111,7 @@ class Hamiltonian(ABC, torch.nn.Module):
         with torch.enable_grad():
             _H = self.H_q(_q, xi)
         dH = torch.autograd.grad(_H, _q, grad_outputs=grad_outputs, create_graph=True)
-        return dH[0]
+        return -dH[0]
 
 
 class SymplecticIntegratorFunction(torch.autograd.Function):
