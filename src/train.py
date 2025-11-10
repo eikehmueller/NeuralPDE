@@ -1,8 +1,5 @@
 from timeit import default_timer as timer
 from datetime import timedelta
-
-start = timer()
-
 import torch
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
@@ -13,10 +10,12 @@ import tomllib
 import argparse
 import os
 import cProfile
-
 from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header
 from neural_pde.loss_functions import multivariate_normalised_rmse as loss_fn
 from neural_pde.model import build_model, load_model
+
+start = timer()
+
 
 # Create argparse arguments
 parser = argparse.ArgumentParser()
@@ -42,7 +41,7 @@ args, _ = parser.parse_known_args()
 with open(args.config, "rb") as f:
     config = tomllib.load(f)
 print()
-print(f"==== parameters ====")
+print("==== parameters ====")
 print()
 with open(args.config, "r") as f:
     for line in f.readlines():
@@ -50,7 +49,7 @@ with open(args.config, "r") as f:
 
 
 print()
-print(f"==== data ====")
+print("==== data ====")
 print()
 
 show_hdf5_header(config["data"]["train"])
