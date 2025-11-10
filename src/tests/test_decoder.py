@@ -1,7 +1,5 @@
 import torch
 from firedrake import *
-import sys
-sys.path.append("..")
 from neural_pde.icosahedral_dual_mesh import IcosahedralDualMesh
 from neural_pde.decoder import Decoder
 import sys

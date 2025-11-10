@@ -1,8 +1,8 @@
 ### Configuration file for Neural PDE training
 
 [data]
-train = "data/data_train_swes_nref3_tlength0.0_tfinalmax100_repeated.h5" # file containing the training data
-valid = "data/data_valid_swes_nref3_tlength0.0_tfinalmax100_repeated.h5" # file containing the validation data
+train = "data/data_train_swes_nref3_tlength0.0_tfinalmax100.h5" # file containing the training data
+valid = "data/data_valid_swes_nref3_tlength0.0_tfinalmax100.h5" # file containing the validation data
 
 [architecture]
 dual_ref = 1              # number of refinements of dual mesh
@@ -14,7 +14,7 @@ nu = 3                    # number of nearest neighours in decoder
 dt = 0.01                 # Stepsize
 
 [optimiser]
-nepoch = 32                  # number of epochs
+nepoch = 256                  # number of epochs
 batchsize = 32               # size of training batches
 initial_learning_rate = 0.01 # initial learning rate
 final_learning_rate = 0.001  # final learning rate

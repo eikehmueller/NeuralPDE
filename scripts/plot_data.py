@@ -23,7 +23,7 @@ parser.add_argument(
     type=str,
     action="store",
     help="file containing the data",
-    default="data/data_valid_swes_nref3_tlength0.0_tfinalmax1_repeated_start.h5",
+    default="data/data_valid_swes_nref3_tlength0.0_tfinalmax100.h5",
 )
 
 parser.add_argument(
@@ -35,7 +35,7 @@ parser.add_argument(
 args, _ = parser.parse_known_args()
 
 print()
-print(f"==== data ====")
+print("==== data ====")
 print()
 
 show_hdf5_header(args.data)
@@ -113,6 +113,6 @@ wsl_folder3 = '/home/katie795/NeuralPDE_workspace/src/results/output_for_evaluat
 windows_folder = 'C:\\Users\\kathe\\OneDrive\\Desktop\\paraview_data'
 
 if args.move_to_windows:
-    move_files_and_directories(wsl_folder1, windows_folder)
-    move_files_and_directories(wsl_folder2, windows_folder)
-    #move_files_and_directories(wsl_folder3, windows_folder)
+    #move_files_and_directories(wsl_folder1, windows_folder)
+    #move_files_and_directories(wsl_folder2, windows_folder)
+    move_files_and_directories(wsl_folder3, windows_folder)

@@ -3,8 +3,6 @@
 1: check that the projection matrix satisfies trivial matrix permutations
 2: check that  model = decoder(encoder(.)) maps X to X."""
 
-import sys
-sys.path.append("..")
 from firedrake import *
 import torch
 from neural_pde.intergrid import torch_interpolation_tensor

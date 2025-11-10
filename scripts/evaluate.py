@@ -99,13 +99,13 @@ parser.add_argument(
     type=str,
     action="store",
     help="file containing the data",
-    default="data/data_valid_swes_nref3_tlength0.0_tfinalmax100_repeated.h5",
+    default="data/data_valid_swes_nref3_tlength0.0_tfinalmax100.h5",
 )
 
 args, _ = parser.parse_known_args()
 
 print()
-print(f"==== data ====")
+print("==== data ====")
 print()
 
 show_hdf5_header(args.data)
@@ -127,7 +127,7 @@ for (Xv, tv), yv in dataloader:
     loss = metric(yv_pred, yv)
     avg_loss += loss.item() / (dataset.n_samples / batch_size)
 
-print(f"average relative error: {100*avg_loss:6.3f} %")
+print(f"average relative error: {100 * avg_loss:6.3f} %")
 if not os.path.exists(args.output):
     os.makedirs(args.output)
 
@@ -139,7 +139,7 @@ V_DG = FunctionSpace(mesh, "DG", 0)
 dt = config["architecture"]["dt"]
 t = float(dataset.metadata["t_lowest"]) 
 t_final = float(dataset.metadata["t_highest"]) 
-animation_file_nn = VTKFile(os.path.join(args.output, f"animation.pvd"))
+animation_file_nn = VTKFile(os.path.join(args.output, "animation.pvd"))
 #animation_file_pde = VTKFile(os.path.join(args.output, f"animation_pde.pvd"))
 h_pred   = Function(V, name="h")
 div_pred = Function(V, name="div")
@@ -220,24 +220,24 @@ for j, ((X, t), y_target) in enumerate(iter(dataset)):
 
     f_input_d = Function(V, name=f"input_d_t={t:8.4e}")
     f_input_d.dat.data[:] = X.detach().numpy()[0, :]
-    f_input_div = Function(V, name=f"input_div")
+    f_input_div = Function(V, name="input_div")
     f_input_div.dat.data[:] = X.detach().numpy()[1, :]
-    f_input_vor = Function(V, name=f"input_vor")
+    f_input_vor = Function(V, name="input_vor")
     f_input_vor.dat.data[:] = X.detach().numpy()[2, :]
 
     f_target_d = Function(V, name=f"target_d_t={t:8.4e}")
     f_target_d.dat.data[:] = y_target.detach().numpy()[0, :]
-    f_target_div = Function(V, name=f"target_div")
+    f_target_div = Function(V, name="target_div")
     f_target_div.dat.data[:] = y_target.detach().numpy()[1, :]
-    f_target_vor = Function(V, name=f"target_vor")
+    f_target_vor = Function(V, name="target_vor")
     f_target_vor.dat.data[:] = y_target.detach().numpy()[2, :]
 
     f_pred_d = Function(V, name=f"pred_d_t={t:8.4e}")
-    f_pred_d.dat.data[:] = X.detach().numpy()[0, :]
-    f_pred_div = Function(V, name=f"pred_div")
-    f_pred_div.dat.data[:] = X.detach().numpy()[1, :]
-    f_pred_vor = Function(V, name=f"pred_vor")
-    f_pred_vor.dat.data[:] = X.detach().numpy()[2, :]
+    f_pred_d.dat.data[:] = y_pred.detach().numpy()[0, :]
+    f_pred_div = Function(V, name="pred_div")
+    f_pred_div.dat.data[:] = y_pred.detach().numpy()[1, :]
+    f_pred_vor = Function(V, name="pred_vor")
+    f_pred_vor.dat.data[:] = y_pred.detach().numpy()[2, :]
 
     file = VTKFile(os.path.join(args.output, f"dataset/output_{j:04d}.pvd"))
     file.write(f_input_d, f_input_div, f_input_vor, 
