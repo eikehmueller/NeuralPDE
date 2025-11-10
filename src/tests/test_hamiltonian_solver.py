@@ -1,3 +1,4 @@
+import functools
 import numpy as np
 import pytest
 import torch
@@ -10,30 +11,33 @@ from neural_pde.hamiltonian_solver import (
 
 @pytest.fixture
 def rng():
+    """Random number generator with fixed seed to guarantee reproducibility"""
     _rng = np.random.default_rng(seed=3852157)
     return _rng
 
 
 class SimpleHamiltonian(Hamiltonian):
-    """Simple Hamiltonian where the forcing functions are linear maps"""
+    """Simple Hamiltonian used for testing"""
 
-    def __init__(self, d_lat, d_ancil, rng=None):
+    def __init__(self, d_lat, d_ancil, rng=None, dtype=torch.float):
         """Initialise new instance
 
         :arg d_lat: total dimension of state space
         :arg d_ancil: dimension of ancillary space
+        :arg rng: random number generator to use for initialising the weights
+        :arg dtype: data type to use (set to touch.double for testing)
         """
         super().__init__(d_lat, d_ancil)
-        self.linear_q = torch.nn.Linear(d_lat // 2 + d_ancil, 1)
-        self.linear_p = torch.nn.Linear(d_lat // 2 + d_ancil, 1)
+        self.linear_q = torch.nn.Linear(d_lat // 2 + d_ancil, 1, dtype=dtype)
+        self.linear_p = torch.nn.Linear(d_lat // 2 + d_ancil, 1, dtype=dtype)
         if rng is not None:
             C_0 = 0.1 / np.sqrt(d_lat // 2 + d_ancil)
             with torch.no_grad():
                 for p in self.parameters():
                     p.copy_(
-                        torch.tensor(
-                            rng.uniform(low=-C_0, high=+C_0, size=p.shape)
-                        ).float()
+                        torch.tensor(rng.uniform(low=-C_0, high=+C_0, size=p.shape)).to(
+                            dtype
+                        )
                     )
 
     def H_q(self, q, xi):
@@ -198,6 +202,20 @@ def test_input_gradients_batched(rng):
     loss.backward()
     grad_naive = X.grad
     assert np.allclose(grad_autograd, grad_naive)
+
+
+def test_input_gradients_gradcheck(rng):
+    """Use gradcheck to compare gradients to finite differences"""
+    d_lat = 16
+    d_ancil = 3
+    batch_size = 1
+    dt = 0.1
+    t_final = torch.tensor(rng.uniform(low=3, high=4, size=batch_size))
+    hamiltonian = SimpleHamiltonian(d_lat, d_ancil, rng, dtype=torch.double)
+    X = torch.tensor(rng.normal(0, 1, size=(batch_size, d_lat + d_ancil)))
+    X.requires_grad = True
+    Phi = functools.partial(autograd_solver, hamiltonian, t_final=t_final, dt=dt)
+    torch.autograd.gradcheck(Phi, X)
 
 
 def test_parameter_gradients_scalar(rng):
