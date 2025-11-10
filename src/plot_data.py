@@ -23,7 +23,7 @@ parser.add_argument(
     type=str,
     action="store",
     help="file containing the data",
-    default="data/data_test_swes_nref3_tlength0.0_tfinalmax100.h5",
+    default="data/data_valid_swes_nref3_tlength0.0_tfinalmax1_repeated_start.h5",
 )
 
 parser.add_argument(
@@ -51,33 +51,29 @@ if not os.path.exists(args.output):
 
 mesh = UnitIcosahedralSphereMesh(dataset.n_ref)
 V = FunctionSpace(mesh, "CG", 1)
-'''
+
 for j, ((X, t), y_target) in enumerate(iter(dataset)):
     
     t_init = dataset._t_initial[j] 
     t_fina = dataset._t_initial[j] + dataset._t_elapsed[j]
 
     f_input_d = Function(V, name=f"input_d_t={t_init:8.4e}")
-    f_input_d.dat.data[:] = X.detach().numpy()[3, :]
-    f_input_u1 = Function(V, name=f"input_u1")
-    f_input_u1.dat.data[:] = X.detach().numpy()[4, :]
-    f_input_u2 = Function(V, name=f"input_u2")
-    f_input_u2.dat.data[:] = X.detach().numpy()[5, :]
-    f_input_u3 = Function(V, name=f"input_u3")
-    f_input_u3.dat.data[:] = X.detach().numpy()[6, :]
+    f_input_d.dat.data[:] = X.detach().numpy()[0, :]
+    f_input_div = Function(V, name=f"input_div")
+    f_input_div.dat.data[:] = X.detach().numpy()[1, :]
+    f_input_vor = Function(V, name=f"input_vor")
+    f_input_vor.dat.data[:] = X.detach().numpy()[2, :]
 
     f_target_d = Function(V, name=f"target_d_t={t_fina:8.4e}")
     f_target_d.dat.data[:] = y_target.detach().numpy()[0, :]
-    f_target_u1 = Function(V, name=f"target_u1")
-    f_target_u1.dat.data[:] = y_target.detach().numpy()[1, :]
-    f_target_u2 = Function(V, name=f"target_u2")
-    f_target_u2.dat.data[:] = y_target.detach().numpy()[2, :]
-    f_target_u3 = Function(V, name=f"target_u3")
-    f_target_u3.dat.data[:] = y_target.detach().numpy()[3, :]
+    f_target_div = Function(V, name=f"target_div")
+    f_target_div.dat.data[:] = y_target.detach().numpy()[1, :]
+    f_target_vor = Function(V, name=f"target_vor")
+    f_target_vor.dat.data[:] = y_target.detach().numpy()[2, :]
 
-    file = VTKFile(os.path.join(args.output, f"output_{j:04d}.pvd"))
-    file.write(f_input_d, f_input_u1, f_input_u2, f_input_u3, f_target_d, f_target_u1, f_target_u2, f_target_u3)
-'''
+    file = VTKFile(os.path.join(args.output, f"start1_output_{j:04d}.pvd"))
+    file.write(f_input_d, f_input_div, f_input_vor, f_target_d, f_target_div, f_target_vor)
+
 
 ### Move from wsl to windows for paraview ####
 def move_files_and_directories(wsl_folder, windows_folder):
@@ -117,6 +113,6 @@ wsl_folder3 = '/home/katie795/NeuralPDE_workspace/src/results/output_for_evaluat
 windows_folder = 'C:\\Users\\kathe\\OneDrive\\Desktop\\paraview_data'
 
 if args.move_to_windows:
-    #move_files_and_directories(wsl_folder1, windows_folder)
-    #move_files_and_directories(wsl_folder2, windows_folder)
-    move_files_and_directories(wsl_folder3, windows_folder)
+    move_files_and_directories(wsl_folder1, windows_folder)
+    move_files_and_directories(wsl_folder2, windows_folder)
+    #move_files_and_directories(wsl_folder3, windows_folder)

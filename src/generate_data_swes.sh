@@ -18,11 +18,12 @@ python data_generator_swes.py \
     --g ${G} \
     --dt ${DT} \
     --tfinalmax ${TFINALMAX} \
-    --nsamples 4096 \
+    --nsamples 8192 \
     --t_interval ${TINTERVAL} \
     --t_sigma ${TSIGMA} \
     --t_lowest 0 \
     --t_highest ${TSPLIT} \
+    --regenerate_data \ 
 
 python data_generator_swes.py \
     --filename data/data_valid_swes_nref${NREF}_tlength${TINTERVAL}_tfinalmax${TFINALMAX}.h5 \

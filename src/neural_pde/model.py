@@ -98,7 +98,7 @@ class NeuralPDEModel(torch.nn.Module):
         # dynamic encoder model: map all fields to the latent space
         # input:  (n_dynamic+n_ancillary, patch_size)
         # output: (latent_dynamic_dim)
-        n_hidden = 64
+        n_hidden = 128
         dynamic_encoder_model = torch.nn.Sequential(
             torch.nn.Flatten(start_dim=-2, end_dim=-1),
             torch.nn.Linear(
@@ -107,8 +107,10 @@ class NeuralPDEModel(torch.nn.Module):
                 out_features=n_hidden,
             ),
             torch.nn.Softplus(),
-            torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
-            torch.nn.Softplus(),
+            #torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
+            #torch.nn.Softplus(),
+            #torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
+            #torch.nn.Softplus(),
             torch.nn.Linear(
                 in_features=n_hidden,
                 out_features=architecture["latent_dynamic_dim"],
@@ -125,8 +127,10 @@ class NeuralPDEModel(torch.nn.Module):
                 out_features=n_hidden,
             ),
             torch.nn.Softplus(),
-            torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
-            torch.nn.Softplus(),
+            #torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
+            #torch.nn.Softplus(),
+            #torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
+            #torch.nn.Softplus(),
             torch.nn.Linear(
                 in_features=n_hidden,
                 out_features=architecture["latent_ancillary_dim"],
@@ -215,10 +219,12 @@ class NeuralPDEModel(torch.nn.Module):
                     out_features=n_hidden,
                 ),
                 torch.nn.Softplus(),
-                torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
-                torch.nn.Softplus(),
-                torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
-                torch.nn.Softplus(),
+                #torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
+                #torch.nn.Softplus(),
+                #torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
+                #torch.nn.Softplus(),
+                #torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
+                #torch.nn.Softplus(),
                 torch.nn.Linear(
                     in_features=n_hidden,
                     out_features=n_func_target,

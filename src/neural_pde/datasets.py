@@ -515,7 +515,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 
                 # randomly sample the generated data
                 highest  = self.t_highest  / self.dt
-                lowest   = self.t_lowest   / self.dt
+                lowest   = self.t_lowest   / self.dt + 1 # there is an error in gusto at t = 0 in the divergence
                 start = np.random.randint(lowest, highest)
 
                 mu =  start + interval

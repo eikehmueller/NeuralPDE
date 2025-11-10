@@ -99,7 +99,7 @@ parser.add_argument(
     type=str,
     action="store",
     help="file containing the data",
-    default="data/data_test_swes_nref3_tlength0.01_tfinalmax100.h5",
+    default="data/data_valid_swes_nref3_tlength0.0_tfinalmax100_repeated.h5",
 )
 
 args, _ = parser.parse_known_args()
@@ -218,14 +218,28 @@ with open("timing.dat", "w", encoding="utf8") as f:
 for j, ((X, t), y_target) in enumerate(iter(dataset)):
     y_pred = model(X, t)
 
-    f_input = Function(V, name="input")
-    f_input.dat.data[:] = X.detach().numpy()[3, :]
+    f_input_d = Function(V, name=f"input_d_t={t:8.4e}")
+    f_input_d.dat.data[:] = X.detach().numpy()[0, :]
+    f_input_div = Function(V, name=f"input_div")
+    f_input_div.dat.data[:] = X.detach().numpy()[1, :]
+    f_input_vor = Function(V, name=f"input_vor")
+    f_input_vor.dat.data[:] = X.detach().numpy()[2, :]
 
-    f_target = Function(V, name="target")
-    f_target.dat.data[:] = y_target.detach().numpy()[0, :]
+    f_target_d = Function(V, name=f"target_d_t={t:8.4e}")
+    f_target_d.dat.data[:] = y_target.detach().numpy()[0, :]
+    f_target_div = Function(V, name=f"target_div")
+    f_target_div.dat.data[:] = y_target.detach().numpy()[1, :]
+    f_target_vor = Function(V, name=f"target_vor")
+    f_target_vor.dat.data[:] = y_target.detach().numpy()[2, :]
 
-    f_pred = Function(V, name="predicted")
-    f_pred.dat.data[:] = y_pred.detach().numpy()[0, :]
+    f_pred_d = Function(V, name=f"pred_d_t={t:8.4e}")
+    f_pred_d.dat.data[:] = X.detach().numpy()[0, :]
+    f_pred_div = Function(V, name=f"pred_div")
+    f_pred_div.dat.data[:] = X.detach().numpy()[1, :]
+    f_pred_vor = Function(V, name=f"pred_vor")
+    f_pred_vor.dat.data[:] = X.detach().numpy()[2, :]
 
     file = VTKFile(os.path.join(args.output, f"dataset/output_{j:04d}.pvd"))
-    file.write(f_input, f_target, f_pred)
+    file.write(f_input_d, f_input_div, f_input_vor, 
+               f_target_d, f_target_div, f_target_vor,
+                 f_pred_d, f_pred_div, f_pred_vor)
