@@ -1,3 +1,6 @@
+import sys
+sys.path.insert(0, "/home/katie795/NeuralPDE_workspace/data")
+
 from timeit import default_timer as timer
 from datetime import timedelta
 import torch
@@ -16,7 +19,6 @@ from neural_pde.model import build_model, load_model
 
 start = timer()
 
-
 # Create argparse arguments
 parser = argparse.ArgumentParser()
 
@@ -33,7 +35,7 @@ parser.add_argument(
     type=str,
     action="store",
     help="directory to stored trained model in",
-    default="saved_model",
+    default="../saved_model",
 )
 
 args, _ = parser.parse_known_args()
@@ -66,7 +68,8 @@ valid_dl = DataLoader(
     valid_ds, batch_size=config["optimiser"]["batchsize"], drop_last=True
 )
 
-if not os.listdir("saved_model"): # load model or initialise new one
+if not os.listdir(args.model): # load model or initialise new one
+    print('Building model')
     model = build_model(
         train_ds.n_ref,
         train_ds.n_func_in_dynamic,
@@ -75,6 +78,7 @@ if not os.listdir("saved_model"): # load model or initialise new one
         config["architecture"],
     )
 else:
+    print('Loading model')
     model = load_model(args.model)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

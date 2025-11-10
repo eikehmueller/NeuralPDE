@@ -1,0 +1,18 @@
+2025-11-10 16:01:26,670 INFO     Running data_generator_swes.py --filename data/data_train_swes_nref3_tlength0.0_tfinalmax1.h5 --nref 3 --omega 1e-4 --g 9.8 --dt 0.01 --tfinalmax 1 --nsamples 4096 --t_interval 0.0 --t_sigma 0.0 --t_lowest 0 --t_highest 80
+2025-11-10 16:01:26,985 ERROR    Gusto is logging this unhandled exception:
+Traceback (most recent call last):
+  File "/home/katie795/NeuralPDE_workspace/scripts/data_generator_swes.py", line 153, in <module>
+    dataset.prepare_for_model()
+  File "/home/katie795/NeuralPDE_workspace/src/neural_pde/datasets.py", line 481, in prepare_for_model
+    with CheckpointFile("/home/katie795/NeuralPDE_workspace/scripts/results/gusto_output/chkpt.h5", 'r') as afile:
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/firedrake/checkpointing.py", line 558, in __exit__
+    self.close()
+  File "/home/katie795/software/venv-firedrake/lib/python3.12/site-packages/firedrake/checkpointing.py", line 1727, in close
+    self.viewer.destroy()
+  File "petsc4py/PETSc/Viewer.pyx", line 176, in petsc4py.PETSc.Viewer.destroy
+petsc4py.PETSc.Error: error code 76
+[0] PetscViewerDestroy() at /home/katie795/software/petsc/src/sys/classes/viewer/interface/view.c:101
+[0] PetscViewerDestroy_HDF5() at /home/katie795/software/petsc/src/sys/classes/viewer/impls/hdf5/hdf5v.c:126
+[0] PetscViewerFileClose_HDF5() at /home/katie795/software/petsc/src/sys/classes/viewer/impls/hdf5/hdf5v.c:107
+[0] Error in external library
+[0] Error in HDF5 call H5Fclose() Status -1

@@ -11,9 +11,8 @@ import sys
 sys.path.append("/home/katie795/software/gusto/gusto")
 from gusto import (
     lonlatr_from_xyz, ShallowWaterParameters, ShallowWaterEquations, Domain,
-    OutputParameters, MeridionalComponent, ZonalComponent,
-    IO, SSPRK3, DGUpwind, SemiImplicitQuasiNewton, RelativeVorticity,
-    SteadyStateError, Divergence)
+    OutputParameters,
+    IO, SSPRK3, DGUpwind, SemiImplicitQuasiNewton, RelativeVorticity, Divergence)
 
 import diagnostics as dg
 from firedrake import (
@@ -479,7 +478,8 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         '''
         start_timer1 = timer()
 
-        with CheckpointFile("results/gusto_output/chkpt.h5", 'r') as afile:
+        with CheckpointFile('/home/katie795/NeuralPDE_workspace/scripts/results/gusto_output/chkpt.h5', 'r') as afile:
+            print('we have opened the checkpoint file')
             mesh_h5 = afile.load_mesh("IcosahedralMesh")
             V_BDM = FunctionSpace(mesh_h5, "BDM", 2)
             V_DG = FunctionSpace(mesh_h5, "DG", 1)
@@ -495,7 +495,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
             diagnostics = dg.Diagnostics(V_BDM, V_CG)
             if self.save_diagnostics:
-                file = VTKFile(f"results/gusto_output/diagnostics.pvd")
+                file = VTKFile("results/gusto_output/diagnostics.pvd")
                 
                 for i in range(nt):
                     u_func = [Function(V_CG) for _ in range(3)]

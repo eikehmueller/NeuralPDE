@@ -1,0 +1,11 @@
+2025-11-10 16:03:51,649 INFO     Running data_generator_swes.py --filename data/data_test_swes_nref3_tlength0.0_tfinalmax1.h5 --nref 3 --omega 1e-4 --g 9.8 --dt 0.01 --tfinalmax 1 --nsamples 128 --t_interval 0.0 --t_sigma 0.0 --t_lowest 80 --t_highest 1
+2025-11-10 16:03:51,924 ERROR    Gusto is logging this unhandled exception:
+Traceback (most recent call last):
+  File "/home/katie795/NeuralPDE_workspace/scripts/data_generator_swes.py", line 153, in <module>
+    dataset.prepare_for_model()
+  File "/home/katie795/NeuralPDE_workspace/src/neural_pde/datasets.py", line 518, in prepare_for_model
+    start = np.random.randint(lowest, highest)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "numpy/random/mtrand.pyx", line 796, in numpy.random.mtrand.RandomState.randint
+  File "numpy/random/_bounded_integers.pyx", line 1334, in numpy.random._bounded_integers._rand_int64
+ValueError: low >= high
