@@ -9,7 +9,8 @@ tb_logs/
 *.vtu
 *.h5
 *.nc
-src/runs/
-src/data/
-src/results/
+runs/
+data/
+results/
 
+results/runs/events.out.tfevents.1762854704.katiesthinkpad.32250.0

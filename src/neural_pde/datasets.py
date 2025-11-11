@@ -272,8 +272,8 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
             self._data[j, 7, :] = self._u.dat.data
             self._t_elapsed[j] = t_final
 
-        #self.mean = torch.mean(self._data[:, 0, 0]) 
-        #self.std = torch.std(self._data[:, 0, 0])
+        self.mean = torch.mean(self._data[:, 0, :], dim=1) 
+        self.std = torch.std(self._data[:, 0, :], dim=1)
 
 
 
@@ -357,9 +357,9 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         :arg omega: rotation speed
         :arg g: gravitational acceleration 
         """
-        n_func_in_dynamic = 3   # fixed for swes
-        n_func_in_ancillary = 3 # x y and z coordinates
-        n_func_target = 3       # fixed for swes
+        self.n_func_in_dynamic = 3   # fixed for swes
+        self.n_func_in_ancillary = 3 # x y and z coordinates
+        self.n_func_target = 3       # fixed for swes
 
         self.omega = omega
         self.g = g
@@ -367,7 +367,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
         # initialise with the SphericalFunctionSpaceData
         super().__init__(
-            n_func_in_dynamic, n_func_in_ancillary, n_func_target, n_ref, nsamples
+            self.n_func_in_dynamic, self.n_func_in_ancillary, self.n_func_target, n_ref, nsamples
         )
 
         self.metadata = {
@@ -561,8 +561,8 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 self._t_initial[j]  = start * self.dt
                 self._t_elapsed[j]  = (end - start) * self.dt
 
-        #self.mean = torch.mean(self._data[:, :, 0], dim=1)
-        #self.std  = torch.std(self._data[:, :, 0], dim=1)
+        self.mean = torch.mean(self._data[:, 0 : self.n_func_in_dynamic, :], dim=1)
+        self.std  = torch.std(self._data[:, 0 : self.n_func_in_dynamic, :], dim=1)
         end_timer1 = timer()
         print(f"Training, validation and test data runtime: {timedelta(seconds=end_timer1-start_timer1)}")
         return

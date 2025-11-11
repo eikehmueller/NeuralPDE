@@ -58,7 +58,7 @@ class NeuralPDEModel(torch.nn.Module):
         self.initialised = False
 
     def setup(
-        self, n_ref, n_func_in_dynamic, n_func_in_ancillary, n_func_target, architecture,
+        self, n_ref, n_func_in_dynamic, n_func_in_ancillary, n_func_target, architecture, mean=1, std=1
     ):
         """
         Initialise new instance with model
@@ -71,6 +71,8 @@ class NeuralPDEModel(torch.nn.Module):
         """
         assert not self.initialised
         self.architecture = architecture
+        self.mean = mean
+        self.std = std
         self.dimensions = dict(
             n_ref=n_ref,
             n_func_in_dynamic=n_func_in_dynamic,
@@ -249,14 +251,16 @@ class NeuralPDEModel(torch.nn.Module):
         :arg x: input tensor of shape (batch_size, n_func_in_dynamic + n_func_in_ancillary, n_vertex)
         :arg t_final: final time for each sample, tensor of shape (batch_size,)
         """
-        y = self.PatchEncoder(x)
+        x_normalised = x / (self.mean * self.std)
+        y = self.PatchEncoder(x_normalised)
         z = self.NeuralSolver(y, t_final)
         if hasattr(self, "PatchDecoder"):
             w = self.PatchDecoder(z)
         if hasattr(self, "Decoder"):
             x_ancil = x[..., self.dimensions["n_func_in_dynamic"] :, :]
             w = self.Decoder(z, x_ancil)
-        return w
+            w_final = w * (self.mean * self.std)
+        return w_final
 
     def save(self, directory):
         """Save model to disk
