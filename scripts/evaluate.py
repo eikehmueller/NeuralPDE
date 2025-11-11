@@ -9,7 +9,6 @@ import tomllib
 import argparse
 import numpy as np
 from diagnostics import Diagnostics
-
 from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header, Projector
 from neural_pde.loss_functions import multivariate_normalised_rmse as metric
 from neural_pde.model import load_model
@@ -83,7 +82,7 @@ parser.add_argument(
     type=str,
     action="store",
     help="path to output folder",
-    default="results/output_for_evaluation",
+    default="../results/output_for_evaluation",
 )
 
 parser.add_argument(
@@ -91,7 +90,7 @@ parser.add_argument(
     type=str,
     action="store",
     help="directory containing the trained model",
-    default="saved_model",
+    default="../saved_model",
 )
 
 parser.add_argument(
@@ -99,7 +98,7 @@ parser.add_argument(
     type=str,
     action="store",
     help="file containing the data",
-    default="data/data_valid_swes_nref3_tlength0.0_tfinalmax100.h5",
+    default="../data/data_test_nref3_0.h5",
 )
 
 args, _ = parser.parse_known_args()

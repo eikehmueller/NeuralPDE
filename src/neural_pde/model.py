@@ -37,6 +37,7 @@ def build_model(
     return model
 
 
+
 def load_model(directory):
     """Load model from disk
 
@@ -57,7 +58,7 @@ class NeuralPDEModel(torch.nn.Module):
         self.initialised = False
 
     def setup(
-        self, n_ref, n_func_in_dynamic, n_func_in_ancillary, n_func_target, architecture
+        self, n_ref, n_func_in_dynamic, n_func_in_ancillary, n_func_target, architecture,
     ):
         """
         Initialise new instance with model
@@ -98,7 +99,7 @@ class NeuralPDEModel(torch.nn.Module):
         # dynamic encoder model: map all fields to the latent space
         # input:  (n_dynamic+n_ancillary, patch_size)
         # output: (latent_dynamic_dim)
-        n_hidden = 128
+        n_hidden = 256
         dynamic_encoder_model = torch.nn.Sequential(
             torch.nn.Flatten(start_dim=-2, end_dim=-1),
             torch.nn.Linear(
@@ -185,8 +186,8 @@ class NeuralPDEModel(torch.nn.Module):
                     out_features=n_hidden,
                 ),
                 torch.nn.Softplus(),
-                torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
-                torch.nn.Softplus(),
+                #torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
+                #torch.nn.Softplus(),
                 torch.nn.Linear(
                     in_features=n_hidden,
                     out_features=n_func_target * spherical_patch_covering.patch_size,
@@ -248,7 +249,6 @@ class NeuralPDEModel(torch.nn.Module):
         :arg x: input tensor of shape (batch_size, n_func_in_dynamic + n_func_in_ancillary, n_vertex)
         :arg t_final: final time for each sample, tensor of shape (batch_size,)
         """
-
         y = self.PatchEncoder(x)
         z = self.NeuralSolver(y, t_final)
         if hasattr(self, "PatchDecoder"):

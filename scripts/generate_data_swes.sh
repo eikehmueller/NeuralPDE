@@ -1,5 +1,5 @@
 #!/bin/bash
-mkdir -p data/
+mkdir -p ../data/
 
 NREF=3
 OMEGA=1e-4

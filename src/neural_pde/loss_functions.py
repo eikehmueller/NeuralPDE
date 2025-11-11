@@ -2,7 +2,7 @@
 
 import torch
 
-__all__ = ["normalised_mse", "normalised_rmse"]
+__all__ = ["normalised_mse", "normalised_rmse", "multivariate_normalised_rmse", "normalised_absolute_error"]
 
 
 def normalised_mse(y_pred, y_target):
@@ -105,18 +105,3 @@ def normalised_absolute_error(y_pred, y_target):
             / torch.sum(torch.abs(y_target), dim=(1, 2))
     )
     return loss
-
-'''
-test_tensor = torch.rand((16, 3, 7))
-test_tensor2 = torch.rand((16, 3, 7))
-
-test_tensor[:,0,:] = 1000 * test_tensor[:,0,:] 
-test_tensor[:,1,:] = 0.001 * test_tensor[:,0,:] 
-
-print(test_tensor)
-summed = torch.sum((test_tensor - test_tensor2)**2, dim=2)
-normalised = summed / torch.sum(test_tensor**2, dim=2)
-mean = torch.mean(torch.sqrt(normalised), dim=0)
-
-print(torch.mean(mean))
-'''

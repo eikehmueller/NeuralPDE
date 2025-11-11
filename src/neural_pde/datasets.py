@@ -3,17 +3,9 @@ import numpy as np
 from scipy.stats import truncnorm
 import json
 import h5py
-
 import tqdm
 from torch.utils.data import Dataset
 import itertools
-import sys
-sys.path.append("/home/katie795/software/gusto/gusto")
-from gusto import (
-    lonlatr_from_xyz, ShallowWaterParameters, ShallowWaterEquations, Domain,
-    OutputParameters,
-    IO, SSPRK3, DGUpwind, SemiImplicitQuasiNewton, RelativeVorticity, Divergence)
-
 import diagnostics as dg
 from firedrake import (
     FunctionSpace,
@@ -24,6 +16,10 @@ from firedrake import (
 from firedrake import *
 from timeit import default_timer as timer
 from datetime import timedelta
+#import sys
+#sys.path.append("/home/katie795/software/gusto/gusto")
+from gusto import (lonlatr_from_xyz, ShallowWaterParameters, ShallowWaterEquations, Domain,
+    OutputParameters, IO, SSPRK3, DGUpwind, SemiImplicitQuasiNewton, RelativeVorticity, Divergence)
 
 __all__ = [
     "show_hdf5_header",
@@ -206,7 +202,7 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
         :arg degree: polynomial degree used for generating random fields
         :arg seed: seed of rng
         """
-        n_func_in_dynamic = 4
+        n_func_in_dynamic = 1
         n_func_in_ancillary = 3
         n_func_target = 1
         super().__init__(
@@ -230,6 +226,7 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
             seed
         )  # removing the seed seems to make it slower
         self.nt = 1
+
 
     def generate(self):
         """Generate the data"""
@@ -274,6 +271,9 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
             self._u.interpolate(expr_target)
             self._data[j, 7, :] = self._u.dat.data
             self._t_elapsed[j] = t_final
+
+        #self.mean = torch.mean(self._data[:, 0, 0]) 
+        #self.std = torch.std(self._data[:, 0, 0])
 
 
 
@@ -422,12 +422,13 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         eqns = ShallowWaterEquations(domain, parameters)
 
         # output options 
-        output = OutputParameters(dirname="gusto_output", dump_vtus=True, dump_nc=True, dump_diagnostics=True, dumpfreq=1, checkpoint=True, chkptfreq=1, multichkpt=True) # these have been modified so we get no output
+        output = OutputParameters(dumpdir="../results/gusto_output", dump_vtus=True, dump_nc=True, dump_diagnostics=True, dumpfreq=1, checkpoint=True, chkptfreq=1, multichkpt=True) # these have been modified so we get no output
 
         # choose which fields to record over the simulation
         #diagnostic_fields = [MeridionalComponent('u'), ZonalComponent('u'), SteadyStateError('D')]
         diagnostic_fields = [Divergence('u'), RelativeVorticity()]
         io = IO(domain, output, diagnostic_fields=diagnostic_fields)
+        io.dumpdir = "../results/gusto_output"
 
         # the methods to solve the equations
         transported_fields = [SSPRK3(domain, "u"), SSPRK3(domain, "D")]
@@ -559,6 +560,9 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 # time data
                 self._t_initial[j]  = start * self.dt
                 self._t_elapsed[j]  = (end - start) * self.dt
+
+        #self.mean = torch.mean(self._data[:, :, 0], dim=1)
+        #self.std  = torch.std(self._data[:, :, 0], dim=1)
         end_timer1 = timer()
         print(f"Training, validation and test data runtime: {timedelta(seconds=end_timer1-start_timer1)}")
         return

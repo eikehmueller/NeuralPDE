@@ -1,7 +1,0 @@
-2025-11-10 16:24:05,067 INFO     Running train.py
-2025-11-10 16:24:05,239 ERROR    Gusto is logging this unhandled exception:
-Traceback (most recent call last):
-  File "/home/katie795/NeuralPDE_workspace/scripts/train.py", line 71, in <module>
-    if not os.listdir("saved_model"): # load model or initialise new one
-           ^^^^^^^^^^^^^^^^^^^^^^^^^
-FileNotFoundError: [Errno 2] No such file or directory: 'saved_model'

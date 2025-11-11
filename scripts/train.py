@@ -94,7 +94,7 @@ gamma = (
 ) ** (1 / config["optimiser"]["nepoch"])
 scheduler = torch.optim.lr_scheduler.ExponentialLR(optimiser, gamma=gamma)
 
-writer = SummaryWriter(flush_secs=5)
+writer = SummaryWriter('../results/runs', flush_secs=5)
 writer.add_text("Model parameters", f"Refinements of dual space: {config["architecture"]["dual_ref"]}\n \
 No. radial points per patch: {config["architecture"]["n_radial"]} \n \
 Dimension of dynamic latent space: {config["architecture"]["latent_dynamic_dim"]} \n \
