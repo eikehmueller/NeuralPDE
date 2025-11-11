@@ -58,7 +58,7 @@ class NeuralPDEModel(torch.nn.Module):
         self.initialised = False
 
     def setup(
-        self, n_ref, n_func_in_dynamic, n_func_in_ancillary, n_func_target, architecture, mean=1, std=1
+        self, n_ref, n_func_in_dynamic, n_func_in_ancillary, n_func_target, architecture,
     ):
         """
         Initialise new instance with model
@@ -71,8 +71,6 @@ class NeuralPDEModel(torch.nn.Module):
         """
         assert not self.initialised
         self.architecture = architecture
-        self.mean = mean
-        self.std = std
         self.dimensions = dict(
             n_ref=n_ref,
             n_func_in_dynamic=n_func_in_dynamic,
@@ -101,7 +99,7 @@ class NeuralPDEModel(torch.nn.Module):
         # dynamic encoder model: map all fields to the latent space
         # input:  (n_dynamic+n_ancillary, patch_size)
         # output: (latent_dynamic_dim)
-        n_hidden = 256
+        n_hidden = 128
         dynamic_encoder_model = torch.nn.Sequential(
             torch.nn.Flatten(start_dim=-2, end_dim=-1),
             torch.nn.Linear(
@@ -251,16 +249,15 @@ class NeuralPDEModel(torch.nn.Module):
         :arg x: input tensor of shape (batch_size, n_func_in_dynamic + n_func_in_ancillary, n_vertex)
         :arg t_final: final time for each sample, tensor of shape (batch_size,)
         """
-        x_normalised = x / (self.mean * self.std)
-        y = self.PatchEncoder(x_normalised)
+        
+        y = self.PatchEncoder(x)
         z = self.NeuralSolver(y, t_final)
         if hasattr(self, "PatchDecoder"):
             w = self.PatchDecoder(z)
         if hasattr(self, "Decoder"):
             x_ancil = x[..., self.dimensions["n_func_in_dynamic"] :, :]
             w = self.Decoder(z, x_ancil)
-            w_final = w * (self.mean * self.std)
-        return w_final
+        return w
 
     def save(self, directory):
         """Save model to disk

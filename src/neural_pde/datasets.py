@@ -6,7 +6,7 @@ import h5py
 import tqdm
 from torch.utils.data import Dataset
 import itertools
-import diagnostics as dg
+import neural_pde.diagnostics as dg
 from firedrake import (
     FunctionSpace,
     Function,
@@ -95,6 +95,8 @@ class SphericalFunctionSpaceDataset(Dataset):
         data=None,
         t_initial=None,
         t_elapsed=None,
+        mean=None,
+        std=None,
         metadata=None,
         dtype=None,
     ):
@@ -138,6 +140,16 @@ class SphericalFunctionSpaceDataset(Dataset):
         self._t_elapsed = (
             np.empty(self.n_samples, dtype=np.float64) if t_elapsed is None else t_elapsed
         )
+        self.mean = (
+            np.empty(self.n_func_in_dynamic
+                    + self.n_func_in_ancillary
+                    + self.n_func_target, dtype=np.float64) if t_elapsed is None else t_elapsed
+        )
+        self.std = (
+            np.empty(self.n_func_in_dynamic
+                    + self.n_func_in_ancillary
+                    + self.n_func_target, dtype=np.float64) if t_elapsed is None else t_elapsed
+        )
 
         self.metadata = {} if metadata is None else metadata
 
@@ -173,6 +185,8 @@ class SphericalFunctionSpaceDataset(Dataset):
             group.create_dataset("data", data=self._data)
             group.create_dataset("t_initial", data=self._t_initial)
             group.create_dataset("t_elapsed", data=self._t_elapsed)
+            group.create_dataset("mean", data=self.mean)
+            group.create_dataset("std", data=self.std)
             f.attrs["n_func_in_dynamic"] = int(self.n_func_in_dynamic)
             f.attrs["n_func_in_ancillary"] = int(self.n_func_in_ancillary)
             f.attrs["n_func_target"] = int(self.n_func_target)
@@ -202,7 +216,7 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
         :arg degree: polynomial degree used for generating random fields
         :arg seed: seed of rng
         """
-        n_func_in_dynamic = 1
+        n_func_in_dynamic = 3
         n_func_in_ancillary = 3
         n_func_target = 1
         super().__init__(
@@ -272,8 +286,9 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
             self._data[j, 7, :] = self._u.dat.data
             self._t_elapsed[j] = t_final
 
-        self.mean = torch.mean(self._data[:, 0, :], dim=1) 
-        self.std = torch.std(self._data[:, 0, :], dim=1)
+        self.mean = np.mean(self._data[:, 0, :], axis=1)
+        self.std = np.std(self._data[:, 0, :], axis=1)
+        return
 
 
 
@@ -374,8 +389,10 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
             "omega": f"{self.omega:}",
             "t_final_max": f"{t_final_max:}",
             "t_lowest": f"{t_lowest}",
-            "t_highest": f"{t_highest}"
+            "t_highest": f"{t_highest}",
         }
+        self.mean = np.mean(self._data, axis=1)
+        self.std  = np.std(self._data, axis=1)
 
         self.dt = dt # number of timesteps
         self.t_final_max = t_final_max # final time
@@ -402,7 +419,6 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         T0 = 12 * 24 * 60 * 60 / (2 * pi * R) # characteristic time scale - scales umax to 1
 
         element_order = 1 # CG method
-        #dt = self.t_final_max / self.nt # Timestep
 
         # BDM means Brezzi-Douglas-Marini finite element basis function
         domain = Domain(self.mesh, self.dt, 'BDM', element_order)
@@ -422,13 +438,12 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         eqns = ShallowWaterEquations(domain, parameters)
 
         # output options 
-        output = OutputParameters(dumpdir="../results/gusto_output", dump_vtus=True, dump_nc=True, dump_diagnostics=True, dumpfreq=1, checkpoint=True, chkptfreq=1, multichkpt=True) # these have been modified so we get no output
+        output = OutputParameters(dirname="gusto_output", dump_vtus=True, dump_nc=True, dump_diagnostics=True, dumpfreq=1, checkpoint=True, chkptfreq=1, multichkpt=True) # these have been modified so we get no output
 
         # choose which fields to record over the simulation
         #diagnostic_fields = [MeridionalComponent('u'), ZonalComponent('u'), SteadyStateError('D')]
         diagnostic_fields = [Divergence('u'), RelativeVorticity()]
         io = IO(domain, output, diagnostic_fields=diagnostic_fields)
-        io.dumpdir = "../results/gusto_output"
 
         # the methods to solve the equations
         transported_fields = [SSPRK3(domain, "u"), SSPRK3(domain, "D")]
@@ -561,8 +576,6 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 self._t_initial[j]  = start * self.dt
                 self._t_elapsed[j]  = (end - start) * self.dt
 
-        self.mean = torch.mean(self._data[:, 0 : self.n_func_in_dynamic, :], dim=1)
-        self.std  = torch.std(self._data[:, 0 : self.n_func_in_dynamic, :], dim=1)
         end_timer1 = timer()
         print(f"Training, validation and test data runtime: {timedelta(seconds=end_timer1-start_timer1)}")
         return

@@ -60,6 +60,12 @@ show_hdf5_header(config["data"]["valid"])
 print()
 train_ds = load_hdf5_dataset(config["data"]["train"])
 valid_ds = load_hdf5_dataset(config["data"]["valid"])
+X_mean = torch.from_numpy(train_ds.mean[:train_ds.n_func_in_ancillary + train_ds.n_func_in_dynamic]).unsqueeze(0).unsqueeze(2).repeat(config["optimiser"]["batchsize"], 1, 642)
+y_mean = torch.from_numpy(train_ds.mean[train_ds.n_func_in_ancillary + train_ds.n_func_in_dynamic:]).unsqueeze(0).unsqueeze(2).repeat(config["optimiser"]["batchsize"], 1, 642)
+X_std  = torch.from_numpy(train_ds.std[:train_ds.n_func_in_ancillary + train_ds.n_func_in_dynamic]).unsqueeze(0).unsqueeze(2).repeat(config["optimiser"]["batchsize"], 1, 642)
+y_std  = torch.from_numpy(train_ds.std[train_ds.n_func_in_ancillary + train_ds.n_func_in_dynamic:]).unsqueeze(0).unsqueeze(2).repeat(config["optimiser"]["batchsize"], 1, 642)
+
+print(y_mean.size())
 
 train_dl = DataLoader(
     train_ds, batch_size=config["optimiser"]["batchsize"], shuffle=True, drop_last=True
@@ -108,9 +114,9 @@ for epoch in range(config["optimiser"]["nepoch"]):
     train_loss = 0
     model.train(True)
     for (Xb, tb), yb in tqdm.tqdm(train_dl):
-        Xb = Xb.to(device)  # move to GPU
-        tb = tb.to(device)  # move to GPU
-        yb = yb.to(device)  # move to GPU
+        Xb = (Xb.to(device) - X_mean) / X_std 
+        yb = (yb.to(device) - y_mean) / y_std 
+        tb = tb.to(device)  
         y_pred = model(Xb, tb)  # make a prediction
         optimiser.zero_grad()  # resets all of the gradients to zero, otherwise the gradients are accumulated
         loss = loss_fn(y_pred, yb)  # calculate the loss
@@ -126,9 +132,9 @@ for epoch in range(config["optimiser"]["nepoch"]):
     model.train(False)
     valid_loss = 0
     for (Xv, tv), yv in valid_dl:
-        Xv = Xv.to(device)  # move to GPU
+        Xv = (Xv.to(device) - X_mean) / X_std   # move to GPU
+        yv = (yv.to(device) - y_mean) / y_std   # move to GPU
         tv = tv.to(device)  # move to GPU
-        yv = yv.to(device)  # move to GPU
         yv_pred = model(Xv, tv)  # make a prediction
         loss = loss_fn(yv_pred, yv)  # calculate the loss
         valid_loss += loss.item() / (

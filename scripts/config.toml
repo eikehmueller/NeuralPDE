@@ -1,8 +1,8 @@
 ### Configuration file for Neural PDE training
 
 [data]
-train = "../data/data_train_nref3_0.h5" # file containing the training data
-valid = "../data/data_valid_nref3_0.h5" # file containing the validation data
+train = "../data/data_train_swes_nref3_tlength0.0_tfinalmax1.h5" # file containing the training data
+valid = "../data/data_valid_swes_nref3_tlength0.0_tfinalmax1.h5" # file containing the validation data
 
 [architecture]
 dual_ref = 1              # number of refinements of dual mesh

@@ -8,7 +8,7 @@ import time
 import tomllib
 import argparse
 import numpy as np
-from diagnostics import Diagnostics
+from neural_pde.diagnostics import Diagnostics
 from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header, Projector
 from neural_pde.loss_functions import multivariate_normalised_rmse as metric
 from neural_pde.model import load_model
