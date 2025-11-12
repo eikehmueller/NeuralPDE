@@ -252,11 +252,13 @@ class NeuralPDEModel(torch.nn.Module):
         
         y = self.PatchEncoder(x)
         z = self.NeuralSolver(y, t_final)
+
         if hasattr(self, "PatchDecoder"):
             w = self.PatchDecoder(z)
         if hasattr(self, "Decoder"):
             x_ancil = x[..., self.dimensions["n_func_in_dynamic"] :, :]
             w = self.Decoder(z, x_ancil)
+            print(f'w is {w[0][0][0]}')
         return w
 
     def save(self, directory):

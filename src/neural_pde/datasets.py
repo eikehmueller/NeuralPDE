@@ -143,12 +143,12 @@ class SphericalFunctionSpaceDataset(Dataset):
         self.mean = (
             np.empty(self.n_func_in_dynamic
                     + self.n_func_in_ancillary
-                    + self.n_func_target, dtype=np.float64) if t_elapsed is None else t_elapsed
+                    + self.n_func_target, dtype=np.float32) if mean is None else mean
         )
         self.std = (
             np.empty(self.n_func_in_dynamic
                     + self.n_func_in_ancillary
-                    + self.n_func_target, dtype=np.float64) if t_elapsed is None else t_elapsed
+                    + self.n_func_target, dtype=np.float32) if std is None else std
         )
 
         self.metadata = {} if metadata is None else metadata
@@ -391,9 +391,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
             "t_lowest": f"{t_lowest}",
             "t_highest": f"{t_highest}",
         }
-        self.mean = np.mean(self._data, axis=1)
-        self.std  = np.std(self._data, axis=1)
-
+    
         self.dt = dt # number of timesteps
         self.t_final_max = t_final_max # final time
         self.t_interval = t_interval # the expected
@@ -575,6 +573,11 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 # time data
                 self._t_initial[j]  = start * self.dt
                 self._t_elapsed[j]  = (end - start) * self.dt
+        
+        self.mean = np.mean(self._data, axis=(0,2))
+        self.std  = np.std(self._data, axis=(0,2))
+        print(f'Mean is {self.mean}')
+        print(f'Std is {self.std}')
 
         end_timer1 = timer()
         print(f"Training, validation and test data runtime: {timedelta(seconds=end_timer1-start_timer1)}")

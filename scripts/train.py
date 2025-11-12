@@ -14,7 +14,7 @@ import argparse
 import os
 import cProfile
 from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header
-from neural_pde.loss_functions import multivariate_normalised_rmse as loss_fn
+from neural_pde.loss_functions import rmse as loss_fn
 from neural_pde.model import build_model, load_model
 
 start = timer()
@@ -65,6 +65,22 @@ y_mean = torch.from_numpy(train_ds.mean[train_ds.n_func_in_ancillary + train_ds.
 X_std  = torch.from_numpy(train_ds.std[:train_ds.n_func_in_ancillary + train_ds.n_func_in_dynamic]).unsqueeze(0).unsqueeze(2).repeat(config["optimiser"]["batchsize"], 1, 642)
 y_std  = torch.from_numpy(train_ds.std[train_ds.n_func_in_ancillary + train_ds.n_func_in_dynamic:]).unsqueeze(0).unsqueeze(2).repeat(config["optimiser"]["batchsize"], 1, 642)
 
+
+print(train_ds.mean)
+print(train_ds.std)
+
+X_mean = X_mean.to(torch.float32)
+y_mean = y_mean.to(torch.float32)
+X_std = X_std.to(torch.float32)
+y_std = y_std.to(torch.float32)
+
+print(torch.max(X_mean))
+print(torch.max(y_mean))
+print(torch.max(X_std))
+print(torch.max(y_std))
+
+print((X_mean.dtype))
+print(X_mean.size())
 print(y_mean.size())
 
 train_dl = DataLoader(
@@ -114,12 +130,14 @@ for epoch in range(config["optimiser"]["nepoch"]):
     train_loss = 0
     model.train(True)
     for (Xb, tb), yb in tqdm.tqdm(train_dl):
-        Xb = (Xb.to(device) - X_mean) / X_std 
-        yb = (yb.to(device) - y_mean) / y_std 
+        Xb = (Xb.to(device) - X_mean.to(device)) / X_std.to(device)
+        yb = (yb.to(device) - y_mean.to(device)) / y_std.to(device)
         tb = tb.to(device)  
         y_pred = model(Xb, tb)  # make a prediction
+        print(f'ypred is {y_pred[0][0][0]}')
         optimiser.zero_grad()  # resets all of the gradients to zero, otherwise the gradients are accumulated
         loss = loss_fn(y_pred, yb)  # calculate the loss
+        print(f'Loss is {loss}')
         loss.backward()  # take the backwards gradient
         optimiser.step()  # adjust the parameters by the gradient collected in the backwards pass
         # data collection for the model
@@ -132,8 +150,8 @@ for epoch in range(config["optimiser"]["nepoch"]):
     model.train(False)
     valid_loss = 0
     for (Xv, tv), yv in valid_dl:
-        Xv = (Xv.to(device) - X_mean) / X_std   # move to GPU
-        yv = (yv.to(device) - y_mean) / y_std   # move to GPU
+        Xv = (Xv.to(device) - X_mean.to(device)) / X_std.to(device)  # move to GPU
+        yv = (yv.to(device) - y_mean.to(device)) / y_std.to(device)   # move to GPU
         tv = tv.to(device)  # move to GPU
         yv_pred = model(Xv, tv)  # make a prediction
         loss = loss_fn(yv_pred, yv)  # calculate the loss

@@ -4,6 +4,33 @@ import torch
 
 __all__ = ["normalised_mse", "normalised_rmse", "multivariate_normalised_rmse", "normalised_absolute_error"]
 
+def rmse(y_pred, y_target):
+    """Calculate the  L2 squared error between two pytorch tensors
+
+    Compute the batch-average
+
+        1/b sum_{b} rho_b
+
+    where
+
+        rho_b = sum_{j,k} (y_pred_{b,j,k} - y_target_{b,j,k})^2 
+
+    is the  error on each sample.
+
+    :arg y_pred: prediction, tensor of size (batchsize, n_func, n_dof)
+    :arg y_target: target tensor of size (batchsize, n_func, n_dof)
+    """
+
+    print(torch.max(y_pred))
+    print(torch.max(y_target))
+
+    loss = torch.mean(
+        torch.sqrt(
+            torch.sum((y_pred - y_target) ** 2, dim=(1, 2))
+        )
+    )
+    print(f'Loss in fn is {loss}')
+    return loss
 
 def normalised_mse(y_pred, y_target):
     """Calculate the normalised L2 squared error between two pytorch tensors
@@ -27,6 +54,7 @@ def normalised_mse(y_pred, y_target):
         torch.sum((y_pred - y_target) ** 2, dim=(1, 2))
         / torch.sum((y_target) ** 2, dim=(1, 2))
     )
+    
     return loss
 
 
@@ -80,6 +108,7 @@ def multivariate_normalised_rmse(y_pred, y_target):
             / torch.sum((y_target) ** 2, dim=2)
         ), dim=0
     )
+
     return torch.mean(loss)
 
 def normalised_absolute_error(y_pred, y_target):
