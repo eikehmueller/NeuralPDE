@@ -21,16 +21,13 @@ def rmse(y_pred, y_target):
     :arg y_target: target tensor of size (batchsize, n_func, n_dof)
     """
 
-    print(torch.max(y_pred))
-    print(torch.max(y_target))
-
     loss = torch.mean(
         torch.sqrt(
-            torch.sum((y_pred - y_target) ** 2, dim=(1, 2))
-        )
-    )
-    print(f'Loss in fn is {loss}')
-    return loss
+            torch.sum((y_pred - y_target) ** 2,  dim=2)
+            / torch.sum((y_target) ** 2, dim=2)
+        ), dim=0)
+
+    return torch.mean(loss)
 
 def normalised_mse(y_pred, y_target):
     """Calculate the normalised L2 squared error between two pytorch tensors

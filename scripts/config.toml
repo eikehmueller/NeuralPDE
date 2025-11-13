@@ -14,7 +14,7 @@ nu = 3                    # number of nearest neighours in decoder
 dt = 0.01                 # Stepsize
 
 [optimiser]
-nepoch = 428                  # number of epochs
+nepoch = 128                  # number of epochs
 batchsize = 32               # size of training batches
 initial_learning_rate = 0.01 # initial learning rate
 final_learning_rate = 0.001  # final learning rate

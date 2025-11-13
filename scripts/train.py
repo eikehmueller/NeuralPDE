@@ -134,10 +134,10 @@ for epoch in range(config["optimiser"]["nepoch"]):
         yb = (yb.to(device) - y_mean.to(device)) / y_std.to(device)
         tb = tb.to(device)  
         y_pred = model(Xb, tb)  # make a prediction
-        print(f'ypred is {y_pred[0][0][0]}')
+        #print(f'ypred is {y_pred[0][0][0]}')
         optimiser.zero_grad()  # resets all of the gradients to zero, otherwise the gradients are accumulated
         loss = loss_fn(y_pred, yb)  # calculate the loss
-        print(f'Loss is {loss}')
+        #print(f'Loss is {loss}')
         loss.backward()  # take the backwards gradient
         optimiser.step()  # adjust the parameters by the gradient collected in the backwards pass
         # data collection for the model

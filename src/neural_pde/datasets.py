@@ -36,6 +36,8 @@ def load_hdf5_dataset(filename):
         data = f["base/data"]
         t_initial = f["base/t_initial"]
         t_elapsed = f["base/t_elapsed"]
+        mean = f["base/mean"]
+        std = f["base/std"]
         metadata = json.loads(f["base/metadata"][()])
         dataset = SphericalFunctionSpaceDataset(
             int(f.attrs["n_func_in_dynamic"]),
@@ -46,8 +48,10 @@ def load_hdf5_dataset(filename):
             data=np.asarray(data),
             t_initial=np.asarray(t_initial),
             t_elapsed=np.asarray(t_elapsed),
-            metadata=metadata,
-        )
+            mean=np.asarray(mean),
+            std=np.asarray(std),
+            metadata=metadata
+            )
     return dataset
 
 
@@ -288,9 +292,8 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
 
         self.mean = np.mean(self._data[:, 0, :], axis=1)
         self.std = np.std(self._data[:, 0, :], axis=1)
+
         return
-
-
 
 class Projector:
 
@@ -352,6 +355,7 @@ class Projector:
             u.assign(self._v)
         else:
             print('Projector error: function space value is neither 1 nor 3.')
+
 
 class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
     """Data set for Shallow Water Equations

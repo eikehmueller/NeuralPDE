@@ -258,7 +258,6 @@ class NeuralPDEModel(torch.nn.Module):
         if hasattr(self, "Decoder"):
             x_ancil = x[..., self.dimensions["n_func_in_dynamic"] :, :]
             w = self.Decoder(z, x_ancil)
-            print(f'w is {w[0][0][0]}')
         return w
 
     def save(self, directory):
