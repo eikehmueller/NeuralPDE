@@ -60,12 +60,6 @@ show_hdf5_header(config["data"]["valid"])
 print()
 train_ds = load_hdf5_dataset(config["data"]["train"])
 valid_ds = load_hdf5_dataset(config["data"]["valid"])
-X_mean = torch.from_numpy(train_ds.mean).unsqueeze(0).unsqueeze(2).repeat(config["optimiser"]["batchsize"], 1, 642)
-X_std  = torch.from_numpy(train_ds.std).unsqueeze(0).unsqueeze(2).repeat(config["optimiser"]["batchsize"], 1, 642)
-#TODO add the normalisation to the model pipeline not the training script
-
-X_mean = X_mean.to(torch.float32)
-X_std = X_std.to(torch.float32)
 
 train_dl = DataLoader(
     train_ds, batch_size=config["optimiser"]["batchsize"], shuffle=True, drop_last=True
@@ -95,7 +89,7 @@ print(f"Running on device {device}")
 
 optimiser = torch.optim.Adam(
     model.parameters(), lr=config["optimiser"]["initial_learning_rate"]
-) # is this the best learning rate?
+) 
 gamma = (
     config["optimiser"]["final_learning_rate"]
     / config["optimiser"]["initial_learning_rate"]
