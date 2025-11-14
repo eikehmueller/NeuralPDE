@@ -220,7 +220,7 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
         :arg degree: polynomial degree used for generating random fields
         :arg seed: seed of rng
         """
-        n_func_in_dynamic = 3
+        n_func_in_dynamic = 4
         n_func_in_ancillary = 3
         n_func_target = 1
         super().__init__(
@@ -275,6 +275,7 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
                     expr_in_dy += coeff[jx, jy, jz] * jy * x**jx * y ** (jy - 1) * z**jz
                 if jz > 0:
                     expr_in_dz += coeff[jx, jy, jz] * jz * x**jx * y**jy * z ** (jz - 1)
+
             self._u.interpolate(expr_in)
             self._data[j, 0, :] = self._u.dat.data
             self._u.interpolate(expr_in_dx)
@@ -290,8 +291,8 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
             self._data[j, 7, :] = self._u.dat.data
             self._t_elapsed[j] = t_final
 
-        self.mean = np.mean(self._data[:, 0, :], axis=1)
-        self.std = np.std(self._data[:, 0, :], axis=1)
+        self.mean = np.mean(self._data, axis=(0,2))
+        self.std  = np.std(self._data, axis=(0,2))
 
         return
 

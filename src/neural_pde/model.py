@@ -20,6 +20,8 @@ def build_model(
     n_func_in_ancillary,
     n_func_target,
     architecture,
+    mean=0,
+    std=1
 ):
     """
     Construct encoder - processor - decoder model
@@ -30,7 +32,7 @@ def build_model(
     :arg n_func_in_target: number of output functions
     :arg architecture: dictionary that describes network architecture
     """
-    model = NeuralPDEModel()
+    model = NeuralPDEModel(mean, std)
     model.setup(
         n_ref, n_func_in_dynamic, n_func_in_ancillary, n_func_target, architecture
     )
@@ -38,11 +40,11 @@ def build_model(
 
 
 
-def load_model(directory):
+def load_model(directory, mean=0, std=1):
     """Load model from disk
 
     :arg directory: directory containing the saved model"""
-    model = NeuralPDEModel()
+    model = NeuralPDEModel(mean, std)
     model.load(directory)
     return model
 
@@ -50,15 +52,17 @@ def load_model(directory):
 class NeuralPDEModel(torch.nn.Module):
     """Class representing the encoder - processor - decoder network"""
 
-    def __init__(self):
+    def __init__(self, mean=0, std=1):
         """Initialise a new instance with empty model"""
         super().__init__()
         self.architecture = None
         self.dimensions = None
         self.initialised = False
+        self.mean = mean
+        self.std= std
 
     def setup(
-        self, n_ref, n_func_in_dynamic, n_func_in_ancillary, n_func_target, architecture,
+        self, n_ref, n_func_in_dynamic, n_func_in_ancillary, n_func_target, architecture
     ):
         """
         Initialise new instance with model
@@ -77,6 +81,10 @@ class NeuralPDEModel(torch.nn.Module):
             n_func_in_ancillary=n_func_in_ancillary,
             n_func_target=n_func_target,
         )
+        self.x_mean = self.mean[:n_func_in_dynamic + n_func_in_ancillary].unsqueeze(0).unsqueeze(2).repeat(32, 1, 642).to(torch.float32)
+        self.y_mean = self.mean[:n_func_in_dynamic].unsqueeze(0).unsqueeze(2).repeat(32, 1, 642).to(torch.float32)
+        self.x_std = self.std[:n_func_in_dynamic + n_func_in_ancillary].unsqueeze(0).unsqueeze(2).repeat(32, 1, 642).to(torch.float32)
+        self.y_std = self.std[:n_func_in_dynamic].unsqueeze(0).unsqueeze(2).repeat(32, 1, 642).to(torch.float32)
         # construct spherical patch covering
         spherical_patch_covering = SphericalPatchCovering(
             architecture["dual_ref"], architecture["n_radial"]
@@ -108,10 +116,6 @@ class NeuralPDEModel(torch.nn.Module):
                 out_features=n_hidden,
             ),
             torch.nn.Softplus(),
-            #torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
-            #torch.nn.Softplus(),
-            #torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
-            #torch.nn.Softplus(),
             torch.nn.Linear(
                 in_features=n_hidden,
                 out_features=architecture["latent_dynamic_dim"],
@@ -128,10 +132,6 @@ class NeuralPDEModel(torch.nn.Module):
                 out_features=n_hidden,
             ),
             torch.nn.Softplus(),
-            #torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
-            #torch.nn.Softplus(),
-            #torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
-            #torch.nn.Softplus(),
             torch.nn.Linear(
                 in_features=n_hidden,
                 out_features=architecture["latent_ancillary_dim"],
@@ -186,8 +186,6 @@ class NeuralPDEModel(torch.nn.Module):
                     out_features=n_hidden,
                 ),
                 torch.nn.Softplus(),
-                #torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
-                #torch.nn.Softplus(),
                 torch.nn.Linear(
                     in_features=n_hidden,
                     out_features=n_func_target * spherical_patch_covering.patch_size,
@@ -220,12 +218,6 @@ class NeuralPDEModel(torch.nn.Module):
                     out_features=n_hidden,
                 ),
                 torch.nn.Softplus(),
-                #torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
-                #torch.nn.Softplus(),
-                #torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
-                #torch.nn.Softplus(),
-                #torch.nn.Linear(in_features=n_hidden, out_features=n_hidden),
-                #torch.nn.Softplus(),
                 torch.nn.Linear(
                     in_features=n_hidden,
                     out_features=n_func_target,
@@ -249,16 +241,18 @@ class NeuralPDEModel(torch.nn.Module):
         :arg x: input tensor of shape (batch_size, n_func_in_dynamic + n_func_in_ancillary, n_vertex)
         :arg t_final: final time for each sample, tensor of shape (batch_size,)
         """
-        
-        y = self.PatchEncoder(x)
+        x_normalised = (x - self.x_mean) / self.x_std
+        y = self.PatchEncoder(x_normalised)
         z = self.NeuralSolver(y, t_final)
 
         if hasattr(self, "PatchDecoder"):
             w = self.PatchDecoder(z)
+            w_final = w * self.y_std + self.y_mean
         if hasattr(self, "Decoder"):
             x_ancil = x[..., self.dimensions["n_func_in_dynamic"] :, :]
             w = self.Decoder(z, x_ancil)
-        return w
+            w_final = w * self.y_std + self.y_mean
+        return w_final
 
     def save(self, directory):
         """Save model to disk
@@ -288,7 +282,7 @@ class NeuralPDEModel(torch.nn.Module):
                 config["dimensions"]["n_func_in_dynamic"],
                 config["dimensions"]["n_func_in_ancillary"],
                 config["dimensions"]["n_func_target"],
-                config["architecture"],
+                config["architecture"]
             )
         self.load_state_dict(
             torch.load(os.path.join(directory, "model.pt"), weights_only=True)

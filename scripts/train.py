@@ -60,28 +60,12 @@ show_hdf5_header(config["data"]["valid"])
 print()
 train_ds = load_hdf5_dataset(config["data"]["train"])
 valid_ds = load_hdf5_dataset(config["data"]["valid"])
-X_mean = torch.from_numpy(train_ds.mean[:train_ds.n_func_in_ancillary + train_ds.n_func_in_dynamic]).unsqueeze(0).unsqueeze(2).repeat(config["optimiser"]["batchsize"], 1, 642)
-y_mean = torch.from_numpy(train_ds.mean[train_ds.n_func_in_ancillary + train_ds.n_func_in_dynamic:]).unsqueeze(0).unsqueeze(2).repeat(config["optimiser"]["batchsize"], 1, 642)
-X_std  = torch.from_numpy(train_ds.std[:train_ds.n_func_in_ancillary + train_ds.n_func_in_dynamic]).unsqueeze(0).unsqueeze(2).repeat(config["optimiser"]["batchsize"], 1, 642)
-y_std  = torch.from_numpy(train_ds.std[train_ds.n_func_in_ancillary + train_ds.n_func_in_dynamic:]).unsqueeze(0).unsqueeze(2).repeat(config["optimiser"]["batchsize"], 1, 642)
-
-
-print(train_ds.mean)
-print(train_ds.std)
+X_mean = torch.from_numpy(train_ds.mean).unsqueeze(0).unsqueeze(2).repeat(config["optimiser"]["batchsize"], 1, 642)
+X_std  = torch.from_numpy(train_ds.std).unsqueeze(0).unsqueeze(2).repeat(config["optimiser"]["batchsize"], 1, 642)
+#TODO add the normalisation to the model pipeline not the training script
 
 X_mean = X_mean.to(torch.float32)
-y_mean = y_mean.to(torch.float32)
 X_std = X_std.to(torch.float32)
-y_std = y_std.to(torch.float32)
-
-print(torch.max(X_mean))
-print(torch.max(y_mean))
-print(torch.max(X_std))
-print(torch.max(y_std))
-
-print((X_mean.dtype))
-print(X_mean.size())
-print(y_mean.size())
 
 train_dl = DataLoader(
     train_ds, batch_size=config["optimiser"]["batchsize"], shuffle=True, drop_last=True
@@ -98,10 +82,12 @@ if not os.listdir(args.model): # load model or initialise new one
         train_ds.n_func_in_ancillary,
         train_ds.n_func_target,
         config["architecture"],
+        mean=torch.from_numpy(train_ds.mean),
+        std=torch.from_numpy(train_ds.std)
     )
 else:
     print('Loading model')
-    model = load_model(args.model)
+    model = load_model(args.model, mean=torch.from_numpy(train_ds.mean), std=torch.from_numpy(train_ds.std))
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 model = model.to(device)  # transfer the model to the GPU
@@ -117,12 +103,6 @@ gamma = (
 scheduler = torch.optim.lr_scheduler.ExponentialLR(optimiser, gamma=gamma)
 
 writer = SummaryWriter('../results/runs', flush_secs=5)
-writer.add_text("Model parameters", f"Refinements of dual space: {config["architecture"]["dual_ref"]}\n \
-No. radial points per patch: {config["architecture"]["n_radial"]} \n \
-Dimension of dynamic latent space: {config["architecture"]["latent_dynamic_dim"]} \n \
-Dimension of ancillary latent space: {config["architecture"]["latent_ancillary_dim"]} \n \
-Time-step: {config["architecture"]["dt"]}")
-
 
 # main training loop
 for epoch in range(config["optimiser"]["nepoch"]):
@@ -130,14 +110,12 @@ for epoch in range(config["optimiser"]["nepoch"]):
     train_loss = 0
     model.train(True)
     for (Xb, tb), yb in tqdm.tqdm(train_dl):
-        Xb = (Xb.to(device) - X_mean.to(device)) / X_std.to(device)
-        yb = (yb.to(device) - y_mean.to(device)) / y_std.to(device)
+        Xb = Xb.to(device) 
+        yb = yb.to(device)
         tb = tb.to(device)  
         y_pred = model(Xb, tb)  # make a prediction
-        #print(f'ypred is {y_pred[0][0][0]}')
         optimiser.zero_grad()  # resets all of the gradients to zero, otherwise the gradients are accumulated
         loss = loss_fn(y_pred, yb)  # calculate the loss
-        #print(f'Loss is {loss}')
         loss.backward()  # take the backwards gradient
         optimiser.step()  # adjust the parameters by the gradient collected in the backwards pass
         # data collection for the model
@@ -150,8 +128,8 @@ for epoch in range(config["optimiser"]["nepoch"]):
     model.train(False)
     valid_loss = 0
     for (Xv, tv), yv in valid_dl:
-        Xv = (Xv.to(device) - X_mean.to(device)) / X_std.to(device)  # move to GPU
-        yv = (yv.to(device) - y_mean.to(device)) / y_std.to(device)   # move to GPU
+        Xv = Xv.to(device)  # move to GPU
+        yv = yv.to(device)  # move to GPU
         tv = tv.to(device)  # move to GPU
         yv_pred = model(Xv, tv)  # make a prediction
         loss = loss_fn(yv_pred, yv)  # calculate the loss

@@ -9,7 +9,7 @@ import argparse
 import numpy as np
 from neural_pde.diagnostics import Diagnostics
 from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header, Projector
-from neural_pde.loss_functions import multivariate_normalised_rmse as metric
+from neural_pde.loss_functions import rmse as metric
 from neural_pde.model import load_model
 from move_results_to_windows import move_files_and_directories
 
@@ -63,7 +63,7 @@ parser.add_argument(
     type=str,
     action="store",
     help="file containing the data",
-    default="../data/data_test_nref3_0.h5",
+    default="../data/data_test_swes_nref3_tlength0.0_tfinalmax100.h5",
 )
 
 args, _ = parser.parse_known_args()
@@ -89,14 +89,16 @@ model = load_model(args.model)
 model.train(False)
 avg_loss = 0
 for (Xv, tv), yv in dataloader:
-    yv_pred = model(Xv, tv)
-    loss = metric(yv_pred, yv)
+    X = Xv # move to GPU
+    y = yv   # move to GPU
+    yv_pred = model(X, tv)
+    loss = metric(yv_pred, y)
     avg_loss += loss.item() / (dataset.n_samples / batch_size)
 
 print(f"average relative error: {100 * avg_loss:6.3f} %")
+
 if not os.path.exists(args.output):
     os.makedirs(args.output)
-
 
 mesh = UnitIcosahedralSphereMesh(dataset.n_ref)
 V = FunctionSpace(mesh, "CG", 1)
