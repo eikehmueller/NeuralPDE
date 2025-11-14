@@ -146,7 +146,7 @@ for epoch in range(config["optimiser"]["nepoch"]):
     )
     writer.add_scalar("learning_rate", scheduler.get_last_lr()[0], epoch)
     print()
-    if epoch % 100 == 0:
+    if epoch % 10 == 0:
         print("Saving model...")
         model.save(args.model)
 writer.flush()

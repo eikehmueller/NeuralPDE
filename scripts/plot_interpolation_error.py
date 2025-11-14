@@ -61,7 +61,7 @@ for j, ((X, t), y_target) in enumerate(iter(dataset)):
     f_output = Function(V, name="output")
     f_output.interpolate(f_process)
 
-    L2_error = norms.errornorm(f_input, f_output)
+    L2_error = norm.errornorm(f_input, f_output)
     L2_error_list.append(L2_error)
 
     file = VTKFile(os.path.join(args.output, f"firedrake_mesh_output_{j:04d}.pvd"))

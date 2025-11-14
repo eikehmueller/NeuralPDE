@@ -9,6 +9,7 @@ tb_logs/
 *.vtu
 *.h5
 *.nc
+*.0
 runs/
 data/
 results/
