@@ -7,6 +7,7 @@ import os
 import argparse
 
 from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header
+from neural_pde.model import load_model
 
 parser = argparse.ArgumentParser()
 
@@ -15,7 +16,7 @@ parser.add_argument(
     type=str,
     action="store",
     help="path to output folder",
-    default="output",
+    default="../results",
 )
 
 parser.add_argument(
@@ -23,7 +24,15 @@ parser.add_argument(
     type=str,
     action="store",
     help="file containing the data",
-    default="data/data_test_nref4_0.h5",
+    default="data/data_test_nref3_0.h5",
+)
+
+parser.add_argument(
+    "--model",
+    type=str,
+    action="store",
+    help="directory containing the trained model",
+    default="../saved_model",
 )
 
 args, _ = parser.parse_known_args()
@@ -43,12 +52,15 @@ dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 if not os.path.exists(args.output):
     os.makedirs(args.output)
 
+model = load_model(args.model)
+
 mesh = UnitIcosahedralSphereMesh(dataset.n_ref)
 dualmesh = UnitIcosahedralSphereMesh(1) # number of refinements on the dual mesh
 V = FunctionSpace(mesh, "CG", 1)
 V_dg = FunctionSpace(dualmesh, "DG", 0)
 
-L2_error_list = []
+L2_interpolated_error_list = []
+L2_learned_error_list = []
 
 for j, ((X, t), y_target) in enumerate(iter(dataset)):
 
@@ -58,18 +70,24 @@ for j, ((X, t), y_target) in enumerate(iter(dataset)):
     f_process = Function(V_dg, name="process")
     f_process.interpolate(f_input)
 
-    f_output = Function(V, name="output")
-    f_output.interpolate(f_process)
+    f_interpolated_output = Function(V, name="interpolated_output")
+    f_interpolated_output.interpolate(f_process)
 
-    L2_error = norm.errornorm(f_input, f_output)
-    L2_error_list.append(L2_error)
+    f_model = model(X)
+    f_learned_output = Function(V, name="model_output")
+    f_learned_output.dat.data[:] = f_model.detach().numpy()[0, :]
+
+    L2_error_interpolated = norm.errornorm(f_input, f_interpolated_output)
+    L2_interpolated_error_list.append(L2_error_interpolated)
+    L2_error_learned = norm.errornorm(f_input, f_learned_output)
+    L2_learned_error_list.append(L2_error_learned)
 
     file = VTKFile(os.path.join(args.output, f"firedrake_mesh_output_{j:04d}.pvd"))
-    file.write(f_input, f_output)
+    file.write(f_input, f_interpolated_output, f_learned_output)
 
     file = VTKFile(os.path.join(args.output, f"dual_mesh_output_{j:04d}.pvd"))
     file.write(f_process)
 
-print(f'Average L2 error: {np.average(np.asarray(L2_error_list))}')
-
+print(f'Average interpolated L2 error: {np.average(np.asarray(L2_interpolated_error_list))}')
+print(f'Average learned      L2 error: {np.average(np.asarray(L2_learned_error_list))}')
 

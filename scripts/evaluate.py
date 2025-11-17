@@ -12,7 +12,7 @@ from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header, Projector
 from neural_pde.loss_functions import rmse as metric
 from neural_pde.model import load_model
 from move_results_to_windows import move_files_and_directories
-
+import matplotlib.pyplot as plt
 # Create argparse arguments
 parser = argparse.ArgumentParser()
 
@@ -158,6 +158,7 @@ if args.animate:
         print(f"time = {t:8.4f}")
 
 if args.plot_dataset_and_model:
+    fig, ax = plt.subplots()  
     for j, ((X, t), y_target) in enumerate(iter(dataset)):
         y_pred = model(X, t)
 
@@ -174,6 +175,7 @@ if args.plot_dataset_and_model:
         f_target_div.dat.data[:] = y_target.detach().numpy()[1, :]
         f_target_vor = Function(V, name="target_vor")
         f_target_vor.dat.data[:] = y_target.detach().numpy()[2, :]
+        f_target = y_target.detach().numpy()[0:2, :]
 
         f_pred_d = Function(V, name=f"pred_d_t={t:8.4e}")
         f_pred_d.dat.data[:] = y_pred.detach().numpy()[0, :]
@@ -181,11 +183,19 @@ if args.plot_dataset_and_model:
         f_pred_div.dat.data[:] = y_pred.detach().numpy()[1, :]
         f_pred_vor = Function(V, name="pred_vor")
         f_pred_vor.dat.data[:] = y_pred.detach().numpy()[2, :]
+        f_pred = y_pred.detach().numpy()[0:2, :]
 
         file = VTKFile(os.path.join(args.output, f"dataset/output_{j:04d}.pvd"))
         file.write(f_input_d, f_input_div, f_input_vor, 
                 f_target_d, f_target_div, f_target_vor,
                     f_pred_d, f_pred_div, f_pred_vor)
+        ax.plot(t, metric(f_target, f_pred), color="black")
+        ax.set_xlabel(r'Time $t$')
+        ax.set_ylabel('Model RMSE')
+        ax.set_title('Total model error')
+        plt.tight_layout()
+        plt.save('../results/model_RMSE_over_time.png')
+        
 
 # Define your WSL and Windows folders
 wsl_folder1 = '/home/katie795/NeuralPDE_workspace/src/results/output_for_visualising_model_dataset'
