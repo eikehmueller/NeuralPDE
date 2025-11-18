@@ -1,6 +1,7 @@
 import torch
 
-class NeuralSolver(torch.nn.Module):
+
+class ForwardEulerNeuralSolver(torch.nn.Module):
     """Neural solver which integrates forward the equations of motion in latent space.
 
     A state in latent space can be written as [Y^{(k)}_{i,j},a_{i,j}] where i is the index of
@@ -62,11 +63,6 @@ class NeuralSolver(torch.nn.Module):
             for j, beta in enumerate(self.spherical_patch_covering.neighbour_list)
         ]
         self.register_buffer("index", torch.tensor(self._neighbour_list).unsqueeze(-1))
-
-    # @functools.cache
-    # def index(self, device):
-    #    """Index list on a particular device"""
-    #    return self._index.to(device)
 
     def forward(self, x, t_final):
         """Carry out a number of forward-Euler steps for the latent variables on the dual mesh

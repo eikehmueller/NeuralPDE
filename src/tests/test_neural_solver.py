@@ -11,7 +11,7 @@ import sys
 
 sys.path.append("..")
 from neural_pde.spherical_patch_covering import SphericalPatchCovering
-from neural_pde.neural_solver import NeuralSolver
+from neural_pde.neural_solver import ForwardEulerNeuralSolver
 import torch
 from firedrake import UnitIcosahedralSphereMesh
 
@@ -109,7 +109,7 @@ def test_is_neighbour():
 
 def test_sample_2d():
     """Check whether the input and output are the same shape"""
-    model = NeuralSolver(
+    model = ForwardEulerNeuralSolver(
         spherical_patch_covering,
         interaction_model,
         stepsize=1.0,
@@ -121,7 +121,7 @@ def test_sample_2d():
 
 def test_sample_3d_full():
     """Check whether the input and output are the same shape"""
-    model = NeuralSolver(
+    model = ForwardEulerNeuralSolver(
         spherical_patch_covering,
         interaction_model,
         stepsize=1.0,
@@ -134,7 +134,7 @@ def test_sample_3d_full():
 def test_average():
     """Check whether the model returns the expected result from an averaging function"""
 
-    model = NeuralSolver(
+    model = ForwardEulerNeuralSolver(
         spherical_patch_covering,
         average_model,
         stepsize=1.0,

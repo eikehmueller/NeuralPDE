@@ -8,7 +8,7 @@ import json
 from neural_pde.patch_encoder import PatchEncoder
 from neural_pde.patch_decoder import PatchDecoder
 from neural_pde.decoder import Decoder
-from neural_pde.neural_solver import NeuralSolver
+from neural_pde.neural_solver import ForwardEulerNeuralSolver
 from neural_pde.spherical_patch_covering import SphericalPatchCovering
 
 __all__ = ["build_model", "load_model"]
@@ -92,7 +92,9 @@ class NeuralPDEModel(torch.nn.Module):
         mesh = UnitIcosahedralSphereMesh(n_ref)  # create the mesh
         V = FunctionSpace(mesh, "CG", 1)  # define the function space
         print(f"  number of unknowns of function space = {V.dof_count}")
-        print(f"  total number of unknowns             = {V.dof_count * spherical_patch_covering.n_patches}")
+        print(
+            f"  total number of unknowns             = {V.dof_count * spherical_patch_covering.n_patches}"
+        )
 
         # encoder models
         # dynamic encoder model: map all fields to the latent space
@@ -164,7 +166,7 @@ class NeuralPDEModel(torch.nn.Module):
         )
         self.add_module(
             "NeuralSolver",
-            NeuralSolver(
+            ForwardEulerNeuralSolver(
                 spherical_patch_covering,
                 interaction_model,
                 stepsize=architecture["dt"],
@@ -234,7 +236,7 @@ class NeuralPDEModel(torch.nn.Module):
                     nu=architecture["nu"],
                 ),
             )
-        
+
         self.initialised = True
 
     def forward(self, x, t_final):
