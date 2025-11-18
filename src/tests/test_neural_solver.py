@@ -6,7 +6,9 @@
 4: check that input and output have shape (batchsize, n_patches, d_lat)
 5: check that an averaging function returns the expected result
 """
+
 import sys
+
 sys.path.append("..")
 from neural_pde.spherical_patch_covering import SphericalPatchCovering
 from neural_pde.neural_solver import NeuralSolver

@@ -23,8 +23,8 @@ def masked_stepsize(t, t_final, dt):
     _t_final = t_final if torch.is_tensor(t_final) else torch.tensor(t_final)
     assert _t_final.ndim < 2
     if _t_final.ndim == 1:
-        _t_final = torch.unsqueeze(_t_final, dim=-1)
-    # Now _t_final is either a scalar tensor or a tensor of shape (batch_size,1)
+        _t_final = torch.reshape(_t_final, shape=[-1, 1, 1])
+    # Now _t_final is either a scalar tensor or a tensor of shape (batch_size,1,1)
     return torch.minimum(torch.maximum(_t_final - t, torch.tensor(0)), torch.tensor(dt))
 
 
@@ -32,14 +32,14 @@ class Hamiltonian(ABC, torch.nn.Module):
     """Base class for (separable) parameterised Hamiltonians
 
     Instances of subclasses of this type can be used by the HamiltonianSolver class.
-    Assumes that the parametrised Hamiltonian H(q,p,xi) on the d_lat-dimensional phase space is
-    separable such that the forcing function can be written as
+    Assumes that the parametrised Hamiltonian H(q,p,xi) on the n_state x d_lat-dimensional
+    phase space is separable such that the forcing function can be written as
 
         F_q = F_q(p,xi) = + dH/dp(p,xi)
         F_p = F_q(p,xi) = - dH/dq(q,xi)
 
-    where q, p are d_lat/2 dimensional state vectors and xi is a d_ancil-dimensional ancillary state
-    vector.
+    where q, p are n x d_lat/2 dimensional state vectors and xi is a
+    n_state x d_ancil-dimensional ancillary state vector.
 
     We further assume that the Hamiltonian is separable, i.e.
 
@@ -52,14 +52,16 @@ class Hamiltonian(ABC, torch.nn.Module):
 
     """
 
-    def __init__(self, d_lat, d_ancil):
+    def __init__(self, n_state, d_lat, d_ancil):
         """Initialise new instance
 
+        :arg n: size of first dimension
         :arg d_lat: dimension of phase space
         :arg d_ancil: dimension of ancillary space
         """
         super().__init__()
         assert d_lat == 2 * d_lat // 2, "d_lat has to be a multiple of two"
+        self.n_state = n_state
         self.d_lat = d_lat
         self.d_ancil = d_ancil
 
@@ -84,10 +86,10 @@ class Hamiltonian(ABC, torch.nn.Module):
     def F_q(self, p, xi):
         """Forcing function F_q which determines rate of change of q
 
-        :arg p: momentum vector, d_lat/2-dimensional
-        :arg xi: ancillary vector, d_ancil-dimensional
+        :arg p: momentum vector, n_state x d_lat/2-dimensional
+        :arg xi: ancillary vector, n_state x d_ancil-dimensional
         """
-        p_shape = list(p.shape)
+        p_shape = list(p.shape[:-1])
         p_shape[-1] = 1
         grad_outputs = torch.ones(size=p_shape)
         _p = p.detach()
@@ -100,10 +102,10 @@ class Hamiltonian(ABC, torch.nn.Module):
     def F_p(self, q, xi):
         """Forcing function F_p which determines rate of change of p
 
-        :arg q: position vector, d_lat/2-dimensional
-        :arg xi: ancillary vector, d_ancil-dimensional
+        :arg q: position vector, n_state x d_lat/2-dimensional
+        :arg xi: ancillary vector, n_state x d_ancil-dimensional
         """
-        q_shape = list(q.shape)
+        q_shape = list(q.shape[:-1])
         q_shape[-1] = 1
         grad_outputs = torch.ones(size=q_shape)
         _q = q.detach()
@@ -131,7 +133,7 @@ class SymplecticIntegratorFunction(torch.autograd.Function):
 
         The functions F_q and F_p are of the form
 
-            F_q, F_p: R^{d_lat/2} x R^{d_ancil} -> R^{d_lat/2}
+            F_q, F_p: R^{n_state x d_lat/2} x R^{n_state x d_ancil} -> R^{n_state x d_lat/2}
 
         and they each depend on a set of (learnable) parameters theta
 
@@ -140,11 +142,13 @@ class SymplecticIntegratorFunction(torch.autograd.Function):
         :arg t_final: final time can be a vector of batchsize
         :arg dt: size of timesteps
         """
+        n_state = hamiltonian.n_state
         d_lat = hamiltonian.d_lat
         d_ancil = hamiltonian.d_ancil
         assert (
             x.shape[-1] == d_lat + d_ancil
-        ), "Last dimension must be of size d_lat + d_ancil"
+        ), "Final dimension must be of size d_lat + d_ancil"
+        assert x.shape[-2] == n_state, "Penultimate dimension must be of size n_state"
         assert d_lat == 2 * d_lat // 2, "Dimension d_lat as to be a multiple of two"
         q, p, xi = torch.split(
             x.clone().detach(), [d_lat // 2, d_lat // 2, d_ancil], dim=-1
