@@ -58,14 +58,6 @@ parser.add_argument(
     default="../saved_model",
 )
 
-parser.add_argument(
-    "--data",
-    type=str,
-    action="store",
-    help="file containing the data",
-    default="../data/data_test_swes_nref3_tlength0.0_tfinalmax100.h5",
-)
-
 args, _ = parser.parse_known_args()
 
 with open(args.config, "rb") as f:
@@ -75,15 +67,16 @@ print()
 print("==== data ====")
 print()
 
-show_hdf5_header(args.data)
+show_hdf5_header(config["data"]["test"])
 print()
 
-dataset = load_hdf5_dataset(args.data)
+dataset = load_hdf5_dataset(config["data"]["test"])
 
 batch_size = len(dataset)
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+train_ds = load_hdf5_dataset(config["data"]["train"])
 
-model = load_model(args.model)
+model = load_model(args.model, mean=torch.from_numpy(train_ds.mean), std=torch.from_numpy(train_ds.std))
 
 # validation
 model.train(False)
@@ -105,8 +98,8 @@ V = FunctionSpace(mesh, "CG", 1)
 V_DG = FunctionSpace(mesh, "DG", 0)
 (X, _), __ = next(iter(dataset))
 dt = config["architecture"]["dt"]
-t = float(dataset.metadata["t_lowest"]) 
-t_final = float(dataset.metadata["t_highest"]) 
+#t = float(dataset.metadata["t_lowest"]) 
+#t_final = float(dataset.metadata["t_highest"]) 
 animation_file_nn = VTKFile(os.path.join(args.output, "animation.pvd"))
 h_pred   = Function(V, name="h")
 div_pred = Function(V, name="div")
@@ -160,7 +153,10 @@ if args.animate:
 if args.plot_dataset_and_model:
     fig, ax = plt.subplots()  
     for j, ((X, t), y_target) in enumerate(iter(dataset)):
+        X = torch.unsqueeze(X, 0)
         y_pred = model(X, t)
+        y_pred = torch.squeeze(y_pred, 0)
+        X = torch.squeeze(X, 0)
 
         f_input_d = Function(V, name=f"input_d_t={t:8.4e}")
         f_input_d.dat.data[:] = X.detach().numpy()[0, :]
@@ -171,30 +167,35 @@ if args.plot_dataset_and_model:
 
         f_target_d = Function(V, name=f"target_d_t={t:8.4e}")
         f_target_d.dat.data[:] = y_target.detach().numpy()[0, :]
-        f_target_div = Function(V, name="target_div")
-        f_target_div.dat.data[:] = y_target.detach().numpy()[1, :]
-        f_target_vor = Function(V, name="target_vor")
-        f_target_vor.dat.data[:] = y_target.detach().numpy()[2, :]
-        f_target = y_target.detach().numpy()[0:2, :]
+        #f_target_div = Function(V, name="target_div")
+        #f_target_div.dat.data[:] = y_target.detach().numpy()[1, :]
+        #f_target_vor = Function(V, name="target_vor")
+        #f_target_vor.dat.data[:] = y_target.detach().numpy()[2, :]
+        f_target = y_target.detach()#[0, :]
 
         f_pred_d = Function(V, name=f"pred_d_t={t:8.4e}")
         f_pred_d.dat.data[:] = y_pred.detach().numpy()[0, :]
-        f_pred_div = Function(V, name="pred_div")
-        f_pred_div.dat.data[:] = y_pred.detach().numpy()[1, :]
-        f_pred_vor = Function(V, name="pred_vor")
-        f_pred_vor.dat.data[:] = y_pred.detach().numpy()[2, :]
-        f_pred = y_pred.detach().numpy()[0:2, :]
+        #f_pred_div = Function(V, name="pred_div")
+        #f_pred_div.dat.data[:] = y_pred.detach().numpy()[1, :]
+        #f_pred_vor = Function(V, name="pred_vor")
+        #f_pred_vor.dat.data[:] = y_pred.detach().numpy()[2, :]
+        #f_pred = y_pred.detach()[0:2, :]
+        f_pred = y_pred.detach()#[0, :]
 
         file = VTKFile(os.path.join(args.output, f"dataset/output_{j:04d}.pvd"))
         file.write(f_input_d, f_input_div, f_input_vor, 
-                f_target_d, f_target_div, f_target_vor,
-                    f_pred_d, f_pred_div, f_pred_vor)
-        ax.plot(t, metric(f_target, f_pred), color="black")
-        ax.set_xlabel(r'Time $t$')
-        ax.set_ylabel('Model RMSE')
-        ax.set_title('Total model error')
-        plt.tight_layout()
-        plt.save('../results/model_RMSE_over_time.png')
+                f_target_d,
+                    f_pred_d)
+        f_target1 = torch.unsqueeze(f_target, 0)
+        f_pred1 = torch.unsqueeze(f_pred, 0)
+
+        
+        ax.plot(t, metric(f_target1, f_pred1), color="black")
+    ax.set_xlabel(r'Time $t$')
+    ax.set_ylabel('Model RMSE')
+    ax.set_title('Total model error')
+    plt.tight_layout()
+    plt.savefig('../results/model_RMSE_over_time.png')
         
 
 # Define your WSL and Windows folders

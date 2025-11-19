@@ -220,7 +220,7 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
         :arg degree: polynomial degree used for generating random fields
         :arg seed: seed of rng
         """
-        n_func_in_dynamic = 4
+        n_func_in_dynamic = 1
         n_func_in_ancillary = 3
         n_func_target = 1
         super().__init__(
@@ -276,6 +276,7 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
                 if jz > 0:
                     expr_in_dz += coeff[jx, jy, jz] * jz * x**jx * y**jy * z ** (jz - 1)
 
+            '''
             self._u.interpolate(expr_in)
             self._data[j, 0, :] = self._u.dat.data
             self._u.interpolate(expr_in_dx)
@@ -289,11 +290,18 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
             self._data[j, 6, :] = self._u_z.dat.data
             self._u.interpolate(expr_target)
             self._data[j, 7, :] = self._u.dat.data
+            '''
+            self._u.interpolate(expr_in)
+            self._data[j, 0, :] = self._u.dat.data
+            self._data[j, 1, :] = self._u_x.dat.data
+            self._data[j, 2, :] = self._u_y.dat.data
+            self._data[j, 3, :] = self._u_z.dat.data
+            self._u.interpolate(expr_target)
+            self._data[j, 4, :] = self._u.dat.data
             self._t_elapsed[j] = t_final
 
         self.mean = np.mean(self._data, axis=(0,2))
         self.std  = np.std(self._data, axis=(0,2))
-
         return
 
 class Projector:
@@ -538,8 +546,8 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 start = np.random.randint(lowest, highest)
 
                 mu =  start + interval
-                #t_norm = truncnorm((start - mu) / sigma, (highest - mu) / sigma, loc=mu, scale=sigma)
-                end = start #+ interval #round(t_norm.rvs(1)[0]) CHANGE THIS BACK
+                t_norm = truncnorm((start - mu) / sigma, (highest - mu) / sigma, loc=mu, scale=sigma)
+                end = round(t_norm.rvs(1)[0]) 
 
                 if j == 100:
                     print(f'Start timestep is {start}')
