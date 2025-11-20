@@ -107,7 +107,7 @@ class NeuralPDEModel(torch.nn.Module):
         # dynamic encoder model: map all fields to the latent space
         # input:  (n_dynamic+n_ancillary, patch_size)
         # output: (latent_dynamic_dim)
-        n_hidden = 128
+        n_hidden = 256
         dynamic_encoder_model = torch.nn.Sequential(
             torch.nn.Flatten(start_dim=-2, end_dim=-1),
             torch.nn.Linear(

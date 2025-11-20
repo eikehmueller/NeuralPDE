@@ -1,6 +1,3 @@
-import sys
-sys.path.insert(0, "/home/katie795/NeuralPDE_workspace/data")
-
 from timeit import default_timer as timer
 from datetime import timedelta
 import torch
@@ -38,6 +35,14 @@ parser.add_argument(
     default="../saved_model",
 )
 
+parser.add_argument(
+    "--data_directory",
+    type=str,
+    action="store",
+    help="directory where the data is saved",
+    default="../data/",
+)
+
 args, _ = parser.parse_known_args()
 
 with open(args.config, "rb") as f:
@@ -58,8 +63,8 @@ show_hdf5_header(config["data"]["train"])
 print()
 show_hdf5_header(config["data"]["valid"])
 print()
-train_ds = load_hdf5_dataset(config["data"]["train"])
-valid_ds = load_hdf5_dataset(config["data"]["valid"])
+train_ds = load_hdf5_dataset(f"{args.data_directory}{config["data"]["train"]}")
+valid_ds = load_hdf5_dataset(f"{args.data_directory}{config["data"]["valid"]}")
 
 train_dl = DataLoader(
     train_ds, batch_size=config["optimiser"]["batchsize"], shuffle=True, drop_last=True
