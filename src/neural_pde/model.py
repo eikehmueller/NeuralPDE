@@ -241,18 +241,15 @@ class NeuralPDEModel(torch.nn.Module):
         :arg x: input tensor of shape (batch_size, n_func_in_dynamic + n_func_in_ancillary, n_vertex)
         :arg t_final: final time for each sample, tensor of shape (batch_size,)
         """
-        x_normalised = (x - self.x_mean) / self.x_std
-        y = self.PatchEncoder(x_normalised)
+        y = self.PatchEncoder(x)
         z = self.NeuralSolver(y, t_final)
 
         if hasattr(self, "PatchDecoder"):
             w = self.PatchDecoder(z)
-            w_final = w * self.y_std + self.y_mean
         if hasattr(self, "Decoder"):
             x_ancil = x[..., self.dimensions["n_func_in_dynamic"] :, :]
             w = self.Decoder(z, x_ancil)
-            w_final = w * self.y_std + self.y_mean
-        return w_final
+        return w
 
     def save(self, directory):
         """Save model to disk

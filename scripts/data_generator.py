@@ -2,7 +2,7 @@
 
 import argparse
 
-from neural_pde.datasets import SolidBodyRotationDataset
+from neural_pde.datasets import SolidBodyRotationDataset, Normalise
 
 # Create argparse arguments
 parser = argparse.ArgumentParser()
@@ -73,8 +73,10 @@ print(f"  tfinalmax = {args.tfinalmax}")
 print(f"  seed      = {args.seed}")
 print(f"  degree    = {args.degree}")
 
+transform = Normalise(mean, std)
+
 dataset = SolidBodyRotationDataset(
-    args.nref, args.nsamples, args.omega, args.tfinalmax, args.degree, args.seed
+    args.nref, args.nsamples, args.omega, args.tfinalmax, args.degree, args.seed, transform=transform
 )
 dataset.generate()
 dataset.save(args.filename)

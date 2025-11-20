@@ -7,7 +7,7 @@ OMEGA=1.0
 TFINALMAX=0 # ~ pi
 
 python data_generator.py \
-    --filename ../data/data_train_nref${NREF}_${TFINALMAX}_noder.h5 \
+    --filename ../data/data_train_nref${NREF}_${TFINALMAX}.h5 \
     --nref ${NREF} \
     --degree ${DEGREE} \
     --omega ${OMEGA} \
@@ -16,7 +16,7 @@ python data_generator.py \
     --seed 152167
 
 python data_generator.py \
-    --filename ../data/data_valid_nref${NREF}_${TFINALMAX}_noder.h5 \
+    --filename ../data/data_valid_nref${NREF}_${TFINALMAX}.h5 \
     --nref ${NREF} \
     --degree ${DEGREE} \
     --omega ${OMEGA} \
@@ -25,7 +25,7 @@ python data_generator.py \
     --seed 251373
 
 python data_generator.py \
-    --filename ../data/data_test_nref${NREF}_${TFINALMAX}_noder.h5 \
+    --filename ../data/data_test_nref${NREF}_${TFINALMAX}.h5 \
     --nref ${NREF} \
     --degree ${DEGREE} \
     --omega ${OMEGA} \

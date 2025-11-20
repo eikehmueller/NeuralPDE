@@ -13,7 +13,7 @@ import tomllib
 import argparse
 import os
 import cProfile
-from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header
+from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header, Normalise
 from neural_pde.loss_functions import rmse as loss_fn
 from neural_pde.model import build_model, load_model
 
@@ -61,11 +61,16 @@ print()
 train_ds = load_hdf5_dataset(config["data"]["train"])
 valid_ds = load_hdf5_dataset(config["data"]["valid"])
 
+transform = Normalise(train_ds.mean, train_ds.std)
+train_ds = torch.utils.data.Subset(train_ds, indices=torch.arange(len(train_ds))) # for resample
+
+transformed_train_ds = train_ds.transform
+
 train_dl = DataLoader(
-    train_ds, batch_size=config["optimiser"]["batchsize"], shuffle=True, drop_last=True
+    transformed_train_ds, batch_size=config["optimiser"]["batchsize"], shuffle=True, drop_last=True
 )
 valid_dl = DataLoader(
-    valid_ds, batch_size=config["optimiser"]["batchsize"], drop_last=True
+    valid_ds, batch_size=config["optimiser"]["batchsize"], drop_last=True,
 )
 
 if not os.listdir(args.model): # load model or initialise new one
@@ -75,9 +80,7 @@ if not os.listdir(args.model): # load model or initialise new one
         train_ds.n_func_in_dynamic,
         train_ds.n_func_in_ancillary,
         train_ds.n_func_target,
-        config["architecture"],
-        mean=torch.from_numpy(train_ds.mean),
-        std=torch.from_numpy(train_ds.std)
+        config["architecture"]
     )
 else:
     print('Loading model')

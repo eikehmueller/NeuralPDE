@@ -48,8 +48,6 @@ def load_hdf5_dataset(filename):
             data=np.asarray(data),
             t_initial=np.asarray(t_initial),
             t_elapsed=np.asarray(t_elapsed),
-            mean=np.asarray(mean),
-            std=np.asarray(std),
             metadata=metadata
             )
     return dataset
@@ -103,6 +101,7 @@ class SphericalFunctionSpaceDataset(Dataset):
         std=None,
         metadata=None,
         dtype=None,
+        transform=None
     ):
         """Initialise new instance
 
@@ -156,6 +155,7 @@ class SphericalFunctionSpaceDataset(Dataset):
         )
 
         self.metadata = {} if metadata is None else metadata
+        self.transform = transform
 
     def __getitem__(self, idx):
         """Return a single sample (X,y)
@@ -174,7 +174,10 @@ class SphericalFunctionSpaceDataset(Dataset):
             self._data[idx, self.n_func_in_dynamic + self.n_func_in_ancillary :],
             dtype=self.dtype,
         )
-        return (X, t), y
+        if self.transform:
+            X_transformed = self.transform(X)
+            y_transformed = self.transform(y)
+        return (X_transformed, t), y_transformed
 
     def __len__(self):
         """Return numnber of samples"""
@@ -276,7 +279,7 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
                 if jz > 0:
                     expr_in_dz += coeff[jx, jy, jz] * jz * x**jx * y**jy * z ** (jz - 1)
 
-            '''
+            
             self._u.interpolate(expr_in)
             self._data[j, 0, :] = self._u.dat.data
             self._u.interpolate(expr_in_dx)
@@ -290,19 +293,25 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
             self._data[j, 6, :] = self._u_z.dat.data
             self._u.interpolate(expr_target)
             self._data[j, 7, :] = self._u.dat.data
-            '''
-            self._u.interpolate(expr_in)
-            self._data[j, 0, :] = self._u.dat.data
-            self._data[j, 1, :] = self._u_x.dat.data
-            self._data[j, 2, :] = self._u_y.dat.data
-            self._data[j, 3, :] = self._u_z.dat.data
-            self._u.interpolate(expr_target)
-            self._data[j, 4, :] = self._u.dat.data
             self._t_elapsed[j] = t_final
 
         self.mean = np.mean(self._data, axis=(0,2))
         self.std  = np.std(self._data, axis=(0,2))
         return
+
+class Normalise(object):
+    def __init__(self, mean, std):
+        self.mean = mean
+        self.std = std
+
+    def __call__(self, sample):
+
+        cut_mean = self.mean[0:len(sample)]
+        cut_std = self.std[0:len(sample)]
+
+        sample_transformed = (sample - cut_mean) / cut_std
+        return sample_transformed
+
 
 class Projector:
 
