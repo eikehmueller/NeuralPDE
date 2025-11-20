@@ -8,7 +8,7 @@ import json
 from neural_pde.patch_encoder import PatchEncoder
 from neural_pde.patch_decoder import PatchDecoder
 from neural_pde.decoder import Decoder
-from neural_pde.neural_solver import ForwardEulerNeuralSolver
+from neural_pde.neural_solver import ForwardEulerNeuralSolver, SymplecticNeuralSolver
 from neural_pde.spherical_patch_covering import SphericalPatchCovering
 
 __all__ = ["build_model", "load_model"]
@@ -134,25 +134,6 @@ class NeuralPDEModel(torch.nn.Module):
                 out_features=architecture["latent_ancillary_dim"],
             ),
         )
-        n_hidden_interaction = 32
-        # interaction model: function on latent space
-        interaction_model = torch.nn.Sequential(
-            torch.nn.Flatten(start_dim=-2, end_dim=-1),
-            torch.nn.Linear(
-                in_features=4
-                * (
-                    architecture["latent_dynamic_dim"]
-                    + architecture["latent_ancillary_dim"]
-                ),
-                out_features=n_hidden_interaction,
-            ),
-            torch.nn.Softplus(),
-            torch.nn.Linear(
-                in_features=n_hidden_interaction,
-                out_features=architecture["latent_dynamic_dim"],
-            ),
-        )
-
         # Full model: encoder + processor + decoder
         self.add_module(
             "PatchEncoder",
@@ -164,14 +145,75 @@ class NeuralPDEModel(torch.nn.Module):
                 n_func_in_dynamic,
             ),
         )
-        self.add_module(
-            "NeuralSolver",
-            ForwardEulerNeuralSolver(
-                spherical_patch_covering,
-                interaction_model,
-                stepsize=architecture["dt"],
-            ),
-        )
+        if architecture["neural_solver"] == "symplectic":
+            n_hidden_hamiltonian = 32
+            # local Hamiltonians
+            H_q_local = torch.nn.Sequential(
+                torch.nn.Linear(
+                    in_features=architecture["latent_dynamic_dim"]
+                    + 2 * architecture["latent_ancillary_dim"],
+                    out_features=n_hidden_hamiltonian,
+                ),
+                torch.nn.Softplus(),
+                torch.nn.Linear(
+                    in_features=n_hidden_hamiltonian,
+                    out_features=1,
+                ),
+                torch.nn.Softplus(),
+            )
+            H_p_local = torch.nn.Sequential(
+                torch.nn.Linear(
+                    in_features=architecture["latent_dynamic_dim"]
+                    + 2 * architecture["latent_ancillary_dim"],
+                    out_features=n_hidden_hamiltonian,
+                ),
+                torch.nn.Softplus(),
+                torch.nn.Linear(
+                    in_features=n_hidden_hamiltonian,
+                    out_features=1,
+                ),
+                torch.nn.Softplus(),
+            )
+            self.add_module(
+                "NeuralSolver",
+                SymplecticNeuralSolver(
+                    spherical_patch_covering.dual_mesh,
+                    architecture["latent_dynamic_dim"],
+                    architecture["latent_ancillary_dim"],
+                    H_q_local,
+                    H_p_local,
+                    stepsize=architecture["dt"],
+                ),
+            )
+        elif architecture["neural_solver"] == "forward_euler":
+            n_hidden_interaction = 32
+            # interaction model: function on latent space
+            interaction_model = torch.nn.Sequential(
+                torch.nn.Flatten(start_dim=-2, end_dim=-1),
+                torch.nn.Linear(
+                    in_features=4
+                    * (
+                        architecture["latent_dynamic_dim"]
+                        + architecture["latent_ancillary_dim"]
+                    ),
+                    out_features=n_hidden_interaction,
+                ),
+                torch.nn.Softplus(),
+                torch.nn.Linear(
+                    in_features=n_hidden_interaction,
+                    out_features=architecture["latent_dynamic_dim"],
+                ),
+            )
+            self.add_module(
+                "NeuralSolver",
+                ForwardEulerNeuralSolver(
+                    spherical_patch_covering,
+                    interaction_model,
+                    stepsize=architecture["dt"],
+                ),
+            )
+        else:
+            raise RuntimeError("Unknown neural solver: ", architecture["neural_solver"])
         if architecture["decoder"] == "patch":
             # decoder model: map latent variables to variables on patches
             # input:  (nu*d_latent+n_ancil)

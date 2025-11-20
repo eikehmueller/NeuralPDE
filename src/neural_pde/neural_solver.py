@@ -1,4 +1,8 @@
+import numpy as np
 import torch
+from neural_pde.hamiltonian_solver import Hamiltonian, SymplecticIntegratorFunction
+
+__all__ = ["ForwardEulerNeuralSolver", "SymplecticNeuralSolver"]
 
 
 class ForwardEulerNeuralSolver(torch.nn.Module):
@@ -67,7 +71,7 @@ class ForwardEulerNeuralSolver(torch.nn.Module):
     def forward(self, x, t_final):
         """Carry out a number of forward-Euler steps for the latent variables on the dual mesh
 
-        :arg x: tensor of shape (B,n_patch,d_{latent}+d_{ancillary}) or (B,n_patch,d_{latent}+d_{ancillary})
+        :arg x: tensor of shape (B,n_patch,d_{latent}+d_{ancillary}) or (n_patch,d_{latent}+d_{ancillary})
         :arg t_final: final time of the integration, tensor of shape (B,) or scalar
         """
         index = self.index.expand(x.shape[:-2] + (-1, -1, x.shape[-1]))
@@ -110,3 +114,101 @@ class ForwardEulerNeuralSolver(torch.nn.Module):
             t += self.stepsize
 
         return x
+
+
+class NearestNeighbourHamiltonian(Hamiltonian):
+    """Hamiltonian describing nearest neighbour interactions
+
+    The Hamiltonian is assumed to be of the form
+
+        H(p,q;xi) = sum_{i~j} H_p^{(local)}(p_i,p_j;xi_i,xi_j)
+                  + sum_{i~j} H_q^{(local)}(q_i,q_j;xi_i,xi_j)
+
+    where the sums extend over all pairs (i,j) of nearest neighbours.
+
+    H_p^{(local)} and H_q^{(local)} are functions
+
+        R^{d_lat + 2*(d_ancil}) -> R
+
+    """
+
+    def __init__(self, dual_mesh, d_lat, d_ancil, H_q_local, H_p_local):
+        """Initialise new instance
+
+        :arg dual_mesh: dual mesh which is used to work out pairs of nearest neighbours
+        :arg d_lat: dimension of dynamic part of latent space
+        :arg d_ancil: dimension of ancillary latent space
+        :arg H_q_local: position dependent part of interaction Hamiltonian H_p^{(local)}
+        :arg H_p_local: momentum dependent part of interaction Hamiltonian H_p^{(local)}
+        """
+        super().__init__(len(dual_mesh.vertices), d_lat, d_ancil)
+        self.H_q_local = H_q_local
+        self.H_p_local = H_p_local
+        # Work out indices of interaction pairs
+        edges = {
+            tuple(sorted([i, j]))
+            for i, beta in enumerate(dual_mesh.neighbour_list)
+            for j in beta
+        }
+        interaction_pairs = np.asarray([list(edge) for edge in edges]).T
+        self.register_buffer("index", torch.tensor(interaction_pairs))
+
+    def H_q(self, q, xi):
+        """Position-dependent part of Hamiltonian
+
+        :arg q: position, tensor of shape (B,n_patch,d_lat/2)
+        :arg xi: ancillary variable, tensor of shape (B,n_patch,d_ancil)
+        """
+        # transform into four tensors of shapes
+        #   (B,n_edges,d_lat/2), (B,n_edges,d_lat/2),
+        #   (B,n_edges,d_ancil), (B,n_edges,d_ancil)
+        q_i = q[..., self.index[0, :], :]
+        q_j = q[..., self.index[1, :], :]
+        xi_i = xi[..., self.index[0, :], :]
+        xi_j = xi[..., self.index[1, :], :]
+        return torch.sum(
+            self.H_q_local(torch.cat((q_i, q_j, xi_i, xi_j), dim=-1)), axis=-2
+        )
+
+    def H_p(self, p, xi):
+        """Momentum-dependent part of Hamiltonian
+
+        :arg p: momentum, tensor of shape (B,n_patch,d_lat/2)
+        :arg xi: ancillary variable tensor of shape (B,n_patch,d_ancil)
+        """
+        p_i = p[..., self.index[0, :], :]
+        p_j = p[..., self.index[1, :], :]
+        xi_i = xi[..., self.index[0, :], :]
+        xi_j = xi[..., self.index[1, :], :]
+        return torch.sum(
+            self.H_p_local(torch.cat((p_i, p_j, xi_i, xi_j), dim=-1)), axis=-2
+        )
+
+
+class SymplecticNeuralSolver(torch.nn.Module):
+    """Neural solver which integrates the equations in latent space"""
+
+    def __init__(self, dual_mesh, d_lat, d_ancil, H_q_local, H_p_local, stepsize=1.0):
+        """Initialise new instance
+
+        :arg dual_mesh: dual mesh which is used to work out pairs of nearest neighbours
+        :arg d_lat: dimension of dynamic part of latent space
+        :arg d_ancil: dimension of ancillary latent space
+        :arg H_q_local: position dependent part of interaction Hamiltonian H_p^{(local)}
+        :arg H_p_local: momentum dependent part of interaction Hamiltonian H_p^{(local)}
+        :arg stepsize: timestep size
+        """
+
+        super().__init__()
+        self.hamiltonian = NearestNeighbourHamiltonian(
+            dual_mesh, d_lat, d_ancil, H_q_local, H_p_local
+        )
+        self.dt = stepsize
+
+    def forward(self, x, t_final):
+        """Carry out a number of symplectic steps for the latent variables on the dual mesh
+
+        :arg x: tensor of shape (B,n_patch,d_{latent}+d_{ancillary}) or (n_patch,d_{latent}+d_{ancillary})
+        :arg t_final: final time of the integration, tensor of shape (B,) or scalar
+        """
+        return SymplecticIntegratorFunction.apply(x, self.hamiltonian, t_final, self.dt)

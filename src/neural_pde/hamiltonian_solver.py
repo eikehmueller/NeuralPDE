@@ -75,7 +75,7 @@ class Hamiltonian(ABC, torch.nn.Module):
         pass
 
     @abstractmethod
-    def H_p(self, q, xi):
+    def H_p(self, p, xi):
         """User-defined momentum-dependent part of Hamiltonian
 
         :arg p: momentum
@@ -91,7 +91,7 @@ class Hamiltonian(ABC, torch.nn.Module):
         """
         p_shape = list(p.shape[:-1])
         p_shape[-1] = 1
-        grad_outputs = torch.ones(size=p_shape)
+        grad_outputs = torch.ones(size=p_shape, device=p.device)
         _p = p.detach()
         _p.requires_grad = True
         with torch.enable_grad():
@@ -107,7 +107,7 @@ class Hamiltonian(ABC, torch.nn.Module):
         """
         q_shape = list(q.shape[:-1])
         q_shape[-1] = 1
-        grad_outputs = torch.ones(size=q_shape)
+        grad_outputs = torch.ones(size=q_shape, device=q.device)
         _q = q.detach()
         _q.requires_grad = True
         with torch.enable_grad():
@@ -126,8 +126,9 @@ class SymplecticIntegratorFunction(torch.autograd.Function):
     def forward(ctx, x, hamiltonian, t_final, dt):
         """Forward pass, compute state at time T = n_t*dt
 
-        The input x in R^{d_lat+d_ancil} is split as x = (q_0,p_0,xi) where q, p are vectors
-        of length d_lat/2 and xi is a vector of length d_ancil. The integrator returns (q_T,p_T,xi)
+        The input x in R^{n_state*(d_lat+d_ancil)} is split as
+        x = (q_0,p_0,xi) where q, p are tensors of shape (n_state,d_lat/2) and xi is
+        a tensor of shape (n_state,d_ancil). The integrator returns (q_T,p_T,xi)
         where q_T, p_T are obtained by integrating the hamiltonian system to time T = n_t*dt with a
         symplectic integrator based on lowest-order Strang splitting.
 
