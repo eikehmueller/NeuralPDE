@@ -6,12 +6,21 @@ from firedrake import *
 import os
 from firedrake import norms
 import argparse
+import tomllib
 
 from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header
 from neural_pde.model import load_model
 import torch
 
 parser = argparse.ArgumentParser()
+
+parser.add_argument(
+    "--config",
+    type=str,
+    action="store",
+    help="name of parameter file",
+    default="config.toml",
+)
 
 parser.add_argument(
     "--output",
@@ -22,11 +31,11 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--data",
+    "--data_directory",
     type=str,
     action="store",
     help="file containing the data",
-    default="../data/data_test_nref3_0.h5",
+    default="../data/",
 )
 
 parser.add_argument(
@@ -39,15 +48,18 @@ parser.add_argument(
 
 args, _ = parser.parse_known_args()
 
+with open(args.config, "rb") as f:
+    config = tomllib.load(f)
+
 print()
 print(f"==== data ====")
 print()
 
-show_hdf5_header(args.data)
+show_hdf5_header(f"{args.data_directory}{config["data"]["test"]}")
 print()
 
-dataset = load_hdf5_dataset(args.data)
-train_ds = load_hdf5_dataset("../data/data_train_nref3_0.h5")
+dataset = load_hdf5_dataset(f"{args.data_directory}{config["data"]["test"]}")
+train_ds = load_hdf5_dataset(f"{args.data_directory}{config["data"]["train"]}")
 batch_size = len(dataset)
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 

@@ -85,6 +85,7 @@ class NeuralPDEModel(torch.nn.Module):
         self.y_mean = self.mean[:n_func_in_dynamic].reshape([1,-1,1]).to(torch.float32)
         self.x_std = self.std[:n_func_in_dynamic + n_func_in_ancillary].reshape([1,-1,1]).to(torch.float32)
         self.y_std = self.std[:n_func_in_dynamic].reshape([1,-1,1]).to(torch.float32)
+
         # construct spherical patch covering
         spherical_patch_covering = SphericalPatchCovering(
             architecture["dual_ref"], architecture["n_radial"]
@@ -107,7 +108,7 @@ class NeuralPDEModel(torch.nn.Module):
         # dynamic encoder model: map all fields to the latent space
         # input:  (n_dynamic+n_ancillary, patch_size)
         # output: (latent_dynamic_dim)
-        n_hidden = 256
+        n_hidden = 128
         dynamic_encoder_model = torch.nn.Sequential(
             torch.nn.Flatten(start_dim=-2, end_dim=-1),
             torch.nn.Linear(
