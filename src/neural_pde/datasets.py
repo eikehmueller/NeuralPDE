@@ -101,7 +101,7 @@ class SphericalFunctionSpaceDataset(Dataset):
         std=None,
         metadata=None,
         dtype=None,
-        transform=None
+        normalise=False
     ):
         """Initialise new instance
 
@@ -144,18 +144,18 @@ class SphericalFunctionSpaceDataset(Dataset):
             np.empty(self.n_samples, dtype=np.float64) if t_elapsed is None else t_elapsed
         )
         self.mean = (
-            np.empty(self.n_func_in_dynamic
+            np.zeros(self.n_func_in_dynamic
                     + self.n_func_in_ancillary
                     + self.n_func_target, dtype=np.float32) if mean is None else mean
         )
         self.std = (
-            np.empty(self.n_func_in_dynamic
+            np.ones(self.n_func_in_dynamic
                     + self.n_func_in_ancillary
                     + self.n_func_target, dtype=np.float32) if std is None else std
         )
 
         self.metadata = {} if metadata is None else metadata
-        self.transform = transform
+        self.normalise = False if normalise is False else Normalise(self.mean, self.std)
 
     def __getitem__(self, idx):
         """Return a single sample (X,y)
@@ -174,9 +174,10 @@ class SphericalFunctionSpaceDataset(Dataset):
             self._data[idx, self.n_func_in_dynamic + self.n_func_in_ancillary :],
             dtype=self.dtype,
         )
-        if self.transform:
-            X_transformed = self.transform(X)
-            y_transformed = self.transform(y)
+        if self.normalise:
+
+            X_transformed = self.normalise(X)
+            y_transformed = self.normalise(y)
         return (X_transformed, t), y_transformed
 
     def __len__(self):
@@ -213,7 +214,7 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
 
     """
 
-    def __init__(self, nref, nsamples, omega, t_final_max=1.0, degree=4, seed=12345):
+    def __init__(self, nref, nsamples, omega, t_final_max=1.0, degree=4, seed=12345, normalise=False):
         """Initialise new instance
 
         :arg nref: number of mesh refinements
@@ -227,7 +228,7 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
         n_func_in_ancillary = 3
         n_func_target = 1
         super().__init__(
-            n_func_in_dynamic, n_func_in_ancillary, n_func_target, nref, nsamples
+            n_func_in_dynamic, n_func_in_ancillary, n_func_target, nref, nsamples, normalise
         )
         self.metadata = {
             "omega": f"{omega:}",

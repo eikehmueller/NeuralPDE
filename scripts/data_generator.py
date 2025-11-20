@@ -73,10 +73,8 @@ print(f"  tfinalmax = {args.tfinalmax}")
 print(f"  seed      = {args.seed}")
 print(f"  degree    = {args.degree}")
 
-transform = Normalise(mean, std)
-
 dataset = SolidBodyRotationDataset(
-    args.nref, args.nsamples, args.omega, args.tfinalmax, args.degree, args.seed, transform=transform
+    args.nref, args.nsamples, args.omega, args.tfinalmax, args.degree, args.seed, normalise=True
 )
 dataset.generate()
 dataset.save(args.filename)
