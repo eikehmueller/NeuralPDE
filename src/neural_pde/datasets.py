@@ -8,12 +8,27 @@ import tqdm
 from torch.utils.data import Dataset
 import itertools
 import sys
+
 sys.path.append("/home/katie795/software/gusto/gusto")
-from gusto import (
-    lonlatr_from_xyz, ShallowWaterParameters, ShallowWaterEquations, Domain,
-    OutputParameters, MeridionalComponent, ZonalComponent,
-    IO, SSPRK3, DGUpwind, SemiImplicitQuasiNewton, RelativeVorticity,
-    SteadyStateError, Divergence)
+try:
+    from gusto import (
+        lonlatr_from_xyz,
+        ShallowWaterParameters,
+        ShallowWaterEquations,
+        Domain,
+        OutputParameters,
+        MeridionalComponent,
+        ZonalComponent,
+        IO,
+        SSPRK3,
+        DGUpwind,
+        SemiImplicitQuasiNewton,
+        RelativeVorticity,
+        SteadyStateError,
+        Divergence,
+    )
+except:
+    print("WARNING: running without gusto support")
 
 import diagnostics as dg
 from firedrake import (
@@ -32,6 +47,7 @@ __all__ = [
     "SphericalFunctionSpaceDataset",
     "SolidBodyRotationDataset",
 ]
+
 
 def load_hdf5_dataset(filename):
     """Load the dataset from disk
@@ -120,7 +136,9 @@ class SphericalFunctionSpaceDataset(Dataset):
         self.n_func_target = n_func_target
         self.n_ref = n_ref
         self.dtype = torch.get_default_dtype() if dtype is None else dtype
-        self.mesh = UnitIcosahedralSphereMesh(refinement_level=n_ref, name="IcosahedralMesh")  # create the mesh
+        self.mesh = UnitIcosahedralSphereMesh(
+            refinement_level=n_ref, name="IcosahedralMesh"
+        )  # create the mesh
         self._fs = FunctionSpace(self.mesh, "CG", 1)  # define the function space
         self.n_samples = nsamples
         self._data = (
@@ -138,10 +156,14 @@ class SphericalFunctionSpaceDataset(Dataset):
             else data
         )
         self._t_initial = (
-            np.empty(self.n_samples, dtype=np.float64) if t_initial is None else t_initial
-        ) 
+            np.empty(self.n_samples, dtype=np.float64)
+            if t_initial is None
+            else t_initial
+        )
         self._t_elapsed = (
-            np.empty(self.n_samples, dtype=np.float64) if t_elapsed is None else t_elapsed
+            np.empty(self.n_samples, dtype=np.float64)
+            if t_elapsed is None
+            else t_elapsed
         )
 
         self.metadata = {} if metadata is None else metadata
@@ -277,7 +299,6 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
             self._t_elapsed[j] = t_final
 
 
-
 class Projector:
 
     def __init__(self, W, V):
@@ -286,8 +307,8 @@ class Projector:
         :arg W: function space W
         :arg V: function space V
         """
-        self._W = W # this should be the BDM space!! or a DG space
-        self._V = V # CG1 space
+        self._W = W  # this should be the BDM space!! or a DG space
+        self._V = V  # CG1 space
         self.phi = TestFunction(self._V)
         self.psi = TrialFunction(self._V)
         self._w_hdiv = Function(self._W)
@@ -298,7 +319,6 @@ class Projector:
         ]
         self._v = Function(self._V)
         self.a_mass = self.phi * self.psi * dx
-
 
     def create_linear_solver(self):
 
@@ -315,7 +335,7 @@ class Projector:
             lvp = LinearVariationalProblem(self.a_mass, b_hscalar, self._v)
             lvs = LinearVariationalSolver(lvp)
         else:
-            print('Projector error: function space value is neither 1 nor 3.')
+            print("Projector error: function space value is neither 1 nor 3.")
 
         return lvs
 
@@ -337,7 +357,8 @@ class Projector:
             lvs.solve()
             u.assign(self._v)
         else:
-            print('Projector error: function space value is neither 1 nor 3.')
+            print("Projector error: function space value is neither 1 nor 3.")
+
 
 class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
     """Data set for Shallow Water Equations
@@ -348,7 +369,20 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
     """
 
-    def __init__(self, n_ref, nsamples, dt, t_final_max=10.0, omega=7.292e-5, g=9.8, t_interval=10, t_sigma=1, t_lowest=0, t_highest=10, save_diagnostics=False):
+    def __init__(
+        self,
+        n_ref,
+        nsamples,
+        dt,
+        t_final_max=10.0,
+        omega=7.292e-5,
+        g=9.8,
+        t_interval=10,
+        t_sigma=1,
+        t_lowest=0,
+        t_highest=10,
+        save_diagnostics=False,
+    ):
         """Initialise new instance
 
         :arg nref: number of mesh refinements
@@ -356,11 +390,11 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         :arg nt: number of timesteps
         :arg t_final_max: maximum final time
         :arg omega: rotation speed
-        :arg g: gravitational acceleration 
+        :arg g: gravitational acceleration
         """
-        n_func_in_dynamic = 3   # fixed for swes
-        n_func_in_ancillary = 3 # x y and z coordinates
-        n_func_target = 3       # fixed for swes
+        n_func_in_dynamic = 3  # fixed for swes
+        n_func_in_ancillary = 3  # x y and z coordinates
+        n_func_target = 3  # fixed for swes
 
         self.omega = omega
         self.g = g
@@ -375,43 +409,45 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
             "omega": f"{self.omega:}",
             "t_final_max": f"{t_final_max:}",
             "t_lowest": f"{t_lowest}",
-            "t_highest": f"{t_highest}"
+            "t_highest": f"{t_highest}",
         }
 
-        self.dt = dt # number of timesteps
-        self.t_final_max = t_final_max # final time
-        self.t_interval = t_interval # the expected
+        self.dt = dt  # number of timesteps
+        self.t_final_max = t_final_max  # final time
+        self.t_interval = t_interval  # the expected
         self.t_lowest = t_lowest
         self.t_highest = t_highest
         self.t_sigma = t_sigma
 
-        x, y, z = SpatialCoordinate(self._fs.mesh()) # spatial coordinate
-        self._x = Function(self._fs).interpolate(x) # collect data on x,y,z coordinates
+        x, y, z = SpatialCoordinate(self._fs.mesh())  # spatial coordinate
+        self._x = Function(self._fs).interpolate(x)  # collect data on x,y,z coordinates
         self._y = Function(self._fs).interpolate(y)
         self._z = Function(self._fs).interpolate(z)
 
     def generate_full_dataset(self):
-        '''
+        """
         Generate the full data for the shallow water equations. The dataset used to train the model
         will be sampled from this data. This may take a while to load.
-        '''
+        """
 
         start_timer = timer()
 
-        L0 = 5960 # charactersistic length scale (mean height of water)
-        R = 6371220 / L0 # radius of earth divided by length scale
-        T0 = 12 * 24 * 60 * 60 / (2 * pi * R) # characteristic time scale - scales umax to 1
+        L0 = 5960  # charactersistic length scale (mean height of water)
+        R = 6371220 / L0  # radius of earth divided by length scale
+        T0 = (
+            12 * 24 * 60 * 60 / (2 * pi * R)
+        )  # characteristic time scale - scales umax to 1
 
-        element_order = 1 # CG method
-        #dt = self.t_final_max / self.nt # Timestep
+        element_order = 1  # CG method
+        # dt = self.t_final_max / self.nt # Timestep
 
         # BDM means Brezzi-Douglas-Marini finite element basis function
-        domain = Domain(self.mesh, self.dt, 'BDM', element_order)
+        domain = Domain(self.mesh, self.dt, "BDM", element_order)
         print(domain.spaces("H1"))
 
         # ShallowWaterParameters are the physical parameters for the shallow water equations
-        mean_depth = 1           # this is the parameter we nondimensionalise around
-        g0 = self.g * (T0**2) / L0    # nondimensionalised g (m/s^2)
+        mean_depth = 1  # this is the parameter we nondimensionalise around
+        g0 = self.g * (T0**2) / L0  # nondimensionalised g (m/s^2)
         Omega0 = self.omega * T0  # nondimensionalised omega (s^-1)
 
         # initialise parameters object
@@ -419,27 +455,40 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
         # set up the finite element form
         xyz = SpatialCoordinate(self.mesh)
-        lon, lat, _ = lonlatr_from_xyz(*xyz)  # latitide and longitude 
+        lon, lat, _ = lonlatr_from_xyz(*xyz)  # latitide and longitude
         eqns = ShallowWaterEquations(domain, parameters)
 
-        # output options 
-        output = OutputParameters(dirname="gusto_output", dump_vtus=True, dump_nc=True, dump_diagnostics=True, dumpfreq=1, checkpoint=True, chkptfreq=1, multichkpt=True) # these have been modified so we get no output
+        # output options
+        output = OutputParameters(
+            dirname="gusto_output",
+            dump_vtus=True,
+            dump_nc=True,
+            dump_diagnostics=True,
+            dumpfreq=1,
+            checkpoint=True,
+            chkptfreq=1,
+            multichkpt=True,
+        )  # these have been modified so we get no output
 
         # choose which fields to record over the simulation
-        #diagnostic_fields = [MeridionalComponent('u'), ZonalComponent('u'), SteadyStateError('D')]
-        diagnostic_fields = [Divergence('u'), RelativeVorticity()]
+        # diagnostic_fields = [MeridionalComponent('u'), ZonalComponent('u'), SteadyStateError('D')]
+        diagnostic_fields = [Divergence("u"), RelativeVorticity()]
         io = IO(domain, output, diagnostic_fields=diagnostic_fields)
 
         # the methods to solve the equations
         transported_fields = [SSPRK3(domain, "u"), SSPRK3(domain, "D")]
-        transport_methods  = [DGUpwind(eqns, "u"), DGUpwind(eqns, "D")]
-        stepper = SemiImplicitQuasiNewton(eqns, io, transported_fields, transport_methods)
+        transport_methods = [DGUpwind(eqns, "u"), DGUpwind(eqns, "D")]
+        stepper = SemiImplicitQuasiNewton(
+            eqns, io, transported_fields, transport_methods
+        )
 
         # setting the initial conditions for velocity
         u0 = stepper.fields("u")
-        day = 24*60*60 / T0 # day in seconds
-        u_max = 2*pi*R/(12*day)  # Maximum amplitude of the zonal wind (m/s)
-        uexpr = as_vector((-u_max*cos(lat)*sin(lon), u_max*cos(lat)*cos(lon), 0))
+        day = 24 * 60 * 60 / T0  # day in seconds
+        u_max = 2 * pi * R / (12 * day)  # Maximum amplitude of the zonal wind (m/s)
+        uexpr = as_vector(
+            (-u_max * cos(lat) * sin(lon), u_max * cos(lat) * cos(lon), 0)
+        )
         u0.project(uexpr)
 
         # setting up initial conditions for height
@@ -448,84 +497,86 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         H = parameters.H
 
         # adding mountain ranges - these could all be varied!
-        lamda_c = -pi/2.  # longitudinal centre of mountain (rad)
-        phi_c = pi/6.     # latitudinal centre of mountain (rad)
+        lamda_c = -pi / 2.0  # longitudinal centre of mountain (rad)
+        phi_c = pi / 6.0  # latitudinal centre of mountain (rad)
 
-        R0 = pi/9.                  # radius of mountain (rad)
-        mountain_height = 2000 / L0 # height of mountain (m)
+        R0 = pi / 9.0  # radius of mountain (rad)
+        mountain_height = 2000 / L0  # height of mountain (m)
 
-        rsq1 = min_value(R0**2, (lon - lamda_c)**2 + (lat - phi_c)**2)
+        rsq1 = min_value(R0**2, (lon - lamda_c) ** 2 + (lat - phi_c) ** 2)
 
         r1 = sqrt(rsq1)
 
-        tpexpr = mountain_height *( (1 - r1/R0) )
-        Dexpr = H - ((R * Omega0 * u_max + 0.5*u_max**2)*(sin(lat))**2) / g + tpexpr
+        tpexpr = mountain_height * ((1 - r1 / R0))
+        Dexpr = (
+            H - ((R * Omega0 * u_max + 0.5 * u_max**2) * (sin(lat)) ** 2) / g + tpexpr
+        )
 
         D0.interpolate(Dexpr)
 
         # reference velocity is zero, reference depth is H
         Dbar = Function(D0.function_space()).assign(H)
-        stepper.set_reference_profiles([('D', Dbar)])
+        stepper.set_reference_profiles([("D", Dbar)])
 
         # run the simulation
         stepper.run(t=0, tmax=self.t_final_max)
         end_timer = timer()
         print(f"Gusto runtime: {timedelta(seconds=end_timer-start_timer)}")
         return
-    
+
     def prepare_for_model(self):
-        '''
+        """
         Sample the data from the generated dataset and save as a np array
-        '''
+        """
         start_timer1 = timer()
 
-        with CheckpointFile("results/gusto_output/chkpt.h5", 'r') as afile:
+        with CheckpointFile("results/gusto_output/chkpt.h5", "r") as afile:
             mesh_h5 = afile.load_mesh("IcosahedralMesh")
             V_BDM = FunctionSpace(mesh_h5, "BDM", 2)
             V_DG = FunctionSpace(mesh_h5, "DG", 1)
             V_CG = FunctionSpace(mesh_h5, "CG", 1)
 
-            h_inp = Function(V_CG) # input function for h
-            h_tar = Function(V_CG) # target function for h
+            h_inp = Function(V_CG)  # input function for h
+            h_tar = Function(V_CG)  # target function for h
 
             p1 = Projector(V_BDM, V_CG)
             p2 = Projector(V_DG, V_CG)
 
-            nt = int(self.t_final_max / self.dt)           
+            nt = int(self.t_final_max / self.dt)
 
             diagnostics = dg.Diagnostics(V_BDM, V_CG)
             if self.save_diagnostics:
                 file = VTKFile(f"results/gusto_output/diagnostics.pvd")
-                
+
                 for i in range(nt):
                     u_func = [Function(V_CG) for _ in range(3)]
                     u = afile.load_function(mesh_h5, "u", idx=i)
-                    p1.apply(u, u_func)    # input u data
+                    p1.apply(u, u_func)  # input u data
 
                     vorticity = diagnostics.vorticity(u)
                     divergence = diagnostics.divergence(u)
                     vorticity.rename("vorticity")
                     divergence.rename("divergence")
                     file.write(vorticity, divergence, u, t=i)
-            
+
             interval = self.t_interval / self.dt
-            sigma    = self.t_sigma    / self.dt
-            
+            sigma = self.t_sigma / self.dt
+
             for j in tqdm.tqdm(range(self.n_samples)):
-                
+
                 # randomly sample the generated data
-                highest  = self.t_highest  / self.dt
-                lowest   = self.t_lowest   / self.dt
+                highest = self.t_highest / self.dt
+                lowest = self.t_lowest / self.dt
                 start = np.random.randint(lowest, highest)
 
-                mu =  start + interval
-                #t_norm = truncnorm((start - mu) / sigma, (highest - mu) / sigma, loc=mu, scale=sigma)
-                end = start #+ interval #round(t_norm.rvs(1)[0]) CHANGE THIS BACK
+                mu = start + interval
+                # t_norm = truncnorm((start - mu) / sigma, (highest - mu) / sigma, loc=mu, scale=sigma)
+                end = start  # + interval #round(t_norm.rvs(1)[0]) CHANGE THIS BACK
 
                 if j == 100:
-                    print(f'Start timestep is {start}')
-                    print(f'End timestep is {end}')
-                
+                    print(f"Start timestep is {start}")
+                    print(f"End timestep is {end}")
+
                 if end > highest:
                     end = highest
 
@@ -542,23 +593,24 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 divergence_inp = diagnostics.divergence(w1)
                 vorticity_tar = diagnostics.vorticity(w2)
                 divergence_tar = diagnostics.divergence(w2)
-                    
-                
+
                 # input data - dynamic variables
-                self._data[j, 0, :] = h_inp.dat.data # h data
+                self._data[j, 0, :] = h_inp.dat.data  # h data
                 self._data[j, 1, :] = divergence_inp.dat.data
                 self._data[j, 2, :] = vorticity_inp.dat.data
                 # coordinate data - auxiliary variables
-                self._data[j, 3, :] = self._x.dat.data # x coord data
-                self._data[j, 4, :] = self._y.dat.data # y coord data
-                self._data[j, 5, :] = self._z.dat.data # z coord data
+                self._data[j, 3, :] = self._x.dat.data  # x coord data
+                self._data[j, 4, :] = self._y.dat.data  # y coord data
+                self._data[j, 5, :] = self._z.dat.data  # z coord data
                 # output data - target data
-                self._data[j, 6, :] = h_tar.dat.data # h data
+                self._data[j, 6, :] = h_tar.dat.data  # h data
                 self._data[j, 7, :] = divergence_tar.dat.data
                 self._data[j, 8, :] = vorticity_tar.dat.data
                 # time data
-                self._t_initial[j]  = start * self.dt
-                self._t_elapsed[j]  = (end - start) * self.dt
+                self._t_initial[j] = start * self.dt
+                self._t_elapsed[j] = (end - start) * self.dt
         end_timer1 = timer()
-        print(f"Training, validation and test data runtime: {timedelta(seconds=end_timer1-start_timer1)}")
+        print(
+            f"Training, validation and test data runtime: {timedelta(seconds=end_timer1-start_timer1)}"
+        )
         return
