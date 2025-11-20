@@ -1,10 +1,10 @@
 #!/bin/bash
 mkdir -p data/
 
-NREF=4
+NREF=3
 DEGREE=4
 OMEGA=1.0
-TFINALMAX=0 # ~ pi
+TFINALMAX=3.14 # ~ pi
 
 python data_generator.py \
     --filename data/data_train_nref${NREF}_${TFINALMAX}.h5 \
@@ -12,7 +12,7 @@ python data_generator.py \
     --degree ${DEGREE} \
     --omega ${OMEGA} \
     --tfinalmax ${TFINALMAX} \
-    --nsamples 4096 \
+    --nsamples 256 \
     --seed 152167
 
 python data_generator.py \

@@ -1,14 +1,15 @@
 {
     "dimensions": {
         "n_ref": 3,
-        "n_func_in_dynamic": 3,
+        "n_func_in_dynamic": 4,
         "n_func_in_ancillary": 3,
-        "n_func_target": 3
+        "n_func_target": 1
     },
     "architecture": {
         "dual_ref": 1,
         "n_radial": 8,
         "decoder": "nearest_neighbour",
+        "neural_solver": "forward_euler",
         "latent_dynamic_dim": 4,
         "latent_ancillary_dim": 2,
         "nu": 3,

@@ -207,7 +207,7 @@ class NeuralPDEModel(torch.nn.Module):
             self.add_module(
                 "NeuralSolver",
                 ForwardEulerNeuralSolver(
-                    spherical_patch_covering,
+                    spherical_patch_covering.dual_mesh,
                     interaction_model,
                     stepsize=architecture["dt"],
                 ),
