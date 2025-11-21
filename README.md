@@ -10,9 +10,9 @@
 For a mathematical description see [here](Description.ipynb)
 
 ### Installation
-To install this package run 
+To install this package, clone the repository, then run 
 ```python -m pip install .```
-as usual after installing the dependencies (see below).
+after navigating to your local repository and after installing the dependencies (see below).
 
 If you want to edit the code, you might prefer to install in editable mode with
 ```python -m pip install --editable .```
