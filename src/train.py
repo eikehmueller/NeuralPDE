@@ -71,8 +71,7 @@ train_dl = DataLoader(
 valid_dl = DataLoader(
     valid_ds, batch_size=config["optimiser"]["batchsize"], drop_last=True
 )
-
-if not os.listdir(args.model): # load model or initialise new one
+if not ("model.pt" in os.listdir(args.model)): # load model or initialise new one
     print('Building model')
     model = build_model(
         train_ds.n_ref,
