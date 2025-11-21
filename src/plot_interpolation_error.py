@@ -1,6 +1,4 @@
 """Calculate error interpolating onto the dual mesh and back"""
-import sys
-sys.path.insert(0, "/home/katie795/NeuralPDE_workspace/data")
 from torch.utils.data import DataLoader
 from firedrake import *
 import os

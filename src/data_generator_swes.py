@@ -1,6 +1,4 @@
 """This script produces the data"""
-import sys
-sys.path.append("/home/katie795/software/gusto")
 import argparse
 import os
 import shutil
