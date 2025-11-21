@@ -1,10 +1,7 @@
 import torch
 from firedrake import *
-import sys
-sys.path.append("..")
 from neural_pde.icosahedral_dual_mesh import IcosahedralDualMesh
 from neural_pde.decoder import Decoder
-import sys
 
 def project_to_dg0(mesh, u_dual):
     """Project data from dual mesh to DG0 space on original mesh

@@ -16,8 +16,5 @@ tb_logs/
 *.out
 *.synctex.gz
 
-src/runs/
-src/data/
-src/results/
 doc/hamiltonian_solver.pdf
 

@@ -14,8 +14,6 @@
 import pytest
 from firedrake import *
 import torch
-import sys
-sys.path.append("..")
 from neural_pde.intergrid import Interpolator, AdjointInterpolator
 from firedrake.ml.pytorch import to_torch
 

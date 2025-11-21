@@ -3,13 +3,9 @@ import numpy as np
 from scipy.stats import truncnorm
 import json
 import h5py
-
 import tqdm
 from torch.utils.data import Dataset
 import itertools
-import sys
-
-sys.path.append("/home/katie795/software/gusto/gusto")
 try:
     from gusto import (
         lonlatr_from_xyz,
@@ -30,7 +26,9 @@ try:
 except:
     print("WARNING: running without gusto support")
 
-import diagnostics as dg
+import neural_pde.diagnostics as dg
+from neural_pde.velocity_functions import Projector
+
 from firedrake import (
     FunctionSpace,
     Function,
@@ -40,12 +38,17 @@ from firedrake import (
 from firedrake import *
 from timeit import default_timer as timer
 from datetime import timedelta
+try:
+    from gusto import (lonlatr_from_xyz, ShallowWaterParameters, ShallowWaterEquations, Domain,OutputParameters, IO, SSPRK3, DGUpwind, SemiImplicitQuasiNewton, RelativeVorticity, Divergence)
+except:
+    print ("WARNING: unable to import gusto")
 
 __all__ = [
     "show_hdf5_header",
     "load_hdf5_dataset",
     "SphericalFunctionSpaceDataset",
     "SolidBodyRotationDataset",
+    "ShallowWaterEquationsDataset"
 ]
 
 
@@ -67,8 +70,8 @@ def load_hdf5_dataset(filename):
             data=np.asarray(data),
             t_initial=np.asarray(t_initial),
             t_elapsed=np.asarray(t_elapsed),
-            metadata=metadata,
-        )
+            metadata=metadata
+            )
     return dataset
 
 
@@ -128,6 +131,7 @@ class SphericalFunctionSpaceDataset(Dataset):
         :arg nsamples: number of samples
         :arg data: data to initialise with
         :arg t_final: final times
+        :arg t_elapsed: elapsed time
         :arg metadata: metadata to initialise with
         :arg dtype: type to which the data is converted to
         """
@@ -165,7 +169,7 @@ class SphericalFunctionSpaceDataset(Dataset):
             if t_elapsed is None
             else t_elapsed
         )
-
+        
         self.metadata = {} if metadata is None else metadata
 
     def __getitem__(self, idx):
@@ -209,7 +213,16 @@ class SphericalFunctionSpaceDataset(Dataset):
             f.attrs["class"] = type(self).__name__
             group.create_dataset("metadata", data=json.dumps(self.metadata))
 
+    @property
+    def mean(self):
+        """Return mean of data by averaging over batches and gridpoints"""
+        return np.mean(self._data, axis=(0, 2))
 
+    @property
+    def std(self):
+        """Return standard deviation of data averaging over batches and gridpoints"""
+        return np.std(self._data, axis=(0, 2))
+    
 class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
     """Data set for advection
 
@@ -254,6 +267,7 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
         )  # removing the seed seems to make it slower
         self.nt = 1
 
+
     def generate(self):
         """Generate the data"""
         # generate data
@@ -283,6 +297,7 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
                     expr_in_dy += coeff[jx, jy, jz] * jy * x**jx * y ** (jy - 1) * z**jz
                 if jz > 0:
                     expr_in_dz += coeff[jx, jy, jz] * jz * x**jx * y**jy * z ** (jz - 1)
+            
             self._u.interpolate(expr_in)
             self._data[j, 0, :] = self._u.dat.data
             self._u.interpolate(expr_in_dx)
@@ -297,67 +312,6 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
             self._u.interpolate(expr_target)
             self._data[j, 7, :] = self._u.dat.data
             self._t_elapsed[j] = t_final
-
-
-class Projector:
-
-    def __init__(self, W, V):
-        """Class for projecting functions in from a 3D vector space to 3 separate scalar functions in V
-
-        :arg W: function space W
-        :arg V: function space V
-        """
-        self._W = W  # this should be the BDM space!! or a DG space
-        self._V = V  # CG1 space
-        self.phi = TestFunction(self._V)
-        self.psi = TrialFunction(self._V)
-        self._w_hdiv = Function(self._W)
-        self._u = [
-            Function(self._V),
-            Function(self._V),
-            Function(self._V),
-        ]
-        self._v = Function(self._V)
-        self.a_mass = self.phi * self.psi * dx
-
-    def create_linear_solver(self):
-
-        if self._W.value_size == 3:
-            lvs = []
-            for j in range(3):
-                n_hat = [0, 0, 0]
-                n_hat[j] = 1
-                b_hdiv = self.phi * inner(self._w_hdiv, as_vector(n_hat)) * dx
-                lvp = LinearVariationalProblem(self.a_mass, b_hdiv, self._u[j])
-                lvs.append(LinearVariationalSolver(lvp))
-        elif self._W.value_size == 1:
-            b_hscalar = self.phi * self._w_hdiv * dx
-            lvp = LinearVariationalProblem(self.a_mass, b_hscalar, self._v)
-            lvs = LinearVariationalSolver(lvp)
-        else:
-            print("Projector error: function space value is neither 1 nor 3.")
-
-        return lvs
-
-    def apply(self, w, u):
-        """Project a specific function
-
-        :arg w: function in W to project
-        :arg u: list of three functions which will contain the result
-        """
-        lvs = self.create_linear_solver()
-
-        if w.function_space().value_size == 3:
-            self._w_hdiv.assign(w)
-            for j in range(3):
-                lvs[j].solve()
-                u[j].assign(self._u[j])
-        elif w.function_space().value_size == 1:
-            self._w_hdiv.assign(w)
-            lvs.solve()
-            u.assign(self._v)
-        else:
-            print("Projector error: function space value is neither 1 nor 3.")
 
 
 class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
@@ -392,29 +346,29 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         :arg omega: rotation speed
         :arg g: gravitational acceleration
         """
-        n_func_in_dynamic = 3  # fixed for swes
-        n_func_in_ancillary = 3  # x y and z coordinates
-        n_func_target = 3  # fixed for swes
 
-        self.omega = omega
-        self.g = g
-        self.save_diagnostics = save_diagnostics
+        n_func_in_dynamic = 3   # height, vorticity and divergence
+        n_func_in_ancillary = 3 # x-, y-, and z- coordinates
+        n_func_target = 3       # height, vorticity and divergence
 
         # initialise with the SphericalFunctionSpaceData
         super().__init__(
             n_func_in_dynamic, n_func_in_ancillary, n_func_target, n_ref, nsamples
         )
 
+        self.omega = omega
+        self.g = g
+        self.save_diagnostics = save_diagnostics
+        
         self.metadata = {
             "omega": f"{self.omega:}",
             "t_final_max": f"{t_final_max:}",
             "t_lowest": f"{t_lowest}",
             "t_highest": f"{t_highest}",
         }
-
-        self.dt = dt  # number of timesteps
-        self.t_final_max = t_final_max  # final time
-        self.t_interval = t_interval  # the expected
+        self.dt = dt # number of timesteps
+        self.t_final_max = t_final_max # final time
+        self.t_interval = t_interval # the expected
         self.t_lowest = t_lowest
         self.t_highest = t_highest
         self.t_sigma = t_sigma
@@ -438,8 +392,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
             12 * 24 * 60 * 60 / (2 * pi * R)
         )  # characteristic time scale - scales umax to 1
 
-        element_order = 1  # CG method
-        # dt = self.t_final_max / self.nt # Timestep
+        element_order = 1 # CG method
 
         # BDM means Brezzi-Douglas-Marini finite element basis function
         domain = Domain(self.mesh, self.dt, "BDM", element_order)
@@ -522,15 +475,16 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         stepper.run(t=0, tmax=self.t_final_max)
         end_timer = timer()
         print(f"Gusto runtime: {timedelta(seconds=end_timer-start_timer)}")
-        return
+    
+    def prepare_for_model(self, filename):
+        '''Sample the data from the generated dataset and save as a np array
 
-    def prepare_for_model(self):
-        """
-        Sample the data from the generated dataset and save as a np array
-        """
+        :arg filename: name of checkpoint file to read from
+        '''
         start_timer1 = timer()
 
-        with CheckpointFile("results/gusto_output/chkpt.h5", "r") as afile:
+        with CheckpointFile(filename, 'r') as afile:
+            print('we have opened the checkpoint file')
             mesh_h5 = afile.load_mesh("IcosahedralMesh")
             V_BDM = FunctionSpace(mesh_h5, "BDM", 2)
             V_DG = FunctionSpace(mesh_h5, "DG", 1)
@@ -546,8 +500,8 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
             diagnostics = dg.Diagnostics(V_BDM, V_CG)
             if self.save_diagnostics:
-                file = VTKFile(f"results/gusto_output/diagnostics.pvd")
-
+                file = VTKFile("results/gusto_output/diagnostics.pvd")
+                
                 for i in range(nt):
                     u_func = [Function(V_CG) for _ in range(3)]
                     u = afile.load_function(mesh_h5, "u", idx=i)
@@ -565,13 +519,14 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
             for j in tqdm.tqdm(range(self.n_samples)):
 
                 # randomly sample the generated data
-                highest = self.t_highest / self.dt
-                lowest = self.t_lowest / self.dt
+
+                highest  = self.t_highest  / self.dt
+                lowest   = self.t_lowest   / self.dt + 1 # there is an error in gusto at t = 0 in the divergence
                 start = np.random.randint(lowest, highest)
 
-                mu = start + interval
-                # t_norm = truncnorm((start - mu) / sigma, (highest - mu) / sigma, loc=mu, scale=sigma)
-                end = start  # + interval #round(t_norm.rvs(1)[0]) CHANGE THIS BACK
+                mu =  start + interval
+                t_norm = truncnorm((start - mu) / sigma, (highest - mu) / sigma, loc=mu, scale=sigma)
+                end = round(t_norm.rvs(1)[0]) 
 
                 if j == 100:
                     print(f"Start timestep is {start}")
@@ -607,10 +562,10 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 self._data[j, 7, :] = divergence_tar.dat.data
                 self._data[j, 8, :] = vorticity_tar.dat.data
                 # time data
-                self._t_initial[j] = start * self.dt
-                self._t_elapsed[j] = (end - start) * self.dt
+                self._t_initial[j]  = start * self.dt
+                self._t_elapsed[j]  = (end - start) * self.dt
+        print(f'Mean is {self.mean}')
+        print(f'Std is {self.std}')
+
         end_timer1 = timer()
-        print(
-            f"Training, validation and test data runtime: {timedelta(seconds=end_timer1-start_timer1)}"
-        )
-        return
+        print(f"Training, validation and test data runtime: {timedelta(seconds=end_timer1-start_timer1)}")

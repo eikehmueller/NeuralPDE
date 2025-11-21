@@ -1,6 +1,4 @@
 """This script produces the data"""
-import sys
-sys.path.append("/home/katie795/software/gusto")
 import argparse
 import os
 import shutil
@@ -23,7 +21,7 @@ parser.add_argument(
     type=str,
     action="store",
     help="name of file where the gusto results are saved",
-    default="/home/katie795/NeuralPDE_workspace/src/results/gusto_output",
+    default="/home/katie795/NeuralPDE_workspace/scripts/results/gusto_output",
 )
 
 parser.add_argument(
@@ -118,7 +116,6 @@ parser.add_argument(
     default=10
 )
 
-
 args, _ = parser.parse_known_args()
 
 print(f"  filename         = {args.filename}")
@@ -150,7 +147,7 @@ else:
     print('Opening previously generated simulation')
 
 print('Extracting the data for the training, test, and validation sets')
-dataset.prepare_for_model()
+dataset.prepare_for_model(os.path.join(args.output_file_path,"chkpt.h5"))
 
 print('Saving the data in h5 format')
 dataset.save(args.filename)
