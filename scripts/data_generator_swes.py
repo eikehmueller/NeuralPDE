@@ -118,7 +118,6 @@ parser.add_argument(
     default=10
 )
 
-
 args, _ = parser.parse_known_args()
 
 print(f"  filename         = {args.filename}")
@@ -150,7 +149,7 @@ else:
     print('Opening previously generated simulation')
 
 print('Extracting the data for the training, test, and validation sets')
-dataset.prepare_for_model()
+dataset.prepare_for_model(os.path.join(args.output_file_path,"chkpt.h5"))
 
 print('Saving the data in h5 format')
 dataset.save(args.filename)

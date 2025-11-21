@@ -9,7 +9,6 @@ import tqdm
 import tomllib
 import argparse
 import os
-import cProfile
 from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header
 from neural_pde.loss_functions import rmse as loss_fn
 from neural_pde.model import build_model, load_model
@@ -152,6 +151,4 @@ writer.flush()
 
 end = timer()
 print(f"Runtime: {timedelta(seconds=end-start)}")
-#print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
-#prof.export_chrome_trace("trace.json")
 model.save(args.model)
