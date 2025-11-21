@@ -10,7 +10,6 @@ from neural_pde.diagnostics import Diagnostics
 from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header, Projector
 from neural_pde.loss_functions import rmse as metric
 from neural_pde.model import load_model
-from move_results_to_windows import move_files_and_directories
 import matplotlib.pyplot as plt
 # Create argparse arguments
 parser = argparse.ArgumentParser()
@@ -21,12 +20,6 @@ parser.add_argument(
     action="store",
     help="name of parameter file",
     default="config.toml",
-)
-
-parser.add_argument(
-    "--move_to_windows",
-    action="store_true",
-    help="whether to move paraview data to windows folder",
 )
 
 parser.add_argument(
@@ -202,15 +195,3 @@ if args.plot_dataset_and_model:
     ax.set_title('Total model error')
     plt.tight_layout()
     plt.savefig('../results/model_RMSE_over_time.png')
-        
-
-# Define your WSL and Windows folders
-wsl_folder1 = '/home/katie795/NeuralPDE_workspace/src/results/output_for_visualising_model_dataset'
-wsl_folder2 = '/home/katie795/NeuralPDE_workspace/src/results/gusto_output/field_output'
-wsl_folder3 = '/home/katie795/NeuralPDE_workspace/src/results/output_for_evaluation'
-windows_folder = 'C:\\Users\\kathe\\OneDrive\\Desktop\\paraview_data'
-
-if args.move_to_windows:
-    move_files_and_directories(wsl_folder1, windows_folder)
-    move_files_and_directories(wsl_folder2, windows_folder)
-    move_files_and_directories(wsl_folder3, windows_folder)
