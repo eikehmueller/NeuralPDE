@@ -36,15 +36,15 @@ parser.add_argument(
     type=str,
     action="store",
     help="name of file to save to",
-    default="data/dataset.h5",
+    default="../data/dataset.h5",
 )
 
 parser.add_argument(
-    "--output_file_path",
+    "--gusto_output_file_path",
     type=str,
     action="store",
     help="name of file where the gusto results are saved",
-    default="/home/katie795/NeuralPDE_workspace/scripts/results/gusto_output",
+    default="",
 )
 
 parser.add_argument(
@@ -141,23 +141,23 @@ parser.add_argument(
 
 args, _ = parser.parse_known_args()
 
-print(f"  PDE              = {args.PDE}")
-print(f"  degree           = {args.degree}")
-print(f"  seed             = {args.seed}")
-print(f"  filename         = {args.filename}")
-print(f"  output_file_path = {args.output_file_path}")
-print(f"  nref             = {args.nref}")
-print(f"  omega            = {args.omega}")
-print(f"  g                = {args.g}")
-print(f"  dt               = {args.dt}")
-print(f"  tfinalmax        = {args.tfinalmax}")
-print(f"  t_lowest         = {args.t_lowest}")
-print(f"  t_highest        = {args.t_highest}")
-print(f"  t_interval       = {args.t_interval}")
-print(f"  t_sigma          = {args.t_sigma}")
-print(f"  nsamples         = {args.nsamples}")
-print(f"  regenerate_data  = {args.regenerate_data}")
-print(f"  save_diagnostics = {args.save_diagnostics}")
+print(f"  PDE                    = {args.PDE}")
+print(f"  degree                 = {args.degree}")
+print(f"  seed                   = {args.seed}")
+print(f"  filename               = {args.filename}")
+print(f"  gusto_output_file_path = {args.gusto_output_file_path}")
+print(f"  nref                   = {args.nref}")
+print(f"  omega                  = {args.omega}")
+print(f"  g                      = {args.g}")
+print(f"  dt                     = {args.dt}")
+print(f"  tfinalmax              = {args.tfinalmax}")
+print(f"  t_lowest               = {args.t_lowest}")
+print(f"  t_highest              = {args.t_highest}")
+print(f"  t_interval             = {args.t_interval}")
+print(f"  t_sigma                = {args.t_sigma}")
+print(f"  nsamples               = {args.nsamples}")
+print(f"  regenerate_data        = {args.regenerate_data}")
+print(f"  save_diagnostics       = {args.save_diagnostics}")
 
 
 if args.PDE == "SBR":
@@ -165,7 +165,7 @@ if args.PDE == "SBR":
     args.nref, args.nsamples, args.omega, args.tfinalmax, args.degree, args.seed
     )
     dataset.generate()
-    dataset.save(os.path.join(args.output_file_path, args.filename))
+    dataset.save(args.filename)
 elif args.PDE == "SWE":
     dataset = ShallowWaterEquationsDataset(
         n_ref=args.nref, nsamples=args.nsamples, dt=args.dt, t_final_max=args.tfinalmax,
@@ -178,13 +178,13 @@ elif args.PDE == "SWE":
         dataset.generate_full_dataset()
     elif args.regenerate_data:
         print('Regenerating the full simulation')
-        shutil.rmtree(args.output_file_path)
+        shutil.rmtree(args.gusto_output_file_path)
         dataset.generate_full_dataset()
     else:
         print('Opening previously generated simulation')
 
     print('Extracting the data for the training, test, and validation sets')
-    dataset.prepare_for_model(os.path.join(args.output_file_path,"chkpt.h5"))
+    dataset.prepare_for_model(os.path.join(args.gusto_output_file_path,"chkpt.h5"))
 
     print('Saving the data in h5 format')
     dataset.save(args.filename)
