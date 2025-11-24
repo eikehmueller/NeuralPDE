@@ -59,7 +59,7 @@ def load_hdf5_dataset(filename):
     with h5py.File(filename, "r") as f:
         data = f["base/data"]
         t_initial = f["base/t_initial"]
-        t_elapsed = f["base/t_elapsed"]
+        t_final = f["base/t_final"]
         metadata = json.loads(f["base/metadata"][()])
         dataset = SphericalFunctionSpaceDataset(
             int(f.attrs["n_func_in_dynamic"]),
@@ -69,7 +69,7 @@ def load_hdf5_dataset(filename):
             int(f.attrs["n_samples"]),
             data=np.asarray(data),
             t_initial=np.asarray(t_initial),
-            t_elapsed=np.asarray(t_elapsed),
+            t_final=np.asarray(t_final),
             metadata=metadata
             )
     return dataset
@@ -118,7 +118,7 @@ class SphericalFunctionSpaceDataset(Dataset):
         nsamples,
         data=None,
         t_initial=None,
-        t_elapsed=None,
+        t_final=None,
         metadata=None,
         dtype=None,
     ):
@@ -131,7 +131,7 @@ class SphericalFunctionSpaceDataset(Dataset):
         :arg nsamples: number of samples
         :arg data: data to initialise with
         :arg t_initial: initial time
-        :arg t_elapsed: elapsed time
+        :arg t_final: final time
         :arg metadata: metadata to initialise with
         :arg dtype: type to which the data is converted to
         """
@@ -164,10 +164,10 @@ class SphericalFunctionSpaceDataset(Dataset):
             if t_initial is None
             else t_initial
         )
-        self._t_elapsed = (
+        self._t_final = (
             np.empty(self.n_samples, dtype=np.float64)
-            if t_elapsed is None
-            else t_elapsed
+            if t_final is None
+            else t_final
         )
         
         self.metadata = {} if metadata is None else metadata
@@ -182,7 +182,7 @@ class SphericalFunctionSpaceDataset(Dataset):
             dtype=self.dtype,
         )
         t = torch.tensor(
-            self._t_elapsed[idx],
+            self._t_final[idx] - self._t_initial[idx],
             dtype=self.dtype,
         )
         y = torch.tensor(
@@ -203,7 +203,7 @@ class SphericalFunctionSpaceDataset(Dataset):
             group = f.create_group("base")
             group.create_dataset("data", data=self._data)
             group.create_dataset("t_initial", data=self._t_initial)
-            group.create_dataset("t_elapsed", data=self._t_elapsed)
+            group.create_dataset("t_final", data=self._t_final)
             f.attrs["n_func_in_dynamic"] = int(self.n_func_in_dynamic)
             f.attrs["n_func_in_ancillary"] = int(self.n_func_in_ancillary)
             f.attrs["n_func_target"] = int(self.n_func_target)
@@ -312,7 +312,8 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
             self._data[j, 6, :] = self._u_z.dat.data
             self._u.interpolate(expr_target)
             self._data[j, 7, :] = self._u.dat.data
-            self._t_elapsed[j] = t_final
+            self._t_initial[j] = 0.
+            self._t_final[j] = t_final
 
 
 class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
@@ -571,7 +572,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 self._data[j, 8, :] = vorticity_tar.dat.data
                 # time data
                 self._t_initial[j]  = start * self.dt
-                self._t_elapsed[j]  = (end - start) * self.dt
+                self._t_final[j]    = end * self.dt
 
         end_timer1 = timer()
         print(f"Training, validation and test data runtime: {timedelta(seconds=end_timer1-start_timer1)}")

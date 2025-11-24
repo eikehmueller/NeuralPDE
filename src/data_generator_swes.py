@@ -1,12 +1,14 @@
 """This script produces the data"""
 import argparse
-import os
-import shutil
 
-from neural_pde.datasets import ShallowWaterEquationsDataset
+from neural_pde.datasets import SolidBodyRotationDataset, ShallowWaterEquationsDataset
 
 # Create argparse arguments
 parser = argparse.ArgumentParser()
+
+parser.add_argument(
+    "--"
+)
 
 parser.add_argument(
     "--filename",
