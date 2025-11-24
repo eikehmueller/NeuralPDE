@@ -85,23 +85,19 @@ class NeuralPDEModel(torch.nn.Module):
             n_func_in_ancillary=n_func_in_ancillary,
             n_func_target=n_func_target,
         )
+        self.n_func_in_dynamic = n_func_in_dynamic
 
         self.x_mean = (
-            self.mean[: n_func_in_dynamic + n_func_in_ancillary, :]
+            self.mean[: n_func_in_dynamic, :]
             .unsqueeze(0)
             .to(torch.float32)
         )
 
-        self.y_mean = (
-            self.mean[:n_func_in_dynamic, :].unsqueeze(0).to(torch.float32)
-        )
         self.x_std = (
-            self.std[: n_func_in_dynamic + n_func_in_ancillary, :]
+            self.std[: n_func_in_dynamic, :]
             .unsqueeze(0)
             .to(torch.float32)
         )
-        self.y_std = self.std[:n_func_in_dynamic, :].unsqueeze(0).to(torch.float32)
-
         # construct spherical patch covering
         spherical_patch_covering = SphericalPatchCovering(
             architecture["dual_ref"], architecture["n_radial"]
@@ -304,12 +300,9 @@ class NeuralPDEModel(torch.nn.Module):
         """
         x_mean = self.x_mean.to(x.device)
         x_std = self.x_std.to(x.device)
-        y_mean = self.y_mean.to(x.device)
-        y_std = self.y_std.to(x.device)
-        x_normalised = (x - x_mean) / x_std
-        y = self.PatchEncoder(x_normalised)
+        x[:, 0: self.n_func_in_dynamic, :] = (x[:, 0: self.n_func_in_dynamic, :] - x_mean) / x_std
+        y = self.PatchEncoder(x)
         z = self.NeuralSolver(y, t_final)
-
         if hasattr(self, "PatchDecoder"):
             w = self.PatchDecoder(z)
         elif hasattr(self, "Decoder"):
@@ -317,7 +310,7 @@ class NeuralPDEModel(torch.nn.Module):
             w = self.Decoder(z, x_ancil)
         else:
             raise RuntimeError("Model has bo decoder attribute!")
-        w_final = w * y_std + y_mean
+        w_final = w * x_std + x_mean
         return w_final
 
     def save(self, directory):
@@ -332,7 +325,7 @@ class NeuralPDEModel(torch.nn.Module):
             os.makedirs(directory)
         torch.save(self.state_dict(), os.path.join(directory, "model.pt"))
         config = dict(dimensions=self.dimensions, architecture=self.architecture,
-                       mean=self.mean, std=self.std)
+                       mean=self.mean.numpy().tolist(), std=self.std.numpy().tolist())
         with open(os.path.join(directory, "model.json"), "w", encoding="utf8") as f:
             json.dump(config, f, indent=4)
 

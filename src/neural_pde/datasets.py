@@ -212,7 +212,7 @@ class SphericalFunctionSpaceDataset(Dataset):
 
     @property
     def mean(self):
-        """Return mean of data by averaging over batches"""
+        """Return mean of data by averaging """
         return np.mean(self._data, axis=0)
 
     @property
