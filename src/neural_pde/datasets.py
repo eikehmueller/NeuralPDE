@@ -215,13 +215,13 @@ class SphericalFunctionSpaceDataset(Dataset):
 
     @property
     def mean(self):
-        """Return mean of data by averaging over batches and gridpoints"""
-        return np.mean(self._data, axis=(0, 2))
+        """Return mean of data by averaging over batches"""
+        return np.mean(self._data, axis=0)
 
     @property
     def std(self):
-        """Return standard deviation of data averaging over batches and gridpoints"""
-        return np.std(self._data, axis=(0, 2))
+        """Return standard deviation of data averaging over batches"""
+        return np.std(self._data, axis=0)
     
 class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
     """Data set for advection
@@ -572,8 +572,6 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 # time data
                 self._t_initial[j]  = start * self.dt
                 self._t_elapsed[j]  = (end - start) * self.dt
-        print(f'Mean is {self.mean}')
-        print(f'Std is {self.std}')
 
         end_timer1 = timer()
         print(f"Training, validation and test data runtime: {timedelta(seconds=end_timer1-start_timer1)}")

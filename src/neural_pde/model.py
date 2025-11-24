@@ -329,7 +329,8 @@ class NeuralPDEModel(torch.nn.Module):
         if not os.path.exists(directory):
             os.makedirs(directory)
         torch.save(self.state_dict(), os.path.join(directory, "model.pt"))
-        config = dict(dimensions=self.dimensions, architecture=self.architecture)
+        config = dict(dimensions=self.dimensions, architecture=self.architecture,
+                       mean=self.mean, std=self.std)
         with open(os.path.join(directory, "model.json"), "w", encoding="utf8") as f:
             json.dump(config, f, indent=4)
 
