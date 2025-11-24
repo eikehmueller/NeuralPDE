@@ -63,9 +63,7 @@ class IcosahedralDualMesh:
 
         """Project data from dual mesh to DG0 space on original mesh
         :arg u_dual: vector of length n, where n is the number of vertices of the dual mesh,
-
-
-                     whcih equals the number of cells of the original mesh
+                     which equals the number of cells of the original mesh
 
         returns a DG0 function on the original mesh
 

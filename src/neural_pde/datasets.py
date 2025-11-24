@@ -130,7 +130,7 @@ class SphericalFunctionSpaceDataset(Dataset):
         :arg n_ref: number of mesh refinements
         :arg nsamples: number of samples
         :arg data: data to initialise with
-        :arg t_final: final times
+        :arg t_initial: initial time
         :arg t_elapsed: elapsed time
         :arg metadata: metadata to initialise with
         :arg dtype: type to which the data is converted to
@@ -269,7 +269,8 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
 
 
     def generate(self):
-        """Generate the data"""
+        """Generate the data as a random polynomial over the sphere.
+        Stores the gradients of the polynomial in the x, y, and z directions."""
         # generate data
         x, y, z = SpatialCoordinate(self._fs.mesh())
         for j in tqdm.tqdm(range(self.n_samples)):
@@ -317,9 +318,10 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
 class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
     """Data set for Shallow Water Equations
 
-    The input conists of the function fields (u,x,y,z) which represent a
-    scalar function u and the three coordinate fields. The output is
-    the same function, but rotated by some angle phi
+    The data is generated using the firedrake package gusto. The height h,
+    and the fluid speed u in the x, y, and z directions are saved.
+    The fields are normalised in h and u but are proportional to the 
+    standard measurements for oceans on the Earth.
 
     """
 
@@ -341,10 +343,17 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
         :arg nref: number of mesh refinements
         :arg nsamples: number of samples
-        :arg nt: number of timesteps
+        :arg dt: length of a timestep
         :arg t_final_max: maximum final time
-        :arg omega: rotation speed
-        :arg g: gravitational acceleration
+        :arg omega: rotation speed - angular rotation of the earth
+        :arg g: gravitational acceleration on the earth
+        :arg t_interval: expected value of a sampled time interval
+        :arg t_sigma: standard deviation from end time of t_interval
+        :arg t_lowest: lowest possible sampled time (used to split training 
+                       and test data)
+        :arg t_highest: highest possible sampled time (used to split training 
+                       and test data)
+        :arg save_diagnostics: whether to save gusto's divergence and vorticity
         """
 
         n_func_in_dynamic = 3   # height, vorticity and divergence
@@ -380,8 +389,8 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
     def generate_full_dataset(self):
         """
-        Generate the full data for the shallow water equations. The dataset used to train the model
-        will be sampled from this data. This may take a while to load.
+        Generate the full data for the shallow water equations using gusto. 
+        The dataset used to train the model is sampled from this data.
         """
 
         start_timer = timer()
@@ -396,7 +405,6 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
         # BDM means Brezzi-Douglas-Marini finite element basis function
         domain = Domain(self.mesh, self.dt, "BDM", element_order)
-        print(domain.spaces("H1"))
 
         # ShallowWaterParameters are the physical parameters for the shallow water equations
         mean_depth = 1  # this is the parameter we nondimensionalise around

@@ -1,4 +1,4 @@
-"""Evaluated a saved model on a dataset"""
+"""Evaluate a saved model on a the test dataset"""
 import torch
 from torch.utils.data import DataLoader
 from firedrake import *

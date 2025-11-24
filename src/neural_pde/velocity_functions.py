@@ -2,7 +2,8 @@
 class Projector:
 
     def __init__(self, W, V):
-        """Class for projecting functions in from a 3D vector space to 3 separate scalar functions in V
+        """Class for projecting functions in from a 3D vector space to 3 
+        separate scalar functions in V
 
         :arg W: function space W
         :arg V: function space V

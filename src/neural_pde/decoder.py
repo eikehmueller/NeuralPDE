@@ -84,7 +84,6 @@ class Decoder(torch.nn.Module):
         """Forward pass of the decoder
 
         :arg z_prime: latent state, tensor of shape (batch_size, n_dual_vertex, d_lat)
-        :arg x_ancil: ancillary state, tensor of shape (batch_size, n_ancil, n_vertex)
         """
         # expand index to shape (batch_size, n_vertex, nu, d_lat)
         index = self.index.expand(z_prime.shape[:-2] + (-1, -1, z_prime.shape[-1]))

@@ -56,7 +56,6 @@ class Interpolator(torch.nn.Module):
 
         :arg fs_from: original function space
         :arg fs_to: target function space that we want to interpolate to
-        :arg assemble: assemble sparse torch matrix of interpolation
         :arg dtype: datatype. Use torch default if None
         """
         super().__init__()

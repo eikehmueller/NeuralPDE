@@ -31,6 +31,8 @@ def build_model(
     :arg n_func_in_ancillary: number of ancillary input functions
     :arg n_func_in_target: number of output functions
     :arg architecture: dictionary that describes network architecture
+    :arg mean: mean of the batchsize over each function at every point
+    :arg std: standard devation of the batchsize over each function at every point
     """
     model = NeuralPDEModel(mean, std)
     model.setup(
@@ -39,11 +41,11 @@ def build_model(
     return model
 
 
-def load_model(directory, mean=0, std=1):
+def load_model(directory):
     """Load model from disk
 
     :arg directory: directory containing the saved model"""
-    model = NeuralPDEModel(mean, std)
+    model = NeuralPDEModel()
     model.load(directory)
     return model
 
@@ -52,7 +54,10 @@ class NeuralPDEModel(torch.nn.Module):
     """Class representing the encoder - processor - decoder network"""
 
     def __init__(self, mean=0, std=1):
-        """Initialise a new instance with empty model"""
+        """Initialise a new instance with empty model
+        
+        :arg mean: mean of the batchsize over each function at every point
+        :arg std: standard devation of the batchsize over each function at every point """
         super().__init__()
         self.architecture = None
         self.dimensions = None
