@@ -173,7 +173,7 @@ elif args.PDE == "SWE":
         t_lowest=args.t_lowest, t_highest=args.t_highest
     )
 
-    if not os.path.isdir(args.output_file_path):
+    if not os.path.isdir(args.gusto_output_file_path):
         print('Generating the full simulation')
         dataset.generate_full_dataset()
     elif args.regenerate_data:
