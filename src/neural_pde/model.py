@@ -21,7 +21,7 @@ def build_model(
     n_func_target,
     architecture,
     mean=0,
-    std=1
+    std=1,
 ):
     """
     Construct encoder - processor - decoder model
@@ -37,7 +37,6 @@ def build_model(
         n_ref, n_func_in_dynamic, n_func_in_ancillary, n_func_target, architecture
     )
     return model
-
 
 
 def load_model(directory, mean=0, std=1):
@@ -59,7 +58,7 @@ class NeuralPDEModel(torch.nn.Module):
         self.dimensions = None
         self.initialised = False
         self.mean = mean
-        self.std= std
+        self.std = std
 
     def setup(
         self, n_ref, n_func_in_dynamic, n_func_in_ancillary, n_func_target, architecture
@@ -81,10 +80,20 @@ class NeuralPDEModel(torch.nn.Module):
             n_func_in_ancillary=n_func_in_ancillary,
             n_func_target=n_func_target,
         )
-        self.x_mean = self.mean[:n_func_in_dynamic + n_func_in_ancillary].reshape([1,-1,1]).to(torch.float32)
-        self.y_mean = self.mean[:n_func_in_dynamic].reshape([1,-1,1]).to(torch.float32)
-        self.x_std = self.std[:n_func_in_dynamic + n_func_in_ancillary].reshape([1,-1,1]).to(torch.float32)
-        self.y_std = self.std[:n_func_in_dynamic].reshape([1,-1,1]).to(torch.float32)
+        self.x_mean = (
+            self.mean[: n_func_in_dynamic + n_func_in_ancillary]
+            .reshape([1, -1, 1])
+            .to(torch.float32)
+        )
+        self.y_mean = (
+            self.mean[:n_func_in_dynamic].reshape([1, -1, 1]).to(torch.float32)
+        )
+        self.x_std = (
+            self.std[: n_func_in_dynamic + n_func_in_ancillary]
+            .reshape([1, -1, 1])
+            .to(torch.float32)
+        )
+        self.y_std = self.std[:n_func_in_dynamic].reshape([1, -1, 1]).to(torch.float32)
 
         # construct spherical patch covering
         spherical_patch_covering = SphericalPatchCovering(
@@ -286,17 +295,22 @@ class NeuralPDEModel(torch.nn.Module):
         :arg x: input tensor of shape (batch_size, n_func_in_dynamic + n_func_in_ancillary, n_vertex)
         :arg t_final: final time for each sample, tensor of shape (batch_size,)
         """
-        x_normalised = (x - self.x_mean) / self.x_std
+        x_mean = self.x_mean.to(x.device)
+        x_std = self.x_std.to(x.device)
+        y_mean = self.y_mean.to(x.device)
+        y_std = self.y_std.to(x.device)
+        x_normalised = (x - x_mean) / x_std
         y = self.PatchEncoder(x_normalised)
         z = self.NeuralSolver(y, t_final)
 
         if hasattr(self, "PatchDecoder"):
             w = self.PatchDecoder(z)
-            w_final = w * self.y_std + self.y_mean
-        if hasattr(self, "Decoder"):
+        elif hasattr(self, "Decoder"):
             x_ancil = x[..., self.dimensions["n_func_in_dynamic"] :, :]
             w = self.Decoder(z, x_ancil)
-            w_final = w * self.y_std + self.y_mean
+        else:
+            raise RuntimeError("Model has bo decoder attribute!")
+        w_final = w * y_std + y_mean
         return w_final
 
     def save(self, directory):
@@ -327,7 +341,7 @@ class NeuralPDEModel(torch.nn.Module):
                 config["dimensions"]["n_func_in_dynamic"],
                 config["dimensions"]["n_func_in_ancillary"],
                 config["dimensions"]["n_func_target"],
-                config["architecture"]
+                config["architecture"],
             )
         self.load_state_dict(
             torch.load(os.path.join(directory, "model.pt"), weights_only=True)
