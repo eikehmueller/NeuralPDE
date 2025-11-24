@@ -76,7 +76,7 @@ batch_size = len(dataset)
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 train_ds = load_hdf5_dataset(f"{args.data_directory}{config["data"]["train"]}")
 
-model = load_model(args.model, mean=torch.from_numpy(train_ds.mean), std=torch.from_numpy(train_ds.std))
+model = load_model(args.model)
 
 # validation
 model.train(False)

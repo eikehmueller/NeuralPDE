@@ -34,9 +34,9 @@ def build_model(
     :arg mean: mean of the batchsize over each function at every point
     :arg std: standard devation of the batchsize over each function at every point
     """
-    model = NeuralPDEModel(mean, std)
+    model = NeuralPDEModel()
     model.setup(
-        n_ref, n_func_in_dynamic, n_func_in_ancillary, n_func_target, architecture
+        n_ref, n_func_in_dynamic, n_func_in_ancillary, n_func_target, architecture, mean, std
     )
     return model
 
@@ -53,7 +53,7 @@ def load_model(directory):
 class NeuralPDEModel(torch.nn.Module):
     """Class representing the encoder - processor - decoder network"""
 
-    def __init__(self, mean=0, std=1):
+    def __init__(self):
         """Initialise a new instance with empty model
         
         :arg mean: mean of the batchsize over each function at every point
@@ -66,7 +66,7 @@ class NeuralPDEModel(torch.nn.Module):
         self.std = std
 
     def setup(
-        self, n_ref, n_func_in_dynamic, n_func_in_ancillary, n_func_target, architecture
+        self, n_ref, n_func_in_dynamic, n_func_in_ancillary, n_func_target, architecture, mean=0, std=1
     ):
         """
         Initialise new instance with model
@@ -86,6 +86,8 @@ class NeuralPDEModel(torch.nn.Module):
             n_func_target=n_func_target,
         )
         self.n_func_in_dynamic = n_func_in_dynamic
+        self.mean = mean
+        self.std = std
 
         self.x_mean = (
             self.mean[: n_func_in_dynamic, :]
@@ -336,6 +338,8 @@ class NeuralPDEModel(torch.nn.Module):
         """
         with open(os.path.join(directory, "model.json"), "r", encoding="utf8") as f:
             config = json.load(f)
+        print(config["mean"])
+        #print(config["mean"])
         if not self.initialised:
             self.setup(
                 config["dimensions"]["n_ref"],
