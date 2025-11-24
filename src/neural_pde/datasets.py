@@ -13,21 +13,18 @@ try:
         ShallowWaterEquations,
         Domain,
         OutputParameters,
-        MeridionalComponent,
-        ZonalComponent,
         IO,
         SSPRK3,
         DGUpwind,
         SemiImplicitQuasiNewton,
         RelativeVorticity,
-        SteadyStateError,
         Divergence,
     )
 except:
     print("WARNING: running without gusto support")
 
 import neural_pde.diagnostics as dg
-from neural_pde.velocity_functions import Projector
+from neural_pde.velocity_functions import Projector as Proj
 
 from firedrake import (
     FunctionSpace,
@@ -492,18 +489,20 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         '''
         start_timer1 = timer()
 
+        print(f'Filename is {filename}')
+
         with CheckpointFile(filename, 'r') as afile:
             print('we have opened the checkpoint file')
             mesh_h5 = afile.load_mesh("IcosahedralMesh")
-            V_BDM = FunctionSpace(mesh_h5, "BDM", 2)
+            V_BDM = FunctionSpace(mesh_h5, "BDM", 2) 
             V_DG = FunctionSpace(mesh_h5, "DG", 1)
             V_CG = FunctionSpace(mesh_h5, "CG", 1)
 
             h_inp = Function(V_CG)  # input function for h
             h_tar = Function(V_CG)  # target function for h
 
-            p1 = Projector(V_BDM, V_CG)
-            p2 = Projector(V_DG, V_CG)
+            p1 = Proj(V_BDM, V_CG)
+            p2 = Proj(V_DG, V_CG)
 
             nt = int(self.t_final_max / self.dt)
 
@@ -532,10 +531,13 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 highest  = self.t_highest  / self.dt
                 lowest   = self.t_lowest   / self.dt + 1 # there is an error in gusto at t = 0 in the divergence
                 start = np.random.randint(lowest, highest)
-
-                mu =  start + interval
-                t_norm = truncnorm((start - mu) / sigma, (highest - mu) / sigma, loc=mu, scale=sigma)
-                end = round(t_norm.rvs(1)[0]) 
+                
+                if np.isclose(0, interval):
+                    end = start
+                else:
+                    mu =  start + interval
+                    t_norm = truncnorm((start - mu) / sigma, (highest - mu) / sigma, loc=mu, scale=sigma)
+                    end = round(t_norm.rvs(1)[0]) 
 
                 if j == 100:
                     print(f"Start timestep is {start}")

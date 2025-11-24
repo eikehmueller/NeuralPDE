@@ -1,4 +1,7 @@
-
+from firedrake import (TestFunction, TrialFunction, Function,
+                       inner, as_vector, LinearVariationalProblem,
+                       LinearVariationalSolver, dx)
+                       
 class Projector:
 
     def __init__(self, W, V):

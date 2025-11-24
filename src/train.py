@@ -71,6 +71,7 @@ train_dl = DataLoader(
 valid_dl = DataLoader(
     valid_ds, batch_size=config["optimiser"]["batchsize"], drop_last=True
 )
+
 if not ("model.pt" in os.listdir(args.model)):  # load model or initialise new one
     print("Building model")
     model = build_model(
@@ -86,8 +87,6 @@ else:
     print("Loading model")
     model = load_model(
         args.model,
-        mean=torch.from_numpy(train_ds.mean),
-        std=torch.from_numpy(train_ds.std),
     )
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

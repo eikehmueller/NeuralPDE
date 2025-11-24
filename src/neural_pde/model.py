@@ -85,20 +85,22 @@ class NeuralPDEModel(torch.nn.Module):
             n_func_in_ancillary=n_func_in_ancillary,
             n_func_target=n_func_target,
         )
+
         self.x_mean = (
-            self.mean[: n_func_in_dynamic + n_func_in_ancillary]
-            .reshape([1, -1, 1])
+            self.mean[: n_func_in_dynamic + n_func_in_ancillary, :]
+            .unsqueeze(0)
             .to(torch.float32)
         )
+
         self.y_mean = (
-            self.mean[:n_func_in_dynamic].reshape([1, -1, 1]).to(torch.float32)
+            self.mean[:n_func_in_dynamic, :].unsqueeze(0).to(torch.float32)
         )
         self.x_std = (
-            self.std[: n_func_in_dynamic + n_func_in_ancillary]
-            .reshape([1, -1, 1])
+            self.std[: n_func_in_dynamic + n_func_in_ancillary, :]
+            .unsqueeze(0)
             .to(torch.float32)
         )
-        self.y_std = self.std[:n_func_in_dynamic].reshape([1, -1, 1]).to(torch.float32)
+        self.y_std = self.std[:n_func_in_dynamic, :].unsqueeze(0).to(torch.float32)
 
         # construct spherical patch covering
         spherical_patch_covering = SphericalPatchCovering(

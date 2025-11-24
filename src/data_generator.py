@@ -161,12 +161,14 @@ print(f"  save_diagnostics       = {args.save_diagnostics}")
 
 
 if args.PDE == "SBR":
+    print("Generating Solid Body Rotation dataset")
     dataset = SolidBodyRotationDataset(
     args.nref, args.nsamples, args.omega, args.tfinalmax, args.degree, args.seed
     )
     dataset.generate()
     dataset.save(args.filename)
 elif args.PDE == "SWE":
+    print("Generating Shallow Water Equations dataset")
     dataset = ShallowWaterEquationsDataset(
         n_ref=args.nref, nsamples=args.nsamples, dt=args.dt, t_final_max=args.tfinalmax,
         omega=args.omega, g=args.g, t_interval=args.t_interval, t_sigma=args.t_sigma,
