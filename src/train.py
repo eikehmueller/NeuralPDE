@@ -71,8 +71,8 @@ train_dl = DataLoader(
 valid_dl = DataLoader(
     valid_ds, batch_size=config["optimiser"]["batchsize"], drop_last=True
 )
-if not ("model.pt" in os.listdir(args.model)): # load model or initialise new one
-    print('Building model')
+if not ("model.pt" in os.listdir(args.model)):  # load model or initialise new one
+    print("Building model")
     model = build_model(
         train_ds.n_ref,
         train_ds.n_func_in_dynamic,
@@ -80,11 +80,15 @@ if not ("model.pt" in os.listdir(args.model)): # load model or initialise new on
         train_ds.n_func_target,
         config["architecture"],
         mean=torch.from_numpy(train_ds.mean),
-        std=torch.from_numpy(train_ds.std)
+        std=torch.from_numpy(train_ds.std),
     )
 else:
-    print('Loading model')
-    model = load_model(args.model, mean=torch.from_numpy(train_ds.mean), std=torch.from_numpy(train_ds.std))
+    print("Loading model")
+    model = load_model(
+        args.model,
+        mean=torch.from_numpy(train_ds.mean),
+        std=torch.from_numpy(train_ds.std),
+    )
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 model = model.to(device)  # transfer the model to the GPU
@@ -92,14 +96,14 @@ print(f"Running on device {device}")
 
 optimiser = torch.optim.Adam(
     model.parameters(), lr=config["optimiser"]["initial_learning_rate"]
-) 
+)
 gamma = (
     config["optimiser"]["final_learning_rate"]
     / config["optimiser"]["initial_learning_rate"]
 ) ** (1 / config["optimiser"]["nepoch"])
 scheduler = torch.optim.lr_scheduler.ExponentialLR(optimiser, gamma=gamma)
 
-writer = SummaryWriter('../results/runs', flush_secs=5)
+writer = SummaryWriter("../results/runs", flush_secs=5)
 
 # main training loop
 for epoch in range(config["optimiser"]["nepoch"]):
@@ -107,9 +111,9 @@ for epoch in range(config["optimiser"]["nepoch"]):
     train_loss = 0
     model.train(True)
     for (Xb, tb), yb in tqdm.tqdm(train_dl):
-        Xb = Xb.to(device) 
+        Xb = Xb.to(device)
         yb = yb.to(device)
-        tb = tb.to(device)  
+        tb = tb.to(device)
         y_pred = model(Xb, tb)  # make a prediction
         optimiser.zero_grad()  # resets all of the gradients to zero, otherwise the gradients are accumulated
         loss = loss_fn(y_pred, yb)  # calculate the loss
@@ -133,7 +137,6 @@ for epoch in range(config["optimiser"]["nepoch"]):
         valid_loss += loss.item() / (
             valid_ds.n_samples // config["optimiser"]["batchsize"]
         )
-    #cProfile.run('model(Xv, tv)', sort='cumtime')
 
     print(f"    training loss: {train_loss:8.3e}, validation loss: {valid_loss:8.3e}")
     writer.add_scalars(
