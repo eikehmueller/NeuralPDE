@@ -98,6 +98,18 @@ class NeuralPDEModel(torch.nn.Module):
             .unsqueeze(0)
             .to(torch.float32)
         )
+
+        self.w_mean = (
+            self.mean[n_func_in_dynamic + n_func_in_ancillary:, :]
+            .unsqueeze(0)
+            .to(torch.float32)
+        )
+
+        self.w_std = (
+            self.std[n_func_in_dynamic + n_func_in_ancillary:, :]
+            .unsqueeze(0)
+            .to(torch.float32)
+        )
         # construct spherical patch covering
         spherical_patch_covering = SphericalPatchCovering(
             architecture["dual_ref"], architecture["n_radial"]
@@ -300,7 +312,8 @@ class NeuralPDEModel(torch.nn.Module):
         """
         x_mean = self.x_mean.to(x.device)
         x_std = self.x_std.to(x.device)
-        x[:, 0: self.n_func_in_dynamic, :] = (x[:, 0: self.n_func_in_dynamic, :] - x_mean) / x_std
+        x_normalised = x
+        x_normalised[:, 0: self.n_func_in_dynamic, :] = (x[:, 0: self.n_func_in_dynamic, :] - x_mean) / x_std
         y = self.PatchEncoder(x)
         z = self.NeuralSolver(y, t_final)
         if hasattr(self, "PatchDecoder"):
@@ -310,7 +323,7 @@ class NeuralPDEModel(torch.nn.Module):
             w = self.Decoder(z, x_ancil)
         else:
             raise RuntimeError("Model has bo decoder attribute!")
-        w_final = w * x_std + x_mean
+        w_final = w * self.w_std + self.w_mean
         return w_final
 
     def save(self, directory):
