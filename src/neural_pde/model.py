@@ -62,8 +62,6 @@ class NeuralPDEModel(torch.nn.Module):
         self.architecture = None
         self.dimensions = None
         self.initialised = False
-        self.mean = mean
-        self.std = std
 
     def setup(
         self, n_ref, n_func_in_dynamic, n_func_in_ancillary, n_func_target, architecture, mean=0, std=1
@@ -338,8 +336,9 @@ class NeuralPDEModel(torch.nn.Module):
         """
         with open(os.path.join(directory, "model.json"), "r", encoding="utf8") as f:
             config = json.load(f)
-        print(config["mean"])
-        #print(config["mean"])
+        tensor_mean = torch.FloatTensor(config["mean"])
+        tensor_std = torch.FloatTensor(config["std"])
+
         if not self.initialised:
             self.setup(
                 config["dimensions"]["n_ref"],
@@ -347,6 +346,8 @@ class NeuralPDEModel(torch.nn.Module):
                 config["dimensions"]["n_func_in_ancillary"],
                 config["dimensions"]["n_func_target"],
                 config["architecture"],
+                tensor_mean,
+                tensor_std
             )
         self.load_state_dict(
             torch.load(os.path.join(directory, "model.pt"), weights_only=True)
