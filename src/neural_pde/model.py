@@ -314,7 +314,7 @@ class NeuralPDEModel(torch.nn.Module):
         x_std = self.x_std.to(x.device)
         x_normalised = x
         x_normalised[:, 0: self.n_func_in_dynamic, :] = (x[:, 0: self.n_func_in_dynamic, :] - x_mean) / x_std
-        y = self.PatchEncoder(x)
+        y = self.PatchEncoder(x_normalised)
         z = self.NeuralSolver(y, t_final)
         if hasattr(self, "PatchDecoder"):
             w = self.PatchDecoder(z)
