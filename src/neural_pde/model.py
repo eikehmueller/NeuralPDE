@@ -134,7 +134,7 @@ class NeuralPDEModel(torch.nn.Module):
         # dynamic encoder model: map all fields to the latent space
         # input:  (n_dynamic+n_ancillary, patch_size)
         # output: (latent_dynamic_dim)
-        n_hidden = 128
+        n_hidden = 64
         dynamic_encoder_model = torch.nn.Sequential(
             torch.nn.Flatten(start_dim=-2, end_dim=-1),
             torch.nn.Linear(
@@ -312,8 +312,9 @@ class NeuralPDEModel(torch.nn.Module):
         """
         x_mean = self.x_mean.to(x.device)
         x_std = self.x_std.to(x.device)
-        x_normalised = x.detach().clone()
-        x_normalised[:, 0: self.n_func_in_dynamic, :] = (x[:, 0: self.n_func_in_dynamic, :] - x_mean) / x_std
+        x_normalised = x.clone()
+        x_normalised[:, : self.n_func_in_dynamic, :] = (x[:, : self.n_func_in_dynamic, :] - x_mean) / x_std
+
         y = self.PatchEncoder(x_normalised)
         z = self.NeuralSolver(y, t_final)
         if hasattr(self, "PatchDecoder"):
@@ -322,8 +323,12 @@ class NeuralPDEModel(torch.nn.Module):
             x_ancil = x[..., self.dimensions["n_func_in_dynamic"] :, :]
             w = self.Decoder(z, x_ancil)
         else:
-            raise RuntimeError("Model has bo decoder attribute!")
+            raise RuntimeError("Model has no decoder attribute!")
+        #w2 = x_normalised[:, :self.n_func_in_dynamic, :] 
         w_final = w * self.w_std + self.w_mean
+        #w2_final = w2 * self.w_std + self.w_mean
+
+        #print(f'Error is {torch.mean(x[:, :self.n_func_in_dynamic, :] - w2_final)}')
         return w_final
 
     def save(self, directory):

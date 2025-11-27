@@ -7,7 +7,8 @@ import tomllib
 import argparse
 import numpy as np
 from neural_pde.diagnostics import Diagnostics
-from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header, Projector
+from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header
+from neural_pde.velocity_functions import Projector as Proj
 from neural_pde.loss_functions import rmse as metric
 from neural_pde.model import load_model
 import matplotlib.pyplot as plt
@@ -82,10 +83,8 @@ model = load_model(args.model)
 model.train(False)
 avg_loss = 0
 for (Xv, tv), yv in dataloader:
-    X = Xv # move to GPU
-    y = yv   # move to GPU
-    yv_pred = model(X, tv)
-    loss = metric(yv_pred, y)
+    yv_pred = model(Xv, tv)
+    loss = metric(yv_pred, yv)
     avg_loss += loss.item() / (dataset.n_samples / batch_size)
 
 print(f"average relative error: {100 * avg_loss:6.3f} %")
@@ -120,20 +119,20 @@ with CheckpointFile("results/gusto_output/chkpt.h5", 'r') as afile:
     h_inp = Function(V_CG) # input function for h
     w1 = afile.load_function(mesh_h5, "u", idx=0)
     h1 = afile.load_function(mesh_h5, "D", idx=0)
-    p2 = Projector(V_DG, V_CG)
+    p2 = Proj(V_DG, V_CG)
     p2.apply(h1, h_inp)
     diagnostics = Diagnostics(V_BDM, V_CG)
     vorticity_inp = diagnostics.vorticity(w1)
     divergence_inp = diagnostics.divergence(w1)
     X = np.zeros((1, 6, mesh_h5.num_vertices()), dtype=np.float64)
-
-    X[0, 0, :] = x_fun.dat.data # x coord data
-    X[0, 1, :] = y_fun.dat.data # y coord data
-    X[0, 2, :] = z_fun.dat.data # z coord data
     # input data
-    X[0, 3, :] = h_inp.dat.data # h data
-    X[0, 4, :] = divergence_inp.dat.data
-    X[0, 5, :] = vorticity_inp.dat.data
+    X[0, 0, :] = h_inp.dat.data # h data
+    X[0, 1, :] = divergence_inp.dat.data
+    X[0, 2, :] = vorticity_inp.dat.data
+
+    X[0, 3, :] = x_fun.dat.data # x coord data
+    X[0, 4, :] = y_fun.dat.data # y coord data
+    X[0, 5, :] = z_fun.dat.data # z coord data
     X = torch.tensor(X, dtype=torch.float32)
 
 if args.animate:
@@ -151,6 +150,7 @@ if args.animate:
         print(f"time = {t:8.4f}")
 
 if args.plot_dataset_and_model:
+    print("Plotting dataset and model")
     fig, ax = plt.subplots()  
     for j, ((X, t), y_target) in enumerate(iter(dataset)):
         X = torch.unsqueeze(X, 0)
