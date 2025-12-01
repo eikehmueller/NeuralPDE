@@ -97,8 +97,8 @@ V = FunctionSpace(mesh, "CG", 1)
 V_DG = FunctionSpace(mesh, "DG", 0)
 (X, _), __ = next(iter(dataset))
 dt = config["architecture"]["dt"]
-t = float(dataset.metadata["t_lowest"]) 
-t_final = float(dataset.metadata["t_highest"]) 
+t_initial = dataset._t_final
+t_final = dataset._t_final 
 animation_file_nn = VTKFile(os.path.join(args.output, "animation.pvd"))
 h_pred   = Function(V, name="h")
 div_pred = Function(V, name="div")
@@ -137,7 +137,7 @@ with CheckpointFile("results/gusto_output/chkpt.h5", 'r') as afile:
 
 if args.animate:
     t_elapsed = 0
-    while t < t_final:
+    while t < t_final - t_initial:
         y_pred = model(X, torch.tensor(t_elapsed))
 
         h_pred.dat.data[:] = y_pred.detach().numpy()[0, 0, :]
@@ -158,14 +158,14 @@ if args.plot_dataset_and_model:
         y_pred = torch.squeeze(y_pred, 0)
         X = torch.squeeze(X, 0)
 
-        f_input_d = Function(V, name=f"input_d_t={t:8.4e}")
+        f_input_d = Function(V, name=f"input_d")
         f_input_d.dat.data[:] = X.detach().numpy()[0, :]
         f_input_div = Function(V, name="input_div")
         f_input_div.dat.data[:] = X.detach().numpy()[1, :]
         f_input_vor = Function(V, name="input_vor")
         f_input_vor.dat.data[:] = X.detach().numpy()[2, :]
 
-        f_target_d = Function(V, name=f"target_d_t={t:8.4e}")
+        f_target_d = Function(V, name=f"target_d_t={t:6.3f}")
         f_target_d.dat.data[:] = y_target.detach().numpy()[0, :]
         f_target_div = Function(V, name="target_div")
         f_target_div.dat.data[:] = y_target.detach().numpy()[1, :]
@@ -173,7 +173,7 @@ if args.plot_dataset_and_model:
         f_target_vor.dat.data[:] = y_target.detach().numpy()[2, :]
         f_target = y_target.detach()[0:2, :]
 
-        f_pred_d = Function(V, name=f"pred_d_t={t:8.4e}")
+        f_pred_d = Function(V, name=f"pred_d_t={t:6.3f}")
         f_pred_d.dat.data[:] = y_pred.detach().numpy()[0, :]
         f_pred_div = Function(V, name="pred_div")
         f_pred_div.dat.data[:] = y_pred.detach().numpy()[1, :]
@@ -181,7 +181,7 @@ if args.plot_dataset_and_model:
         f_pred_vor.dat.data[:] = y_pred.detach().numpy()[2, :]
         f_pred = y_pred.detach()[0:2, :]
 
-        file = VTKFile(os.path.join(args.output, f"dataset/output_{j:04d}.pvd"))
+        file = VTKFile(os.path.join(args.output, f"dataset/output_t={t_initial[j]}_{j:04d}.pvd"))
         file.write(f_input_d, f_input_div, f_input_vor, 
                 f_target_d, f_target_div, f_target_vor,
                     f_pred_d, f_pred_div, f_pred_vor)
