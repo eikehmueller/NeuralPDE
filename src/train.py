@@ -12,6 +12,7 @@ import os
 from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header
 from neural_pde.loss_functions import multivariate_normalised_rmse_with_data as loss_fn
 from neural_pde.loss_functions import individual_function_rmse as loss_fn2
+from neural_pde.loss_functions import multivariate_normalised_rmse as loss_fn3
 from neural_pde.model import build_model, load_model
 
 start = timer()
@@ -132,12 +133,14 @@ for epoch in range(config["optimiser"]["nepoch"]):
     # validation
     model.train(False)
     valid_loss = 0
+    percent_loss = 0
     for (Xv, tv), yv in valid_dl:
         Xv = Xv.to(device)  # move to GPU
         yv = yv.to(device)  # move to GPU
         tv = tv.to(device)  # move to GPU
         yv_pred = model(Xv, tv)  # make a prediction
         loss = loss_fn(yv_pred, yv, overall_mean, overall_std)  # calculate the loss
+
         valid_loss += loss.item() / (
             valid_ds.n_samples // config["optimiser"]["batchsize"]
         )
@@ -146,8 +149,14 @@ for epoch in range(config["optimiser"]["nepoch"]):
             valid_ds.n_samples // config["optimiser"]["batchsize"]
         )
 
+        loss3 = loss_fn3(yv_pred, yv)
+        percent_loss += loss3.item() / (
+            valid_ds.n_samples // config["optimiser"]["batchsize"]
+        )
+
     print(f"    training loss: {train_loss:8.3e}, validation loss: {valid_loss:8.3e}")
-    print(f"Loss for individual functions: {function_loss}")
+    print(f"    Loss for individual functions: {function_loss}")
+    print(f"    Percentage loss: {100 * percent_loss:6.3f} %")
     writer.add_scalars(
         "loss",
         {"train": train_loss, "valid": valid_loss},

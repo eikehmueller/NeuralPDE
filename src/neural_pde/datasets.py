@@ -468,7 +468,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
         tpexpr = mountain_height * ((1 - r1 / R0))
         Dexpr = (
-            H - ((R * Omega0 * u_max + 0.5 * u_max**2) * (sin(lat)) ** 2) / g + tpexpr
+            H - ((R * Omega0 * u_max + 0.5 * u_max**2) * (sin(lat)) ** 2) / g #+ tpexpr
         )
 
         D0.interpolate(Dexpr)

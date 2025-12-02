@@ -9,7 +9,7 @@ import numpy as np
 from neural_pde.diagnostics import Diagnostics
 from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header
 from neural_pde.velocity_functions import Projector as Proj
-from neural_pde.loss_functions import multivariate_normalised_rmse as metric
+from neural_pde.loss_functions import multivariate_normalised_rmse_with_data as metric
 from neural_pde.loss_functions import individual_function_rmse as metric2
 from neural_pde.model import load_model
 import matplotlib.pyplot as plt
@@ -77,6 +77,8 @@ dataset = load_hdf5_dataset(f"{args.data_directory}{config["data"]["test"]}")
 batch_size = len(dataset)
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 train_ds = load_hdf5_dataset(f"{args.data_directory}{config["data"]["train"]}")
+overall_mean = torch.mean(torch.from_numpy(train_ds.mean), axis=1)[train_ds.n_func_in_dynamic + train_ds.n_func_in_ancillary:]
+overall_std = torch.mean(torch.from_numpy(train_ds.std), axis=1)[train_ds.n_func_in_dynamic + train_ds.n_func_in_ancillary:]
 
 model = load_model(args.model)
 
@@ -86,7 +88,7 @@ avg_loss = 0
 individual_loss = np.zeros(3)
 for (Xv, tv), yv in dataloader:
     yv_pred = model(Xv, tv)
-    loss = metric(yv_pred, yv)
+    loss = metric(yv_pred, yv, overall_mean, overall_std)
     avg_loss += loss.item() / (dataset.n_samples / batch_size)
 
 print(f"average relative error: {100 * avg_loss:6.3f} %")
@@ -157,11 +159,9 @@ if args.plot_dataset_and_model:
     for j, ((X, t), y_target) in enumerate(iter(dataset)):
         X = torch.unsqueeze(X, 0)
         y_pred = model(X, t)
-        yp = y_pred.detach().numpy()
-        yt = y_target.detach().numpy()
-        print(f'Error is {np.sqrt(np.sum((yp - yt) ** 2,  axis=-1) / np.sum((yt) ** 2, axis=-1))}')
-        print(f"Error is {np.sqrt(np.sum((yp - yt) ** 2,  axis=-1))}")
         y_pred = torch.squeeze(y_pred, 0)
+        yt = torch.unsqueeze(y_target, 0)
+        print(f"Individual errors are {metric2(y_pred, yt, overall_mean, overall_std)}")
         X = torch.squeeze(X, 0)
 
         f_input_d = Function(V, name=f"input_d")
@@ -195,7 +195,7 @@ if args.plot_dataset_and_model:
         f_pred1 = torch.unsqueeze(f_pred, 0)
 
         
-        ax.plot(t, metric(f_target1, f_pred1), color="black")
+        #ax.plot(t, metric(f_target1, f_pred1, overall_mean, overall_std), color="black")
     ax.set_xlabel(r'Time $t$')
     ax.set_ylabel('Model RMSE')
     ax.set_title('Total model error')
