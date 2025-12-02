@@ -10,7 +10,8 @@ import tomllib
 import argparse
 import os
 from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header
-from neural_pde.loss_functions import rmse as loss_fn
+from neural_pde.loss_functions import multivariate_normalised_rmse_with_data as loss_fn
+from neural_pde.loss_functions import individual_function_rmse as loss_fn2
 from neural_pde.model import build_model, load_model
 
 start = timer()
@@ -65,6 +66,9 @@ print()
 train_ds = load_hdf5_dataset(f"{args.data_directory}{config["data"]["train"]}")
 valid_ds = load_hdf5_dataset(f"{args.data_directory}{config["data"]["valid"]}")
 
+overall_mean = torch.mean(torch.from_numpy(train_ds.mean), axis=1)[train_ds.n_func_in_dynamic + train_ds.n_func_in_ancillary:]
+overall_std = torch.mean(torch.from_numpy(train_ds.std), axis=1)[train_ds.n_func_in_dynamic + train_ds.n_func_in_ancillary:]
+
 train_dl = DataLoader(
     train_ds, batch_size=config["optimiser"]["batchsize"], shuffle=True, drop_last=True
 )
@@ -108,6 +112,7 @@ writer = SummaryWriter("../results/runs", flush_secs=5)
 for epoch in range(config["optimiser"]["nepoch"]):
     print(f"epoch {epoch + 1} of {config["optimiser"]["nepoch"]}")
     train_loss = 0
+    function_loss = torch.zeros(3)
     model.train(True)
     for (Xb, tb), yb in tqdm.tqdm(train_dl):
         Xb = Xb.to(device)
@@ -115,7 +120,7 @@ for epoch in range(config["optimiser"]["nepoch"]):
         tb = tb.to(device)
         y_pred = model(Xb, tb)  # make a prediction
         optimiser.zero_grad()  # resets all of the gradients to zero, otherwise the gradients are accumulated
-        loss = loss_fn(y_pred, yb)  # calculate the loss
+        loss = loss_fn(y_pred, yb, overall_mean, overall_std)  # calculate the loss
         loss.backward()  # take the backwards gradient
         optimiser.step()  # adjust the parameters by the gradient collected in the backwards pass
         # data collection for the model
@@ -132,12 +137,17 @@ for epoch in range(config["optimiser"]["nepoch"]):
         yv = yv.to(device)  # move to GPU
         tv = tv.to(device)  # move to GPU
         yv_pred = model(Xv, tv)  # make a prediction
-        loss = loss_fn(yv_pred, yv)  # calculate the loss
+        loss = loss_fn(yv_pred, yv, overall_mean, overall_std)  # calculate the loss
         valid_loss += loss.item() / (
+            valid_ds.n_samples // config["optimiser"]["batchsize"]
+        )
+        loss2 = loss_fn2(yv_pred, yv, overall_mean, overall_std)
+        function_loss += loss2 / (
             valid_ds.n_samples // config["optimiser"]["batchsize"]
         )
 
     print(f"    training loss: {train_loss:8.3e}, validation loss: {valid_loss:8.3e}")
+    print(f"Loss for individual functions: {function_loss}")
     writer.add_scalars(
         "loss",
         {"train": train_loss, "valid": valid_loss},

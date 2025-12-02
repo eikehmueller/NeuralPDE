@@ -9,7 +9,8 @@ import numpy as np
 from neural_pde.diagnostics import Diagnostics
 from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header
 from neural_pde.velocity_functions import Projector as Proj
-from neural_pde.loss_functions import rmse as metric
+from neural_pde.loss_functions import multivariate_normalised_rmse as metric
+from neural_pde.loss_functions import individual_function_rmse as metric2
 from neural_pde.model import load_model
 import matplotlib.pyplot as plt
 # Create argparse arguments
@@ -82,6 +83,7 @@ model = load_model(args.model)
 # validation
 model.train(False)
 avg_loss = 0
+individual_loss = np.zeros(3)
 for (Xv, tv), yv in dataloader:
     yv_pred = model(Xv, tv)
     loss = metric(yv_pred, yv)
@@ -155,6 +157,10 @@ if args.plot_dataset_and_model:
     for j, ((X, t), y_target) in enumerate(iter(dataset)):
         X = torch.unsqueeze(X, 0)
         y_pred = model(X, t)
+        yp = y_pred.detach().numpy()
+        yt = y_target.detach().numpy()
+        print(f'Error is {np.sqrt(np.sum((yp - yt) ** 2,  axis=-1) / np.sum((yt) ** 2, axis=-1))}')
+        print(f"Error is {np.sqrt(np.sum((yp - yt) ** 2,  axis=-1))}")
         y_pred = torch.squeeze(y_pred, 0)
         X = torch.squeeze(X, 0)
 

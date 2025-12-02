@@ -313,14 +313,14 @@ class NeuralPDEModel(torch.nn.Module):
         x_mean = self.x_mean.to(x.device)
         x_std = self.x_std.to(x.device)
         x_normalised = x.clone()
-        x_normalised[:, : self.n_func_in_dynamic, :] = (x[:, : self.n_func_in_dynamic, :] - x_mean) / x_std
+        x_normalised[:, : self.n_func_in_dynamic, :] = (x[:, :self.n_func_in_dynamic, :] - x_mean) / x_std
 
         y = self.PatchEncoder(x_normalised)
         z = self.NeuralSolver(y, t_final)
         if hasattr(self, "PatchDecoder"):
             w = self.PatchDecoder(z)
         elif hasattr(self, "Decoder"):
-            x_ancil = x[..., self.dimensions["n_func_in_dynamic"] :, :]
+            x_ancil = x[:, self.dimensions["n_func_in_dynamic"]:, :]
             w = self.Decoder(z, x_ancil)
         else:
             raise RuntimeError("Model has no decoder attribute!")
