@@ -45,9 +45,17 @@ def load_model(directory):
     """Load model from disk
 
     :arg directory: directory containing the saved model"""
+    checkpoint = torch.load(os.path.join(directory, "checkpoint.pt"))
+
     model = NeuralPDEModel()
-    model.load(directory)
-    return model
+    model.load(directory, checkpoint)
+
+    optimiser =  torch.optim.Adam(model.parameters())
+    optimiser.load_state_dict(checkpoint["optimizer"])
+
+    epoch = checkpoint["epoch"]
+
+    return model, optimiser, epoch
 
 
 class NeuralPDEModel(torch.nn.Module):
@@ -331,7 +339,7 @@ class NeuralPDEModel(torch.nn.Module):
         #print(f'Error is {torch.mean(x[:, :self.n_func_in_dynamic, :] - w2_final)}')
         return w_final
 
-    def save(self, directory):
+    def save(self, state, directory):
         """Save model to disk
 
         The model weights are saved in model.pt and model metadata in model.json
@@ -341,23 +349,25 @@ class NeuralPDEModel(torch.nn.Module):
         assert self.initialised
         if not os.path.exists(directory):
             os.makedirs(directory)
-        torch.save(self.state_dict(), os.path.join(directory, "model.pt"))
+        torch.save(state, os.path.join(directory, "checkpoint.pt"))
+
         config = dict(dimensions=self.dimensions, architecture=self.architecture,
                        mean=self.mean.numpy().tolist(), std=self.std.numpy().tolist())
-        with open(os.path.join(directory, "model.json"), "w", encoding="utf8") as f:
+        with open(os.path.join(directory, "checkpoint.json"), "w", encoding="utf8") as f:
             json.dump(config, f, indent=4)
 
-    def load(self, directory):
+    def load(self, directory, checkpoint):
         """Load model from disk
 
         :arg directory: directory to load model from
         """
-        with open(os.path.join(directory, "model.json"), "r", encoding="utf8") as f:
+        with open(os.path.join(directory, "checkpoint.json"), "r", encoding="utf8") as f:
             config = json.load(f)
         tensor_mean = torch.FloatTensor(config["mean"])
         tensor_std = torch.FloatTensor(config["std"])
 
         if not self.initialised:
+            print("Reinitialising the model")
             self.setup(
                 config["dimensions"]["n_ref"],
                 config["dimensions"]["n_func_in_dynamic"],
@@ -367,7 +377,6 @@ class NeuralPDEModel(torch.nn.Module):
                 tensor_mean,
                 tensor_std
             )
-        self.load_state_dict(
-            torch.load(os.path.join(directory, "model.pt"), weights_only=True)
-        )
+        self.load_state_dict(checkpoint["state_dict"])
+        
         self.eval()

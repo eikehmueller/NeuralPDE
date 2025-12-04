@@ -36,7 +36,9 @@ from firedrake import *
 from timeit import default_timer as timer
 from datetime import timedelta
 try:
-    from gusto import (lonlatr_from_xyz, ShallowWaterParameters, ShallowWaterEquations, Domain,OutputParameters, IO, SSPRK3, DGUpwind, SemiImplicitQuasiNewton, RelativeVorticity, Divergence)
+    from gusto import (lonlatr_from_xyz, ShallowWaterParameters, ShallowWaterEquations, Domain,OutputParameters, 
+                       IO, SSPRK3, DGUpwind, SemiImplicitQuasiNewton, RelativeVorticity, Divergence,
+                       Perturbation)
 except:
     print ("WARNING: unable to import gusto")
 
@@ -430,8 +432,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         )  # these have been modified so we get no output
 
         # choose which fields to record over the simulation
-        # diagnostic_fields = [MeridionalComponent('u'), ZonalComponent('u'), SteadyStateError('D')]
-        diagnostic_fields = [Divergence("u"), RelativeVorticity()]
+        diagnostic_fields = [Divergence("u"), RelativeVorticity(), Perturbation("D")]
         io = IO(domain, output, diagnostic_fields=diagnostic_fields)
 
         # the methods to solve the equations
@@ -561,7 +562,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 divergence_tar = diagnostics.divergence(w2)
 
                 # input data - dynamic variables
-                self._data[j, 0, :] = h_inp.dat.data  # h data
+                self._data[j, 0, :] = h_inp.dat.data - 1 # h data, take away mean depth
                 self._data[j, 1, :] = divergence_inp.dat.data
                 self._data[j, 2, :] = vorticity_inp.dat.data
                 # coordinate data - auxiliary variables
@@ -569,7 +570,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 self._data[j, 4, :] = self._y.dat.data  # y coord data
                 self._data[j, 5, :] = self._z.dat.data  # z coord data
                 # output data - target data
-                self._data[j, 6, :] = h_tar.dat.data  # h data
+                self._data[j, 6, :] = h_tar.dat.data - 1 # h data
                 self._data[j, 7, :] = divergence_tar.dat.data
                 self._data[j, 8, :] = vorticity_tar.dat.data
                 # time data
