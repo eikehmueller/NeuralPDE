@@ -343,7 +343,8 @@ class NeuralPDEModel(torch.nn.Module):
         """Save model to disk
 
         The model weights are saved in model.pt and model metadata in model.json
-
+        
+        :arg state: dictionary with state of model, optimiser and epoch
         :arg directory: directory to save in
         """
         assert self.initialised
@@ -360,14 +361,15 @@ class NeuralPDEModel(torch.nn.Module):
         """Load model from disk
 
         :arg directory: directory to load model from
+        :arg checkpoint: dictionary with state of the model  
         """
         with open(os.path.join(directory, "checkpoint.json"), "r", encoding="utf8") as f:
             config = json.load(f)
+            
         tensor_mean = torch.FloatTensor(config["mean"])
         tensor_std = torch.FloatTensor(config["std"])
 
         if not self.initialised:
-            print("Reinitialising the model")
             self.setup(
                 config["dimensions"]["n_ref"],
                 config["dimensions"]["n_func_in_dynamic"],

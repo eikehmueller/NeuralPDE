@@ -64,11 +64,12 @@ show_hdf5_header(f"{args.data_directory}{config["data"]["train"]}")
 print()
 show_hdf5_header(f"{args.data_directory}{config["data"]["valid"]}")
 print()
+
 train_ds = load_hdf5_dataset(f"{args.data_directory}{config["data"]["train"]}")
 valid_ds = load_hdf5_dataset(f"{args.data_directory}{config["data"]["valid"]}")
 
 overall_mean = torch.mean(torch.from_numpy(train_ds.mean), axis=1)[train_ds.n_func_in_dynamic + train_ds.n_func_in_ancillary:]
-overall_std = torch.mean(torch.from_numpy(train_ds.std), axis=1)[train_ds.n_func_in_dynamic + train_ds.n_func_in_ancillary:]
+overall_std  = torch.mean(torch.from_numpy(train_ds.std),  axis=1)[train_ds.n_func_in_dynamic + train_ds.n_func_in_ancillary:]
 
 train_dl = DataLoader(
     train_ds, batch_size=config["optimiser"]["batchsize"], shuffle=True, drop_last=True
@@ -93,21 +94,22 @@ if not ("checkpoint.pt" in os.listdir(args.model)):  # load model or initialise 
     )
     prev_epoch = 0
 else:
-    print("Loading model")
+    print("Loading model and optimiser")
     model, optimiser, prev_epoch = load_model(
         args.model,
     )
+    print(f"Previous epoch is {prev_epoch}")
 
 gamma = (
-config["optimiser"]["final_learning_rate"]
-/ config["optimiser"]["initial_learning_rate"]
-) ** (1 / config["optimiser"]["nepoch"])
+    config["optimiser"]["final_learning_rate"]
+    / config["optimiser"]["initial_learning_rate"]
+    ) ** (1 / config["optimiser"]["nepoch"])
 
 scheduler = torch.optim.lr_scheduler.ExponentialLR(optimiser, gamma=gamma)
+
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 model = model.to(device)  # transfer the model to the GPU
 print(f"Running on device {device}")
-
 
 writer = SummaryWriter("../results/runs", flush_secs=5)
 
@@ -130,6 +132,7 @@ for epoch in range(config["optimiser"]["nepoch"]):
         train_loss += loss.item() / (
             train_ds.n_samples // config["optimiser"]["batchsize"]
         )
+
     scheduler.step()
 
     # validation
@@ -167,7 +170,7 @@ for epoch in range(config["optimiser"]["nepoch"]):
     writer.add_scalar("learning_rate", scheduler.get_last_lr()[0], epoch)
     print()
     if epoch % 10 == 0:
-        state = {'epoch': epoch + 1, 'state_dict': model.state_dict(),
+        state = {'epoch': epoch + prev_epoch, 'state_dict': model.state_dict(),
              'optimizer': optimiser.state_dict()}
         print("Saving model...")
         model.save(state, args.model)
@@ -176,7 +179,7 @@ writer.flush()
 end = timer()
 print(f"Runtime: {timedelta(seconds=end-start)}")
 
-state = {'epoch': epoch + 1, 'state_dict': model.state_dict(),
+state = {'epoch': epoch + prev_epoch, 'state_dict': model.state_dict(),
              'optimizer': optimiser.state_dict()}
 
 model.save(state, args.model)
