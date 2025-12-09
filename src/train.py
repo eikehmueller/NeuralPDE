@@ -117,7 +117,7 @@ writer = SummaryWriter("../results/runs", flush_secs=5)
 for epoch in range(config["optimiser"]["nepoch"]):
     print(f"epoch {epoch + 1 + prev_epoch} of {config["optimiser"]["nepoch"] + prev_epoch}")
     train_loss = 0
-    function_loss = torch.zeros(3)
+    function_loss = torch.zeros(train_ds.n_func_target)
     model.train(True)
     for (Xb, tb), yb in tqdm.tqdm(train_dl):
         Xb = Xb.to(device)

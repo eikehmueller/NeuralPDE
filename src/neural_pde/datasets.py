@@ -457,11 +457,11 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         H = parameters.H
 
         # adding mountain ranges - these could all be varied!
-        lamda_c = -pi / 2.0  # longitudinal centre of mountain (rad)
-        phi_c = pi / 6.0  # latitudinal centre of mountain (rad)
+        lamda_c = -pi / 4.0  # longitudinal centre of mountain (rad)
+        phi_c = - pi / 3.0  # latitudinal centre of mountain (rad)
 
         R0 = pi / 9.0  # radius of mountain (rad)
-        mountain_height = 2000 / L0  # height of mountain (m)
+        mountain_height = 500 / L0  # height of mountain (m)
 
         rsq1 = min_value(R0**2, (lon - lamda_c) ** 2 + (lat - phi_c) ** 2)
 
@@ -469,7 +469,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
         tpexpr = mountain_height * ((1 - r1 / R0))
         Dexpr = (
-            H - ((R * Omega0 * u_max + 0.5 * u_max**2) * (sin(lat)) ** 2) / g #+ tpexpr
+            H - ((R * Omega0 * u_max + 0.5 * u_max**2) * (sin(lat)) ** 2) / g + tpexpr
         )
 
         D0.interpolate(Dexpr)
@@ -562,7 +562,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 divergence_tar = diagnostics.divergence(w2)
 
                 # input data - dynamic variables
-                self._data[j, 0, :] = h_inp.dat.data - 1 # h data, take away mean depth
+                self._data[j, 0, :] = h_inp.dat.data # h data, take away mean depth
                 self._data[j, 1, :] = divergence_inp.dat.data
                 self._data[j, 2, :] = vorticity_inp.dat.data
                 # coordinate data - auxiliary variables
@@ -570,7 +570,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 self._data[j, 4, :] = self._y.dat.data  # y coord data
                 self._data[j, 5, :] = self._z.dat.data  # z coord data
                 # output data - target data
-                self._data[j, 6, :] = h_tar.dat.data - 1 # h data
+                self._data[j, 6, :] = h_tar.dat.data # h data
                 self._data[j, 7, :] = divergence_tar.dat.data
                 self._data[j, 8, :] = vorticity_tar.dat.data
                 # time data

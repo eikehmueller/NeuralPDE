@@ -162,7 +162,6 @@ def individual_function_rmse(y_pred, y_target, mean, std):
             torch.sum((yp - yt) ** 2,  dim=2)
             / torch.sum((yt) ** 2, dim=2)
         ),  dim=0)
-
     return loss
 
 

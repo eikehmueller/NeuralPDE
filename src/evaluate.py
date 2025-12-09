@@ -80,7 +80,7 @@ train_ds = load_hdf5_dataset(f"{args.data_directory}{config["data"]["train"]}")
 overall_mean = torch.mean(torch.from_numpy(train_ds.mean), axis=1)[train_ds.n_func_in_dynamic + train_ds.n_func_in_ancillary:]
 overall_std = torch.mean(torch.from_numpy(train_ds.std), axis=1)[train_ds.n_func_in_dynamic + train_ds.n_func_in_ancillary:]
 
-model = load_model(args.model)
+model, _, _ = load_model(args.model)
 
 # validation
 model.train(False)
@@ -166,33 +166,34 @@ if args.plot_dataset_and_model:
 
         f_input_d = Function(V, name=f"input_d")
         f_input_d.dat.data[:] = X.detach().numpy()[0, :]
-        f_input_div = Function(V, name="input_div")
-        f_input_div.dat.data[:] = X.detach().numpy()[1, :]
-        f_input_vor = Function(V, name="input_vor")
-        f_input_vor.dat.data[:] = X.detach().numpy()[2, :]
+        #f_input_div = Function(V, name="input_div")
+        #f_input_div.dat.data[:] = X.detach().numpy()[1, :]
+        #f_input_vor = Function(V, name="input_vor")
+        #f_input_vor.dat.data[:] = X.detach().numpy()[2, :]
 
         f_target_d = Function(V, name=f"target_d_t={t:6.3f}")
         f_target_d.dat.data[:] = y_target.detach().numpy()[0, :]
-        f_target_div = Function(V, name="target_div")
-        f_target_div.dat.data[:] = y_target.detach().numpy()[1, :]
-        f_target_vor = Function(V, name="target_vor")
-        f_target_vor.dat.data[:] = y_target.detach().numpy()[2, :]
-        f_target = y_target.detach()[0:2, :]
+        #f_target_div = Function(V, name="target_div")
+        #f_target_div.dat.data[:] = y_target.detach().numpy()[1, :]
+        #f_target_vor = Function(V, name="target_vor")
+        #f_target_vor.dat.data[:] = y_target.detach().numpy()[2, :]
+        #f_target = y_target.detach()[0:2, :]
 
         f_pred_d = Function(V, name=f"pred_d_t={t:6.3f}")
         f_pred_d.dat.data[:] = y_pred.detach().numpy()[0, :]
-        f_pred_div = Function(V, name="pred_div")
-        f_pred_div.dat.data[:] = y_pred.detach().numpy()[1, :]
-        f_pred_vor = Function(V, name="pred_vor")
-        f_pred_vor.dat.data[:] = y_pred.detach().numpy()[2, :]
-        f_pred = y_pred.detach()[0:2, :]
+        #f_pred_div = Function(V, name="pred_div")
+        #f_pred_div.dat.data[:] = y_pred.detach().numpy()[1, :]
+        #f_pred_vor = Function(V, name="pred_vor")
+        #f_pred_vor.dat.data[:] = y_pred.detach().numpy()[2, :]
+        #f_pred = y_pred.detach()[0:2, :]
 
         file = VTKFile(os.path.join(args.output, f"dataset/output_t={t_initial[j]}_{j:04d}.pvd"))
-        file.write(f_input_d, f_input_div, f_input_vor, 
-                f_target_d, f_target_div, f_target_vor,
-                    f_pred_d, f_pred_div, f_pred_vor)
-        f_target1 = torch.unsqueeze(f_target, 0)
-        f_pred1 = torch.unsqueeze(f_pred, 0)
+        #file.write(f_input_d, f_input_div, f_input_vor, 
+        #        f_target_d, f_target_div, f_target_vor,
+        #            f_pred_d, f_pred_div, f_pred_vor)
+        file.write(f_input_d, f_target_d, f_pred_d,)
+        #f_target1 = torch.unsqueeze(f_target, 0)
+        #f_pred1 = torch.unsqueeze(f_pred, 0)
 
         
         #ax.plot(t, metric(f_target1, f_pred1, overall_mean, overall_std), color="black")
