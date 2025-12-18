@@ -101,7 +101,7 @@ V = FunctionSpace(mesh, "CG", 1)
 V_DG = FunctionSpace(mesh, "DG", 0)
 (X, _), __ = next(iter(dataset))
 dt = config["architecture"]["dt"]
-t_initial = dataset._t_final
+t_initial = dataset._t_initial
 t_final = dataset._t_final 
 animation_file_nn = VTKFile(os.path.join(args.output, "animation.pvd"))
 h_pred   = Function(V, name="h")
@@ -140,9 +140,9 @@ with CheckpointFile("results/gusto_output/chkpt.h5", 'r') as afile:
     X = torch.tensor(X, dtype=torch.float32)
 
 if args.animate:
-    t_elapsed = 0
-    while t < t_final - t_initial:
-        y_pred = model(X, torch.tensor(t_elapsed))
+    t = 0
+    while t < 20:
+        y_pred = model(X, torch.tensor(t))
 
         h_pred.dat.data[:] = y_pred.detach().numpy()[0, 0, :]
         div_pred.dat.data[:] = y_pred.detach().numpy()[0, 1, :]
@@ -150,7 +150,7 @@ if args.animate:
         animation_file_nn.write(h_pred, div_pred, vor_pred, time=t)
 
         t += dt
-        t_elapsed += dt
+
         print(f"time = {t:8.4f}")
 
 if args.plot_dataset_and_model:
@@ -166,32 +166,32 @@ if args.plot_dataset_and_model:
 
         f_input_d = Function(V, name=f"input_d")
         f_input_d.dat.data[:] = X.detach().numpy()[0, :]
-        #f_input_div = Function(V, name="input_div")
-        #f_input_div.dat.data[:] = X.detach().numpy()[1, :]
-        #f_input_vor = Function(V, name="input_vor")
-        #f_input_vor.dat.data[:] = X.detach().numpy()[2, :]
+        f_input_div = Function(V, name="input_div")
+        f_input_div.dat.data[:] = X.detach().numpy()[1, :]
+        f_input_vor = Function(V, name="input_vor")
+        f_input_vor.dat.data[:] = X.detach().numpy()[2, :]
 
         f_target_d = Function(V, name=f"target_d_t={t:6.3f}")
         f_target_d.dat.data[:] = y_target.detach().numpy()[0, :]
-        #f_target_div = Function(V, name="target_div")
-        #f_target_div.dat.data[:] = y_target.detach().numpy()[1, :]
-        #f_target_vor = Function(V, name="target_vor")
-        #f_target_vor.dat.data[:] = y_target.detach().numpy()[2, :]
-        #f_target = y_target.detach()[0:2, :]
+        f_target_div = Function(V, name="target_div")
+        f_target_div.dat.data[:] = y_target.detach().numpy()[1, :]
+        f_target_vor = Function(V, name="target_vor")
+        f_target_vor.dat.data[:] = y_target.detach().numpy()[2, :]
+        f_target = y_target.detach()[0:2, :]
 
         f_pred_d = Function(V, name=f"pred_d_t={t:6.3f}")
         f_pred_d.dat.data[:] = y_pred.detach().numpy()[0, :]
-        #f_pred_div = Function(V, name="pred_div")
-        #f_pred_div.dat.data[:] = y_pred.detach().numpy()[1, :]
-        #f_pred_vor = Function(V, name="pred_vor")
-        #f_pred_vor.dat.data[:] = y_pred.detach().numpy()[2, :]
-        #f_pred = y_pred.detach()[0:2, :]
+        f_pred_div = Function(V, name="pred_div")
+        f_pred_div.dat.data[:] = y_pred.detach().numpy()[1, :]
+        f_pred_vor = Function(V, name="pred_vor")
+        f_pred_vor.dat.data[:] = y_pred.detach().numpy()[2, :]
+        f_pred = y_pred.detach()[0:2, :]
 
         file = VTKFile(os.path.join(args.output, f"dataset/output_t={t_initial[j]}_{j:04d}.pvd"))
-        #file.write(f_input_d, f_input_div, f_input_vor, 
-        #        f_target_d, f_target_div, f_target_vor,
-        #            f_pred_d, f_pred_div, f_pred_vor)
-        file.write(f_input_d, f_target_d, f_pred_d,)
+        file.write(f_input_d, f_input_div, f_input_vor, 
+                f_target_d, f_target_div, f_target_vor,
+                    f_pred_d, f_pred_div, f_pred_vor)
+        #file.write(f_input_d, f_target_d, f_pred_d,)
         #f_target1 = torch.unsqueeze(f_target, 0)
         #f_pred1 = torch.unsqueeze(f_pred, 0)
 
