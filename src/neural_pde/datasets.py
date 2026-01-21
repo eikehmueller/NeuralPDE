@@ -465,8 +465,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         #u_max = 2 * pi / (12 * day)  # Maximum amplitude of the zonal wind (m/s)
         #uexpr = as_vector(
         #    (-u_max * cos(lat) * sin(lon), u_max * cos(lat) * cos(lon), 0)
-        #)
-        u0.project(uexpr)
+        #
 
         # setting up initial conditions for height
         D0 = stepper.fields("D")
@@ -496,7 +495,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
             mean_depth - tpexpr
             - (radius*Omega*u_max + 0.5*u_max**2)*(z/radius)**2/g
         )
-
+        u0.project(uexpr)
         D0.interpolate(Dexpr)
 
         # reference velocity is zero, reference depth is H
