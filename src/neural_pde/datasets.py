@@ -402,6 +402,8 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         )  # characteristic time scale - scales umax to 1
 
         element_order = 1 # CG method
+        xyz = SpatialCoordinate(self.mesh)
+        lon, lat, _ = lonlatr_from_xyz(*xyz)  # latitide and longitude
 
         # BDM means Brezzi-Douglas-Marini finite element basis function
         domain = Domain(self.mesh, self.dt, "BDM", element_order)
@@ -411,12 +413,22 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         g0 = self.g * (T0**2) / L0  # nondimensionalised g (m/s^2)
         Omega0 = self.omega * T0  # nondimensionalised omega (s^-1)
 
+        # mountain parameters 
+        mountain_height = 2000.     # height of mountain (m)
+        R0 = pi/9.                  # radius of mountain (rad)
+        lamda_c = -pi/2.            # longitudinal centre of mountain (rad)
+        phi_c = pi/6.               # latitudinal centre of mountain (rad)
+
+        
+
+        rsq = min_value(R0**2, (lon - lamda_c)**2 + (lat - phi_c)**2)
+        r = sqrt(rsq)
+        tpexpr = mountain_height * (1 - r/R0)
+
         # initialise parameters object
-        parameters = ShallowWaterParameters(self.mesh, H=mean_depth, g=g0, Omega=Omega0)
+        parameters = ShallowWaterParameters(self.mesh, H=mean_depth, g=g0, Omega=Omega0, topog_expr=tpexpr)
 
         # set up the finite element form
-        xyz = SpatialCoordinate(self.mesh)
-        lon, lat, _ = lonlatr_from_xyz(*xyz)  # latitide and longitude
         eqns = ShallowWaterEquations(domain, parameters)
 
         # output options
@@ -457,19 +469,20 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         H = parameters.H
 
         # adding mountain ranges - these could all be varied!
-        lamda_c = -pi / 4.0  # longitudinal centre of mountain (rad)
-        phi_c = - pi / 3.0  # latitudinal centre of mountain (rad)
+        #lamda_c = -pi / 4.0  # longitudinal centre of mountain (rad)
+        #phi_c = - pi / 3.0  # latitudinal centre of mountain (rad)
 
-        R0 = pi / 9.0  # radius of mountain (rad)
-        mountain_height = 500 / L0  # height of mountain (m)
+        #R0 = pi / 9.0  # radius of mountain (rad)
+        #mountain_height = 500 / L0  # height of mountain (m)
 
-        rsq1 = min_value(R0**2, (lon - lamda_c) ** 2 + (lat - phi_c) ** 2)
+        #rsq1 = min_value(R0**2, (lon - lamda_c) ** 2 + (lat - phi_c) ** 2)
 
-        r1 = sqrt(rsq1)
+        
+        #r1 = sqrt(rsq1)
 
-        tpexpr = mountain_height * ((1 - r1 / R0))
+        #tpexpr = mountain_height * ((1 - r1 / R0))
         Dexpr = (
-            H - ((R * Omega0 * u_max + 0.5 * u_max**2) * (sin(lat)) ** 2) / g + tpexpr
+            H - ((R * Omega0 * u_max + 0.5 * u_max**2) * (sin(lat)) ** 2) / g# + tpexpr
         )
 
         D0.interpolate(Dexpr)
