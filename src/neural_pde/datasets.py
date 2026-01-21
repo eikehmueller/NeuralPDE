@@ -395,23 +395,28 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
         start_timer = timer()
 
-        L0 = 5960  # charactersistic length scale (mean height of water)
-        R = 6371220 / L0  # radius of earth divided by length scale
-        T0 = (
-            12 * 24 * 60 * 60 / (2 * pi * R)
-        )  # characteristic time scale - scales umax to 1
+        radius = 6371220.           # planetary radius (m)
+        mean_depth = 5960           # reference depth (m)
+        g = 9.80616                 # acceleration due to gravity (m/s^2)
+        u_max = 20.                 # max amplitude of the zonal wind (m/s)
+
+        #L0 = 5960  # charactersistic length scale (mean height of water)
+        #R = 6371220 / L0  # radius of earth divided by length scale
+        #T0 = (
+        #    12 * 24 * 60 * 60 / (2 * pi * R)
+        #)  # characteristic time scale - scales umax to 1
 
         element_order = 1 # CG method
-        xyz = SpatialCoordinate(self.mesh)
-        lon, lat, _ = lonlatr_from_xyz(*xyz)  # latitide and longitude
+        x, y, z = SpatialCoordinate(self.mesh)
+        lamda, phi, _ = lonlatr_from_xyz(x,y,z)  # latitide and longitude
 
         # BDM means Brezzi-Douglas-Marini finite element basis function
         domain = Domain(self.mesh, self.dt, "BDM", element_order)
 
         # ShallowWaterParameters are the physical parameters for the shallow water equations
         mean_depth = 1  # this is the parameter we nondimensionalise around
-        g0 = self.g * (T0**2) / L0  # nondimensionalised g (m/s^2)
-        Omega0 = self.omega * T0  # nondimensionalised omega (s^-1)
+        #g0 = self.g * (T0**2) / L0  # nondimensionalised g (m/s^2)
+        #Omega0 = self.omega * T0  # nondimensionalised omega (s^-1)
 
         # mountain parameters 
         mountain_height = 1000.     # height of mountain (m)
@@ -420,12 +425,12 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         phi_c = pi/6.               # latitudinal centre of mountain (rad)
 
 
-        rsq = min_value(R0**2, (lon - lamda_c)**2 + (lat - phi_c)**2)
+        rsq = min_value(R0**2, (lamda - lamda_c)**2 + (phi - phi_c)**2)
         r = sqrt(rsq)
         tpexpr = mountain_height * (1 - r/R0)
 
         # initialise parameters object
-        parameters = ShallowWaterParameters(self.mesh, H=mean_depth, g=g0, Omega=Omega0, topog_expr=tpexpr)
+        parameters = ShallowWaterParameters(self.mesh, H=mean_depth, g=g, topog_expr=tpexpr)
 
         # set up the finite element form
         eqns = ShallowWaterEquations(domain, parameters)
@@ -455,11 +460,12 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
         # setting the initial conditions for velocity
         u0 = stepper.fields("u")
-        day = 24 * 60 * 60 / T0  # day in seconds
-        u_max = 2 * pi * R / (12 * day)  # Maximum amplitude of the zonal wind (m/s)
-        uexpr = as_vector(
-            (-u_max * cos(lat) * sin(lon), u_max * cos(lat) * cos(lon), 0)
-        )
+        #day = 24 * 60 * 60 #/ T0  # day in seconds
+        #u_max = 2 * pi * R / (12 * day)  # Maximum amplitude of the zonal wind (m/s)
+        #u_max = 2 * pi / (12 * day)  # Maximum amplitude of the zonal wind (m/s)
+        #uexpr = as_vector(
+        #    (-u_max * cos(lat) * sin(lon), u_max * cos(lat) * cos(lon), 0)
+        #)
         u0.project(uexpr)
 
         # setting up initial conditions for height
@@ -480,8 +486,15 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         #r1 = sqrt(rsq1)
 
         #tpexpr = mountain_height * ((1 - r1 / R0))
+        #Dexpr = (
+        #    H - ((R * Omega0 * u_max + 0.5 * u_max**2) * (sin(lat)) ** 2) / g# + tpexpr
+        #)
+
+        uexpr = as_vector([-u_max*y/radius, u_max*x/radius, 0.0])
+        Omega = parameters.Omega
         Dexpr = (
-            H - ((R * Omega0 * u_max + 0.5 * u_max**2) * (sin(lat)) ** 2) / g# + tpexpr
+            mean_depth - tpexpr
+            - (radius*Omega*u_max + 0.5*u_max**2)*(z/radius)**2/g
         )
 
         D0.interpolate(Dexpr)
