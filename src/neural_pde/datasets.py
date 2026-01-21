@@ -414,12 +414,11 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         Omega0 = self.omega * T0  # nondimensionalised omega (s^-1)
 
         # mountain parameters 
-        mountain_height = 2000.     # height of mountain (m)
+        mountain_height = 1000.     # height of mountain (m)
         R0 = pi/9.                  # radius of mountain (rad)
         lamda_c = -pi/2.            # longitudinal centre of mountain (rad)
         phi_c = pi/6.               # latitudinal centre of mountain (rad)
 
-        
 
         rsq = min_value(R0**2, (lon - lamda_c)**2 + (lat - phi_c)**2)
         r = sqrt(rsq)
