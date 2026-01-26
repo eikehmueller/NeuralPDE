@@ -19,6 +19,8 @@ try:
         SemiImplicitQuasiNewton,
         RelativeVorticity,
         Divergence,
+        SubcyclingOptions,
+        RungeKuttaFormulation
     )
 except:
     print("WARNING: running without gusto support")
@@ -399,6 +401,10 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         mean_depth = 5960           # reference depth (m)
         g = 9.80616                 # acceleration due to gravity (m/s^2)
         u_max = 20.                 # max amplitude of the zonal wind (m/s)
+        mountain_height = 2000.     # height of mountain (m)
+        R0 = pi/9.                  # radius of mountain (rad)
+        lamda_c = -pi/2.            # longitudinal centre of mountain (rad)
+        phi_c = pi/6.               # latitudinal centre of mountain (rad)
 
         #L0 = 5960  # charactersistic length scale (mean height of water)
         #R = 6371220 / L0  # radius of earth divided by length scale
@@ -407,24 +413,12 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         #)  # characteristic time scale - scales umax to 1
 
         element_order = 1 # CG method
+        domain = Domain(self.mesh, self.dt, "BDM", element_order)
+
         x, y, z = SpatialCoordinate(self.mesh)
         lamda, phi, _ = lonlatr_from_xyz(x,y,z)  # latitide and longitude
 
-        # BDM means Brezzi-Douglas-Marini finite element basis function
-        domain = Domain(self.mesh, self.dt, "BDM", element_order)
-
-        # ShallowWaterParameters are the physical parameters for the shallow water equations
-        mean_depth = 1  # this is the parameter we nondimensionalise around
-        #g0 = self.g * (T0**2) / L0  # nondimensionalised g (m/s^2)
-        #Omega0 = self.omega * T0  # nondimensionalised omega (s^-1)
-
         # mountain parameters 
-        mountain_height = 1000.     # height of mountain (m)
-        R0 = pi/9.                  # radius of mountain (rad)
-        lamda_c = -pi/2.            # longitudinal centre of mountain (rad)
-        phi_c = pi/6.               # latitudinal centre of mountain (rad)
-
-
         rsq = min_value(R0**2, (lamda - lamda_c)**2 + (phi - phi_c)**2)
         r = sqrt(rsq)
         tpexpr = mountain_height * (1 - r/R0)
@@ -434,6 +428,13 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
         # set up the finite element form
         eqns = ShallowWaterEquations(domain, parameters)
+
+        # BDM means Brezzi-Douglas-Marini finite element basis function
+
+        # ShallowWaterParameters are the physical parameters for the shallow water equations
+        #mean_depth = 1  # this is the parameter we nondimensionalise around
+        #g0 = self.g * (T0**2) / L0  # nondimensionalised g (m/s^2)
+        #Omega0 = self.omega * T0  # nondimensionalised omega (s^-1)
 
         # output options
         output = OutputParameters(
@@ -451,11 +452,20 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         diagnostic_fields = [Divergence("u"), RelativeVorticity(), Perturbation("D")]
         io = IO(domain, output, diagnostic_fields=diagnostic_fields)
 
-        # the methods to solve the equations
-        transported_fields = [SSPRK3(domain, "u"), SSPRK3(domain, "D")]
-        transport_methods = [DGUpwind(eqns, "u"), DGUpwind(eqns, "D")]
+        subcycling_options = SubcyclingOptions(subcycle_by_courant=0.25)
+        transported_fields = [
+            SSPRK3(domain, "u", subcycling_options=subcycling_options),
+            SSPRK3(
+                domain, "D", subcycling_options=subcycling_options,
+                rk_formulation=RungeKuttaFormulation.linear
+            )
+        ]
+        transport_methods = [
+            DGUpwind(eqns, "u"),
+            DGUpwind(eqns, "D", advective_then_flux=True)
+        ]
         stepper = SemiImplicitQuasiNewton(
-            eqns, io, transported_fields, transport_methods
+            eqns, io, transported_fields, transport_methods, tau_values={'D': 1.0}
         )
 
         # setting the initial conditions for velocity
@@ -471,6 +481,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         D0 = stepper.fields("D")
         g = parameters.g
         H = parameters.H
+        Omega = parameters.Omega
 
         # adding mountain ranges - these could all be varied!
         #lamda_c = -pi / 4.0  # longitudinal centre of mountain (rad)
@@ -490,7 +501,6 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         #)
 
         uexpr = as_vector([-u_max*y/radius, u_max*x/radius, 0.0])
-        Omega = parameters.Omega
         Dexpr = (
             mean_depth - tpexpr
             - (radius*Omega*u_max + 0.5*u_max**2)*(z/radius)**2/g
@@ -499,7 +509,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         D0.interpolate(Dexpr)
 
         # reference velocity is zero, reference depth is H
-        Dbar = Function(D0.function_space()).assign(H)
+        Dbar = Function(D0.function_space()).assign(mean_depth)
         stepper.set_reference_profiles([("D", Dbar)])
 
         # run the simulation
