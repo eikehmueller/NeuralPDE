@@ -20,7 +20,8 @@ try:
         RelativeVorticity,
         Divergence,
         SubcyclingOptions,
-        RungeKuttaFormulation
+        RungeKuttaFormulation,
+        Sum
     )
 except:
     print("WARNING: running without gusto support")
@@ -115,6 +116,7 @@ class SphericalFunctionSpaceDataset(Dataset):
         n_func_in_dynamic,
         n_func_in_ancillary,
         n_func_target,
+        radius,
         n_ref,
         nsamples,
         data=None,
@@ -128,6 +130,7 @@ class SphericalFunctionSpaceDataset(Dataset):
         :arg n_func_in_dynamic: number of dynamic input funtions
         :arg n_func_in_ancillary number of ancillary input functions
         :arg n_func_target: number of output functions
+        :arg radius: the radius of the sphere
         :arg n_ref: number of mesh refinements
         :arg nsamples: number of samples
         :arg data: data to initialise with
@@ -140,8 +143,9 @@ class SphericalFunctionSpaceDataset(Dataset):
         self.n_func_in_ancillary = n_func_in_ancillary
         self.n_func_target = n_func_target
         self.n_ref = n_ref
+        self.radius = radius
         self.dtype = torch.get_default_dtype() if dtype is None else dtype
-        self.mesh = UnitIcosahedralSphereMesh(
+        self.mesh = IcosahedralSphereMesh(radius=self.radius,
             refinement_level=n_ref, name="IcosahedralMesh"
         )  # create the mesh
         self._fs = FunctionSpace(self.mesh, "CG", 1)  # define the function space
@@ -208,6 +212,7 @@ class SphericalFunctionSpaceDataset(Dataset):
             f.attrs["n_func_in_dynamic"] = int(self.n_func_in_dynamic)
             f.attrs["n_func_in_ancillary"] = int(self.n_func_in_ancillary)
             f.attrs["n_func_target"] = int(self.n_func_target)
+            f.attrs["radius"] = float(self.radius)
             f.attrs["n_ref"] = int(self.n_ref)
             f.attrs["n_dof"] = int(self._fs.dof_count)
             f.attrs["n_samples"] = int(self.n_samples)
@@ -246,8 +251,9 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
         n_func_in_dynamic = 4
         n_func_in_ancillary = 3
         n_func_target = 1
+        radius = 1
         super().__init__(
-            n_func_in_dynamic, n_func_in_ancillary, n_func_target, nref, nsamples
+            n_func_in_dynamic, n_func_in_ancillary, n_func_target, radius, nref, nsamples
         )
         self.metadata = {
             "omega": f"{omega:}",
@@ -335,6 +341,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         t_final_max=10.0,
         omega=7.292e-5,
         g=9.8,
+        radius=1,
         t_interval=10,
         t_sigma=1,
         t_lowest=0,
@@ -364,11 +371,12 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
         # initialise with the SphericalFunctionSpaceData
         super().__init__(
-            n_func_in_dynamic, n_func_in_ancillary, n_func_target, n_ref, nsamples
+            n_func_in_dynamic, n_func_in_ancillary, n_func_target, radius, n_ref, nsamples
         )
 
         self.omega = omega
         self.g = g
+        self.radius = radius
         self.save_diagnostics = save_diagnostics
         
         self.metadata = {
@@ -401,18 +409,18 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         mean_depth = 5960           # reference depth (m)
         g = 9.80616                 # acceleration due to gravity (m/s^2)
         u_max = 20.                 # max amplitude of the zonal wind (m/s)
-        mountain_height = 2000.     # height of mountain (m)
+        mountain_height = 3000.     # height of mountain (m)
         R0 = pi/9.                  # radius of mountain (rad)
         lamda_c = -pi/2.            # longitudinal centre of mountain (rad)
         phi_c = pi/6.               # latitudinal centre of mountain (rad)
 
-        #L0 = 5960  # charactersistic length scale (mean height of water)
-        #R = 6371220 / L0  # radius of earth divided by length scale
-        #T0 = (
-        #    12 * 24 * 60 * 60 / (2 * pi * R)
-        #)  # characteristic time scale - scales umax to 1
+
+        # THE PROBLEM IS THE MESH
 
         element_order = 1 # CG method
+        ncells_per_edge = 16
+        #self.mesh = GeneralIcosahedralSphereMesh(radius, ncells_per_edge, degree=1)
+        #self.mesh =IcosahedralSphereMesh(radius=radius, refinement_level=3)
         domain = Domain(self.mesh, self.dt, "BDM", element_order)
 
         x, y, z = SpatialCoordinate(self.mesh)
@@ -443,13 +451,14 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
             dump_nc=True,
             dump_diagnostics=True,
             dumpfreq=1,
+            dumplist=['D', 'topography'],
             checkpoint=True,
             chkptfreq=1,
             multichkpt=True,
         )  # these have been modified so we get no output
 
         # choose which fields to record over the simulation
-        diagnostic_fields = [Divergence("u"), RelativeVorticity(), Perturbation("D")]
+        diagnostic_fields = [Sum('D', 'topography'), Divergence("u"), RelativeVorticity()]
         io = IO(domain, output, diagnostic_fields=diagnostic_fields)
 
         subcycling_options = SubcyclingOptions(subcycle_by_courant=0.25)

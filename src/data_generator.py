@@ -72,6 +72,14 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--radius",
+    type=float,
+    action="store",
+    help="radius of the sphere",
+    default=1,
+)
+
+parser.add_argument(
     "--dt",
     type=float,
     action="store",
@@ -149,6 +157,7 @@ print(f"  gusto_output_file_path = {args.gusto_output_file_path}")
 print(f"  nref                   = {args.nref}")
 print(f"  omega                  = {args.omega}")
 print(f"  g                      = {args.g}")
+print(f"  radius                 = {args.radius}")
 print(f"  dt                     = {args.dt}")
 print(f"  tfinalmax              = {args.tfinalmax}")
 print(f"  t_lowest               = {args.t_lowest}")
@@ -171,7 +180,7 @@ elif args.PDE == "SWE":
     print("Generating Shallow Water Equations dataset")
     dataset = ShallowWaterEquationsDataset(
         n_ref=args.nref, nsamples=args.nsamples, dt=args.dt, t_final_max=args.tfinalmax,
-        omega=args.omega, g=args.g, t_interval=args.t_interval, t_sigma=args.t_sigma,
+        omega=args.omega, g=args.g, radius=args.radius, t_interval=args.t_interval, t_sigma=args.t_sigma,
         t_lowest=args.t_lowest, t_highest=args.t_highest
     )
 
