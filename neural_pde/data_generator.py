@@ -1,17 +1,18 @@
 """This script produces the data"""
+
 import argparse
 import os
 import shutil
-from neural_pde.datasets import SolidBodyRotationDataset, ShallowWaterEquationsDataset
+from neural_pde.model.datasets import (
+    SolidBodyRotationDataset,
+    ShallowWaterEquationsDataset,
+)
 
 # Create argparse arguments
 parser = argparse.ArgumentParser()
 
 parser.add_argument(
-    "--PDE",
-    type=str,
-    action="store",
-    help="The PDE problem that is being solved"
+    "--PDE", type=str, action="store", help="The PDE problem that is being solved"
 )
 
 parser.add_argument(
@@ -104,11 +105,7 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--t_highest",
-    type=float,
-    action="store",
-    help="end of time simulation",
-    default=10
+    "--t_highest", type=float, action="store", help="end of time simulation", default=10
 )
 
 parser.add_argument(
@@ -172,32 +169,40 @@ print(f"  save_diagnostics       = {args.save_diagnostics}")
 if args.PDE == "SBR":
     print("Generating Solid Body Rotation dataset")
     dataset = SolidBodyRotationDataset(
-    args.nref, args.nsamples, args.omega, args.tfinalmax, args.degree, args.seed
+        args.nref, args.nsamples, args.omega, args.tfinalmax, args.degree, args.seed
     )
     dataset.generate()
     dataset.save(args.filename)
 elif args.PDE == "SWE":
     print("Generating Shallow Water Equations dataset")
     dataset = ShallowWaterEquationsDataset(
-        n_ref=args.nref, nsamples=args.nsamples, dt=args.dt, t_final_max=args.tfinalmax,
-        omega=args.omega, g=args.g, radius=args.radius, t_interval=args.t_interval, t_sigma=args.t_sigma,
-        t_lowest=args.t_lowest, t_highest=args.t_highest
+        n_ref=args.nref,
+        nsamples=args.nsamples,
+        dt=args.dt,
+        t_final_max=args.tfinalmax,
+        omega=args.omega,
+        g=args.g,
+        radius=args.radius,
+        t_interval=args.t_interval,
+        t_sigma=args.t_sigma,
+        t_lowest=args.t_lowest,
+        t_highest=args.t_highest,
     )
 
     if not os.path.isdir(args.gusto_output_file_path):
-        print('Generating the full simulation')
+        print("Generating the full simulation")
         dataset.generate_full_dataset()
     elif args.regenerate_data:
-        print('Regenerating the full simulation')
+        print("Regenerating the full simulation")
         shutil.rmtree(args.gusto_output_file_path)
         dataset.generate_full_dataset()
     else:
-        print('Opening previously generated simulation')
+        print("Opening previously generated simulation")
 
-    print('Extracting the data for the training, test, and validation sets')
-    dataset.prepare_for_model(os.path.join(args.gusto_output_file_path,"chkpt.h5"))
+    print("Extracting the data for the training, test, and validation sets")
+    dataset.prepare_for_model(os.path.join(args.gusto_output_file_path, "chkpt.h5"))
 
-    print('Saving the data in h5 format')
+    print("Saving the data in h5 format")
     dataset.save(args.filename)
 else:
     print("PDE options are SBR (Solid Body Rotation) or SWE (Shallow Water Equations)")

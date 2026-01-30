@@ -5,11 +5,14 @@ import torch
 import os
 import json
 
-from neural_pde.patch_encoder import PatchEncoder
-from neural_pde.patch_decoder import PatchDecoder
-from neural_pde.decoder import Decoder
-from neural_pde.neural_solver import ForwardEulerNeuralSolver, SymplecticNeuralSolver
-from neural_pde.spherical_patch_covering import SphericalPatchCovering
+from neural_pde.model.patch_encoder import PatchEncoder
+from neural_pde.model.patch_decoder import PatchDecoder
+from neural_pde.model.decoder import Decoder
+from neural_pde.model.neural_solver import (
+    ForwardEulerNeuralSolver,
+    SymplecticNeuralSolver,
+)
+from neural_pde.model.spherical_patch_covering import SphericalPatchCovering
 
 __all__ = ["build_model", "load_model"]
 
@@ -36,7 +39,13 @@ def build_model(
     """
     model = NeuralPDEModel()
     model.setup(
-        n_ref, n_func_in_dynamic, n_func_in_ancillary, n_func_target, architecture, mean, std
+        n_ref,
+        n_func_in_dynamic,
+        n_func_in_ancillary,
+        n_func_target,
+        architecture,
+        mean,
+        std,
     )
     return model
 
@@ -50,7 +59,7 @@ def load_model(directory):
     model = NeuralPDEModel()
     model.load(directory, checkpoint)
 
-    optimiser =  torch.optim.Adam(model.parameters())
+    optimiser = torch.optim.Adam(model.parameters())
     optimiser.load_state_dict(checkpoint["optimizer"])
 
     epoch = checkpoint["epoch"]
@@ -63,16 +72,24 @@ class NeuralPDEModel(torch.nn.Module):
 
     def __init__(self):
         """Initialise a new instance with empty model
-        
+
         :arg mean: mean of the batchsize over each function at every point
-        :arg std: standard devation of the batchsize over each function at every point """
+        :arg std: standard devation of the batchsize over each function at every point
+        """
         super().__init__()
         self.architecture = None
         self.dimensions = None
         self.initialised = False
 
     def setup(
-        self, n_ref, n_func_in_dynamic, n_func_in_ancillary, n_func_target, architecture, mean=0, std=1
+        self,
+        n_ref,
+        n_func_in_dynamic,
+        n_func_in_ancillary,
+        n_func_target,
+        architecture,
+        mean=0,
+        std=1,
     ):
         """
         Initialise new instance with model
@@ -95,26 +112,18 @@ class NeuralPDEModel(torch.nn.Module):
         self.mean = mean
         self.std = std
 
-        self.x_mean = (
-            self.mean[: n_func_in_dynamic, :]
-            .unsqueeze(0)
-            .to(torch.float32)
-        )
+        self.x_mean = self.mean[:n_func_in_dynamic, :].unsqueeze(0).to(torch.float32)
 
-        self.x_std = (
-            self.std[: n_func_in_dynamic, :]
-            .unsqueeze(0)
-            .to(torch.float32)
-        )
+        self.x_std = self.std[:n_func_in_dynamic, :].unsqueeze(0).to(torch.float32)
 
         self.w_mean = (
-            self.mean[n_func_in_dynamic + n_func_in_ancillary:, :]
+            self.mean[n_func_in_dynamic + n_func_in_ancillary :, :]
             .unsqueeze(0)
             .to(torch.float32)
         )
 
         self.w_std = (
-            self.std[n_func_in_dynamic + n_func_in_ancillary:, :]
+            self.std[n_func_in_dynamic + n_func_in_ancillary :, :]
             .unsqueeze(0)
             .to(torch.float32)
         )
@@ -321,29 +330,31 @@ class NeuralPDEModel(torch.nn.Module):
         x_mean = self.x_mean.to(x.device)
         x_std = self.x_std.to(x.device)
         x_normalised = x.clone()
-        x_normalised[:, : self.n_func_in_dynamic, :] = (x[:, :self.n_func_in_dynamic, :] - x_mean) / x_std
+        x_normalised[:, : self.n_func_in_dynamic, :] = (
+            x[:, : self.n_func_in_dynamic, :] - x_mean
+        ) / x_std
 
         y = self.PatchEncoder(x_normalised)
         z = self.NeuralSolver(y, t_final)
         if hasattr(self, "PatchDecoder"):
             w = self.PatchDecoder(z)
         elif hasattr(self, "Decoder"):
-            x_ancil = x[:, self.dimensions["n_func_in_dynamic"]:, :]
+            x_ancil = x[:, self.dimensions["n_func_in_dynamic"] :, :]
             w = self.Decoder(z, x_ancil)
         else:
             raise RuntimeError("Model has no decoder attribute!")
-        #w2 = x_normalised[:, :self.n_func_in_dynamic, :] 
+        # w2 = x_normalised[:, :self.n_func_in_dynamic, :]
         w_final = w * self.w_std + self.w_mean
-        #w2_final = w2 * self.w_std + self.w_mean
+        # w2_final = w2 * self.w_std + self.w_mean
 
-        #print(f'Error is {torch.mean(x[:, :self.n_func_in_dynamic, :] - w2_final)}')
+        # print(f'Error is {torch.mean(x[:, :self.n_func_in_dynamic, :] - w2_final)}')
         return w_final
 
     def save(self, state, directory):
         """Save model to disk
 
         The model weights are saved in model.pt and model metadata in model.json
-        
+
         :arg state: dictionary with state of model, optimiser and epoch
         :arg directory: directory to save in
         """
@@ -352,20 +363,28 @@ class NeuralPDEModel(torch.nn.Module):
             os.makedirs(directory)
         torch.save(state, os.path.join(directory, "checkpoint.pt"))
 
-        config = dict(dimensions=self.dimensions, architecture=self.architecture,
-                       mean=self.mean.numpy().tolist(), std=self.std.numpy().tolist())
-        with open(os.path.join(directory, "checkpoint.json"), "w", encoding="utf8") as f:
+        config = dict(
+            dimensions=self.dimensions,
+            architecture=self.architecture,
+            mean=self.mean.numpy().tolist(),
+            std=self.std.numpy().tolist(),
+        )
+        with open(
+            os.path.join(directory, "checkpoint.json"), "w", encoding="utf8"
+        ) as f:
             json.dump(config, f, indent=4)
 
     def load(self, directory, checkpoint):
         """Load model from disk
 
         :arg directory: directory to load model from
-        :arg checkpoint: dictionary with state of the model  
+        :arg checkpoint: dictionary with state of the model
         """
-        with open(os.path.join(directory, "checkpoint.json"), "r", encoding="utf8") as f:
+        with open(
+            os.path.join(directory, "checkpoint.json"), "r", encoding="utf8"
+        ) as f:
             config = json.load(f)
-            
+
         tensor_mean = torch.FloatTensor(config["mean"])
         tensor_std = torch.FloatTensor(config["std"])
 
@@ -377,8 +396,8 @@ class NeuralPDEModel(torch.nn.Module):
                 config["dimensions"]["n_func_target"],
                 config["architecture"],
                 tensor_mean,
-                tensor_std
+                tensor_std,
             )
         self.load_state_dict(checkpoint["state_dict"])
-        
+
         self.eval()

@@ -1,18 +1,26 @@
-from firedrake import (TestFunction, TrialFunction, Function,
-                       inner, as_vector, LinearVariationalProblem,
-                       LinearVariationalSolver, dx)
-                       
+from firedrake import (
+    TestFunction,
+    TrialFunction,
+    Function,
+    inner,
+    as_vector,
+    LinearVariationalProblem,
+    LinearVariationalSolver,
+    dx,
+)
+
+
 class Projector:
 
     def __init__(self, W, V):
-        """Class for projecting functions in from a 3D vector space to 3 
+        """Class for projecting functions in from a 3D vector space to 3
         separate scalar functions in V
 
         :arg W: function space W
         :arg V: function space V
         """
-        self._W = W # this should be the BDM space!! or a DG space
-        self._V = V # CG1 space
+        self._W = W  # this should be the BDM space!! or a DG space
+        self._V = V  # CG1 space
         self.phi = TestFunction(self._V)
         self.psi = TrialFunction(self._V)
         self._w_hdiv = Function(self._W)
@@ -23,7 +31,6 @@ class Projector:
         ]
         self._v = Function(self._V)
         self.a_mass = self.phi * self.psi * dx
-
 
     def create_linear_solver(self):
 
@@ -40,7 +47,7 @@ class Projector:
             lvp = LinearVariationalProblem(self.a_mass, b_hscalar, self._v)
             lvs = LinearVariationalSolver(lvp)
         else:
-            print('Projector error: function space value is neither 1 nor 3.')
+            print("Projector error: function space value is neither 1 nor 3.")
 
         return lvs
 
@@ -62,4 +69,4 @@ class Projector:
             lvs.solve()
             u.assign(self._v)
         else:
-            print('Projector error: function space value is neither 1 nor 3.')
+            print("Projector error: function space value is neither 1 nor 3.")

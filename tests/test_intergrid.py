@@ -5,16 +5,16 @@
 3: check that the jacobian of the decoder is the adjoint of the jacobian of the encoder
 4: check that the encoder gives the same results as manual interpolation of the functions
 5: check that interpolation using Encoder is the same as manual interpolation
-    for an input tensor with the shape (n, n_in). 
+    for an input tensor with the shape (n, n_in).
 6: check that interpolation using Encoder is the same as manual interpolation
-    for an input tensor with the shape (batch_size, n, n_in). 
+    for an input tensor with the shape (batch_size, n, n_in).
 
 """
 
 import pytest
 from firedrake import *
 import torch
-from neural_pde.intergrid import Interpolator, AdjointInterpolator
+from neural_pde.model.intergrid import Interpolator, AdjointInterpolator
 from firedrake.ml.pytorch import to_torch
 
 

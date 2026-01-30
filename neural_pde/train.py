@@ -9,11 +9,13 @@ import tqdm
 import tomllib
 import argparse
 import os
-from neural_pde.datasets import load_hdf5_dataset, show_hdf5_header
-from neural_pde.loss_functions import multivariate_normalised_rmse_with_data as loss_fn
-from neural_pde.loss_functions import individual_function_rmse as loss_fn2
-from neural_pde.loss_functions import multivariate_normalised_rmse as loss_fn3
-from neural_pde.model import build_model, load_model
+from neural_pde.model.datasets import load_hdf5_dataset, show_hdf5_header
+from neural_pde.model.loss_functions import (
+    multivariate_normalised_rmse_with_data as loss_fn,
+)
+from neural_pde.model.loss_functions import individual_function_rmse as loss_fn2
+from neural_pde.model.loss_functions import multivariate_normalised_rmse as loss_fn3
+from neural_pde.model.model import build_model, load_model
 
 start = timer()
 
@@ -68,8 +70,12 @@ print()
 train_ds = load_hdf5_dataset(f"{args.data_directory}{config["data"]["train"]}")
 valid_ds = load_hdf5_dataset(f"{args.data_directory}{config["data"]["valid"]}")
 
-overall_mean = torch.mean(torch.from_numpy(train_ds.mean), axis=1)[train_ds.n_func_in_dynamic + train_ds.n_func_in_ancillary:]
-overall_std  = torch.mean(torch.from_numpy(train_ds.std),  axis=1)[train_ds.n_func_in_dynamic + train_ds.n_func_in_ancillary:]
+overall_mean = torch.mean(torch.from_numpy(train_ds.mean), axis=1)[
+    train_ds.n_func_in_dynamic + train_ds.n_func_in_ancillary :
+]
+overall_std = torch.mean(torch.from_numpy(train_ds.std), axis=1)[
+    train_ds.n_func_in_dynamic + train_ds.n_func_in_ancillary :
+]
 
 train_dl = DataLoader(
     train_ds, batch_size=config["optimiser"]["batchsize"], shuffle=True, drop_last=True
@@ -90,7 +96,7 @@ if not ("checkpoint.pt" in os.listdir(args.model)):  # load model or initialise 
         std=torch.from_numpy(train_ds.std),
     )
     optimiser = torch.optim.Adam(
-    model.parameters(), lr=config["optimiser"]["initial_learning_rate"]
+        model.parameters(), lr=config["optimiser"]["initial_learning_rate"]
     )
     prev_epoch = 0
 else:
@@ -103,7 +109,7 @@ else:
 gamma = (
     config["optimiser"]["final_learning_rate"]
     / config["optimiser"]["initial_learning_rate"]
-    ) ** (1 / config["optimiser"]["nepoch"])
+) ** (1 / config["optimiser"]["nepoch"])
 
 scheduler = torch.optim.lr_scheduler.ExponentialLR(optimiser, gamma=gamma)
 
@@ -115,7 +121,9 @@ writer = SummaryWriter("../results/runs", flush_secs=5)
 
 # main training loop
 for epoch in range(config["optimiser"]["nepoch"]):
-    print(f"epoch {epoch + 1 + prev_epoch} of {config["optimiser"]["nepoch"] + prev_epoch}")
+    print(
+        f"epoch {epoch + 1 + prev_epoch} of {config["optimiser"]["nepoch"] + prev_epoch}"
+    )
     train_loss = 0
     function_loss = torch.zeros(train_ds.n_func_target)
     model.train(True)
@@ -170,8 +178,11 @@ for epoch in range(config["optimiser"]["nepoch"]):
     writer.add_scalar("learning_rate", scheduler.get_last_lr()[0], epoch)
     print()
     if epoch % 10 == 0:
-        state = {'epoch': epoch + prev_epoch, 'state_dict': model.state_dict(),
-             'optimizer': optimiser.state_dict()}
+        state = {
+            "epoch": epoch + prev_epoch,
+            "state_dict": model.state_dict(),
+            "optimizer": optimiser.state_dict(),
+        }
         print("Saving model...")
         model.save(state, args.model)
 writer.flush()
@@ -179,7 +190,10 @@ writer.flush()
 end = timer()
 print(f"Runtime: {timedelta(seconds=end-start)}")
 
-state = {'epoch': epoch + prev_epoch, 'state_dict': model.state_dict(),
-             'optimizer': optimiser.state_dict()}
+state = {
+    "epoch": epoch + prev_epoch,
+    "state_dict": model.state_dict(),
+    "optimizer": optimiser.state_dict(),
+}
 
 model.save(state, args.model)

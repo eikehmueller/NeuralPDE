@@ -7,7 +7,8 @@ n_{patches} x n_{point per patch}
 
 import numpy as np
 import scipy as sp
-from neural_pde.icosahedral_dual_mesh import IcosahedralDualMesh
+from neural_pde.model.icosahedral_dual_mesh import IcosahedralDualMesh
+
 
 class SphericalPatch:
     """A single spherical patch

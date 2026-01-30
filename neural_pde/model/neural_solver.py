@@ -1,5 +1,5 @@
 import torch
-from neural_pde.hamiltonian import masked_stepsize, NearestNeighbourHamiltonian
+from neural_pde.model.hamiltonian import masked_stepsize, NearestNeighbourHamiltonian
 
 __all__ = ["ForwardEulerNeuralSolver", "SymplecticNeuralSolver"]
 

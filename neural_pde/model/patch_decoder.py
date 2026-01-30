@@ -2,7 +2,7 @@
 
 from firedrake import *
 import torch
-from neural_pde.intergrid import AdjointInterpolator
+from neural_pde.model.intergrid import AdjointInterpolator
 
 
 class PatchDecoder(torch.nn.Module):
