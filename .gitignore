@@ -17,4 +17,4 @@ tb_logs/
 *.synctex.gz
 
 doc/hamiltonian_solver.pdf
-
+build/
