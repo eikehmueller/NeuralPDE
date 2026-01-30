@@ -24,10 +24,11 @@ maintainers = [
 description = "Neural PDE solver on the sphere."
 readme = "README.md"
 license = "MIT"
-license-files = ["LICENSE"]
 keywords = ["machine learning","neural ODEs"]
 classifiers = [
     "Programming Language :: Python :: 3"
 ]
 [project.urls]
 Repository = "https://github.com/eikehmueller/NeuralPDE"
+[tool.setuptools]
+packages = ["neural_pde", "neural_pde.model"]
