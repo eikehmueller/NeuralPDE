@@ -14,7 +14,7 @@
 import pytest
 from firedrake import *
 import torch
-from neural_pde.model.intergrid import Interpolator, AdjointInterpolator
+from neural_pde.grid.intergrid import Interpolator, AdjointInterpolator
 from firedrake.ml.pytorch import to_torch
 
 

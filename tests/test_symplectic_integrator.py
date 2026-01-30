@@ -3,8 +3,8 @@ import numpy as np
 import scipy as sp
 import pytest
 import torch
-from neural_pde.model.hamiltonian import masked_stepsize, Hamiltonian
-from neural_pde.model.neural_solver import SymplecticIntegratorFunction
+from neural_pde.solver.hamiltonian import masked_stepsize, Hamiltonian
+from neural_pde.solver.neural_solver import SymplecticIntegratorFunction
 
 
 @pytest.fixture

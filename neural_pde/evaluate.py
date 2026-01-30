@@ -7,13 +7,13 @@ import os
 import tomllib
 import argparse
 import numpy as np
-from neural_pde.model.diagnostics import Diagnostics
-from neural_pde.model.datasets import load_hdf5_dataset, show_hdf5_header
-from neural_pde.model.velocity_functions import Projector as Proj
-from neural_pde.model.loss_functions import (
+from neural_pde.util.diagnostics import Diagnostics
+from neural_pde.data.datasets import load_hdf5_dataset, show_hdf5_header
+from neural_pde.util.velocity_functions import Projector as Proj
+from neural_pde.util.loss_functions import (
     multivariate_normalised_rmse_with_data as metric,
 )
-from neural_pde.model.loss_functions import individual_function_rmse as metric2
+from neural_pde.util.loss_functions import individual_function_rmse as metric2
 from neural_pde.model.model import load_model
 import matplotlib.pyplot as plt
 

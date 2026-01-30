@@ -31,4 +31,11 @@ classifiers = [
 [project.urls]
 Repository = "https://github.com/eikehmueller/NeuralPDE"
 [tool.setuptools]
-packages = ["neural_pde", "neural_pde.model"]
+packages = [
+  "neural_pde",
+    "neural_pde.model",
+    "neural_pde.data",
+    "neural_pde.grid",
+    "neural_pde.model",
+    "neural_pde.solver",
+    "neural_pde.util"]

@@ -7,8 +7,8 @@
 5: check that an averaging function returns the expected result
 """
 
-from neural_pde.model.spherical_patch_covering import SphericalPatchCovering
-from neural_pde.model.neural_solver import ForwardEulerNeuralSolver
+from neural_pde.grid.spherical_patch_covering import SphericalPatchCovering
+from neural_pde.solver.neural_solver import ForwardEulerNeuralSolver
 import torch
 from firedrake import UnitIcosahedralSphereMesh
 

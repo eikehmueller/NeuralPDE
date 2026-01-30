@@ -19,15 +19,15 @@ If you want to edit the code, you might prefer to install in editable mode with
 
 ### Usage
 #### Generating data
-To generate data, use [src/data_generator.py], which can be controlled via command line options (run `python data_generator.py --help` to see these), can be used to generate datasets as hdf5 files. For convenience, the script [src/generate_data.sh] will generate the training, validation and test datasets. A generated file `DATA.h5` can be inspected with the `show_hdf5_header()` method which can be invoked as follows:
+To generate data, use [neural_pde/data_generator.py], which can be controlled via command line options (run `python data_generator.py --help` to see these), can be used to generate datasets as hdf5 files. A generated file `DATA.h5` can be inspected with the `show_hdf5_header()` method which can be invoked as follows:
 ```
 python -c "from neural_pde.datasets import show_hdf5_header; show_hdf5_header('DATA.h5')"
 ```
 #### Training
-To train the model, user [src/train.py], which is controlled by a parameter file such as `config.toml`. Run `python train.py --help`to see the command line options. The trained model is saved to disk.
+To train the model, user [neural_pde/train.py], which is controlled by a parameter file such as `config.toml`. Run `python train.py --help`to see the command line options. The trained model is saved to disk.
 
 #### Evaluation
-The trained model can be loaded and evaluated with [src/evaluate.py]. Run `python evaluate.py --help` to see the available command line options.
+The trained model can be loaded and evaluated with [neural_pde/evaluate.py]. Run `python evaluate.py --help` to see the available command line options.
 
 ### Dependencies
 #### Firedrake

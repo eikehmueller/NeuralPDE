@@ -1,7 +1,7 @@
 import torch
 from firedrake import *
-from neural_pde.model.icosahedral_dual_mesh import IcosahedralDualMesh
-from neural_pde.model.decoder import Decoder
+from neural_pde.grid.icosahedral_dual_mesh import IcosahedralDualMesh
+from neural_pde.grid.decoder import Decoder
 
 
 def project_to_dg0(mesh, u_dual):

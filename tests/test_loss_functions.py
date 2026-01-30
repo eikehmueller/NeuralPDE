@@ -5,7 +5,7 @@
    and thus the loss for random sampling is between 0.5 and 1.
 """
 
-from neural_pde.model.loss_functions import (
+from neural_pde.util.loss_functions import (
     normalised_mse,
     normalised_rmse,
     multivariate_normalised_rmse,

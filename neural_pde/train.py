@@ -9,12 +9,12 @@ import tqdm
 import tomllib
 import argparse
 import os
-from neural_pde.model.datasets import load_hdf5_dataset, show_hdf5_header
-from neural_pde.model.loss_functions import (
+from neural_pde.data.datasets import load_hdf5_dataset, show_hdf5_header
+from neural_pde.util.loss_functions import (
     multivariate_normalised_rmse_with_data as loss_fn,
 )
-from neural_pde.model.loss_functions import individual_function_rmse as loss_fn2
-from neural_pde.model.loss_functions import multivariate_normalised_rmse as loss_fn3
+from neural_pde.util.loss_functions import individual_function_rmse as loss_fn2
+from neural_pde.util.loss_functions import multivariate_normalised_rmse as loss_fn3
 from neural_pde.model.model import build_model, load_model
 
 start = timer()

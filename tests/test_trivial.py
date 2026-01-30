@@ -5,10 +5,10 @@
 
 from firedrake import *
 import torch
-from neural_pde.model.intergrid import torch_interpolation_tensor
-from neural_pde.model.spherical_patch_covering import SphericalPatchCovering
-from neural_pde.model.patch_encoder import PatchEncoder
-from neural_pde.model.patch_decoder import PatchDecoder
+from neural_pde.grid.intergrid import torch_interpolation_tensor
+from neural_pde.grid.spherical_patch_covering import SphericalPatchCovering
+from neural_pde.grid.patch_encoder import PatchEncoder
+from neural_pde.grid.patch_decoder import PatchDecoder
 
 spherical_patch_covering = SphericalPatchCovering(0, 0)
 

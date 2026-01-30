@@ -27,8 +27,8 @@ try:
 except:
     print("WARNING: running without gusto support")
 
-import neural_pde.model.diagnostics as dg
-from neural_pde.model.velocity_functions import Projector as Proj
+import neural_pde.util.diagnostics as dg
+from neural_pde.util.velocity_functions import Projector as Proj
 
 from firedrake import (
     FunctionSpace,

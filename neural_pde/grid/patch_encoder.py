@@ -2,7 +2,7 @@
 
 from firedrake import *
 import torch
-from neural_pde.model.intergrid import Interpolator
+from neural_pde.grid.intergrid import Interpolator
 
 
 class PatchEncoder(torch.nn.Module):

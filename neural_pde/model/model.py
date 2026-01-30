@@ -5,14 +5,15 @@ import torch
 import os
 import json
 
-from neural_pde.model.patch_encoder import PatchEncoder
-from neural_pde.model.patch_decoder import PatchDecoder
-from neural_pde.model.decoder import Decoder
-from neural_pde.model.neural_solver import (
+from neural_pde.grid.patch_encoder import PatchEncoder
+from neural_pde.grid.patch_decoder import PatchDecoder
+from neural_pde.grid.decoder import Decoder
+from neural_pde.grid.spherical_patch_covering import SphericalPatchCovering
+from neural_pde.solver.neural_solver import (
     ForwardEulerNeuralSolver,
     SymplecticNeuralSolver,
 )
-from neural_pde.model.spherical_patch_covering import SphericalPatchCovering
+
 
 __all__ = ["build_model", "load_model"]
 

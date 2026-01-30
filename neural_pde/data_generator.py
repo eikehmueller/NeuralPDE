@@ -3,7 +3,7 @@
 import argparse
 import os
 import shutil
-from neural_pde.model.datasets import (
+from neural_pde.data.datasets import (
     SolidBodyRotationDataset,
     ShallowWaterEquationsDataset,
 )
