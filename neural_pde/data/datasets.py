@@ -431,24 +431,49 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         u_max = 20.0  # max amplitude of the zonal wind (m/s)
         mountain_height = 3000.0  # height of mountain (m)
         R0 = pi / 9.0  # radius of mountain (rad)
+        lamda_a = pi / 6.0
+        lamda_b = 5 * pi / 6
         lamda_c = -pi / 2.0  # longitudinal centre of mountain (rad)
+        lamda_d = pi / 2
+        lamda_e = - pi/ 6
+        lamda_f = - 5 * pi / 6
+        phi_a = - pi / 6.0
         phi_c = pi / 6.0  # latitudinal centre of mountain (rad)
 
         # THE PROBLEM IS THE MESH
 
         element_order = 1  # CG method
-        ncells_per_edge = 16
-        # self.mesh = GeneralIcosahedralSphereMesh(radius, ncells_per_edge, degree=1)
-        # self.mesh =IcosahedralSphereMesh(radius=radius, refinement_level=3)
         domain = Domain(self.mesh, self.dt, "BDM", element_order)
 
         x, y, z = SpatialCoordinate(self.mesh)
         lamda, phi, _ = lonlatr_from_xyz(x, y, z)  # latitide and longitude
 
         # mountain parameters
-        rsq = min_value(R0**2, (lamda - lamda_c) ** 2 + (phi - phi_c) ** 2)
-        r = sqrt(rsq)
-        tpexpr = mountain_height * (1 - r / R0)
+        rsq1 = min_value(R0**2, (lamda - lamda_a) ** 2 + (phi - phi_c) ** 2)
+        r1 = sqrt(rsq1)
+        tpexpr1 = mountain_height * (1 - r1 / R0)
+
+        rsq2 = min_value(R0**2, (lamda - lamda_b) ** 2 + (phi - phi_c) ** 2)
+        r2 = sqrt(rsq2)
+        tpexpr2 = mountain_height * (1 - r2 / R0)
+
+        rsq3 = min_value(R0**2, (lamda - lamda_c) ** 2 + (phi - phi_c) ** 2)
+        r3 = sqrt(rsq3)
+        tpexpr3 = mountain_height * (1 - r3 / R0)
+
+        rsq4 = min_value(R0**2, (lamda - lamda_d) ** 2 + (phi - phi_a) ** 2)
+        r4 = sqrt(rsq4)
+        tpexpr4 = mountain_height * (1 - r4 / R0)
+
+        rsq5 = min_value(R0**2, (lamda - lamda_e) ** 2 + (phi - phi_a) ** 2)
+        r5 = sqrt(rsq5)
+        tpexpr5 = mountain_height * (1 - r5 / R0)
+
+        rsq6 = min_value(R0**2, (lamda - lamda_f) ** 2 + (phi - phi_a) ** 2)
+        r6 = sqrt(rsq6)
+        tpexpr6 = mountain_height * (1 - r6 / R0)
+
+        tpexpr = tpexpr1 + tpexpr2 + tpexpr3 + tpexpr4 + tpexpr5 + tpexpr6
 
         # initialise parameters object
         parameters = ShallowWaterParameters(
@@ -459,12 +484,6 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         eqns = ShallowWaterEquations(domain, parameters)
 
         # BDM means Brezzi-Douglas-Marini finite element basis function
-
-        # ShallowWaterParameters are the physical parameters for the shallow water equations
-        # mean_depth = 1  # this is the parameter we nondimensionalise around
-        # g0 = self.g * (T0**2) / L0  # nondimensionalised g (m/s^2)
-        # Omega0 = self.omega * T0  # nondimensionalised omega (s^-1)
-
         # output options
         output = OutputParameters(
             dirname="gusto_output",
@@ -506,34 +525,12 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
         # setting the initial conditions for velocity
         u0 = stepper.fields("u")
-        # day = 24 * 60 * 60 #/ T0  # day in seconds
-        # u_max = 2 * pi * R / (12 * day)  # Maximum amplitude of the zonal wind (m/s)
-        # u_max = 2 * pi / (12 * day)  # Maximum amplitude of the zonal wind (m/s)
-        # uexpr = as_vector(
-        #    (-u_max * cos(lat) * sin(lon), u_max * cos(lat) * cos(lon), 0)
-        #
 
         # setting up initial conditions for height
         D0 = stepper.fields("D")
         g = parameters.g
         H = parameters.H
         Omega = parameters.Omega
-
-        # adding mountain ranges - these could all be varied!
-        # lamda_c = -pi / 4.0  # longitudinal centre of mountain (rad)
-        # phi_c = - pi / 3.0  # latitudinal centre of mountain (rad)
-
-        # R0 = pi / 9.0  # radius of mountain (rad)
-        # mountain_height = 500 / L0  # height of mountain (m)
-
-        # rsq1 = min_value(R0**2, (lon - lamda_c) ** 2 + (lat - phi_c) ** 2)
-
-        # r1 = sqrt(rsq1)
-
-        # tpexpr = mountain_height * ((1 - r1 / R0))
-        # Dexpr = (
-        #    H - ((R * Omega0 * u_max + 0.5 * u_max**2) * (sin(lat)) ** 2) / g# + tpexpr
-        # )
 
         uexpr = as_vector([-u_max * y / radius, u_max * x / radius, 0.0])
         Dexpr = (
