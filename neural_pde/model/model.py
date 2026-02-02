@@ -102,6 +102,7 @@ class NeuralPDEModel(torch.nn.Module):
         :arg architecture: dictionary that describes network architecture
         """
         assert not self.initialised
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.architecture = architecture
         self.dimensions = dict(
             n_ref=n_ref,
@@ -113,21 +114,24 @@ class NeuralPDEModel(torch.nn.Module):
         self.mean = mean
         self.std = std
 
-        self.x_mean = self.mean[:n_func_in_dynamic, :].unsqueeze(0).to(torch.float32)
+        self.x_mean = self.mean[:n_func_in_dynamic, :].unsqueeze(0).to(torch.float32).to(device)
 
-        self.x_std = self.std[:n_func_in_dynamic, :].unsqueeze(0).to(torch.float32)
+
+        self.x_std = self.std[:n_func_in_dynamic, :].unsqueeze(0).to(torch.float32).to(device)
+
 
         self.w_mean = (
             self.mean[n_func_in_dynamic + n_func_in_ancillary :, :]
             .unsqueeze(0)
             .to(torch.float32)
-        )
+        ).to(device)
 
         self.w_std = (
             self.std[n_func_in_dynamic + n_func_in_ancillary :, :]
             .unsqueeze(0)
             .to(torch.float32)
-        )
+        ).to(device)
+
         # construct spherical patch covering
         spherical_patch_covering = SphericalPatchCovering(
             architecture["dual_ref"], architecture["n_radial"]
@@ -152,7 +156,7 @@ class NeuralPDEModel(torch.nn.Module):
         # dynamic encoder model: map all fields to the latent space
         # input:  (n_dynamic+n_ancillary, patch_size)
         # output: (latent_dynamic_dim)
-        n_hidden = 64
+        n_hidden = 32
         dynamic_encoder_model = torch.nn.Sequential(
             torch.nn.Flatten(start_dim=-2, end_dim=-1),
             torch.nn.Linear(

@@ -79,6 +79,7 @@ def load_hdf5_dataset(filename):
             int(f.attrs["n_func_in_dynamic"]),
             int(f.attrs["n_func_in_ancillary"]),
             int(f.attrs["n_func_target"]),
+            float(f.attrs["radius"]),
             int(f.attrs["n_ref"]),
             int(f.attrs["n_samples"]),
             data=np.asarray(data),
@@ -103,11 +104,12 @@ def show_hdf5_header(filename):
             "n_func_in_dynamic",
             "n_func_in_ancillary",
             "n_func_target",
+            "radius",
             "n_ref",
             "n_dof",
             "n_samples",
         ]:
-            print(f"    {item:20s} = {f.attrs[item]:8d}")
+            print(f"    {item:20s} = {f.attrs[item]}")
         print("  metadata:")
         metadata = json.loads(f["base/metadata"][()])
         for key, value in metadata.items():

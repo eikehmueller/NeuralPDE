@@ -9,6 +9,7 @@ import tqdm
 import tomllib
 import argparse
 import os
+import gc
 from neural_pde.data.datasets import load_hdf5_dataset, show_hdf5_header
 from neural_pde.util.loss_functions import (
     multivariate_normalised_rmse_with_data as loss_fn,
@@ -16,6 +17,12 @@ from neural_pde.util.loss_functions import (
 from neural_pde.util.loss_functions import individual_function_rmse as loss_fn2
 from neural_pde.util.loss_functions import multivariate_normalised_rmse as loss_fn3
 from neural_pde.model.model import build_model, load_model
+
+gc.collect()
+torch.cuda.empty_cache()
+
+print(torch.version.cuda)
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 start = timer()
 
@@ -46,6 +53,8 @@ parser.add_argument(
     default="../data/",
 )
 
+print(torch.cuda.memory_allocated())
+print(torch.cuda.max_memory_allocated())
 args, _ = parser.parse_known_args()
 
 with open(args.config, "rb") as f:
@@ -72,10 +81,10 @@ valid_ds = load_hdf5_dataset(f"{args.data_directory}{config["data"]["valid"]}")
 
 overall_mean = torch.mean(torch.from_numpy(train_ds.mean), axis=1)[
     train_ds.n_func_in_dynamic + train_ds.n_func_in_ancillary :
-]
+].to(device)
 overall_std = torch.mean(torch.from_numpy(train_ds.std), axis=1)[
     train_ds.n_func_in_dynamic + train_ds.n_func_in_ancillary :
-]
+].to(device)
 
 train_dl = DataLoader(
     train_ds, batch_size=config["optimiser"]["batchsize"], shuffle=True, drop_last=True
@@ -113,19 +122,16 @@ gamma = (
 
 scheduler = torch.optim.lr_scheduler.ExponentialLR(optimiser, gamma=gamma)
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 model = model.to(device)  # transfer the model to the GPU
 print(f"Running on device {device}")
-
 writer = SummaryWriter("../results/runs", flush_secs=5)
-
 # main training loop
 for epoch in range(config["optimiser"]["nepoch"]):
     print(
         f"epoch {epoch + 1 + prev_epoch} of {config["optimiser"]["nepoch"] + prev_epoch}"
     )
     train_loss = 0
-    function_loss = torch.zeros(train_ds.n_func_target)
+    function_loss = torch.zeros(train_ds.n_func_target).to(device)
     model.train(True)
     for (Xb, tb), yb in tqdm.tqdm(train_dl):
         Xb = Xb.to(device)
@@ -185,6 +191,7 @@ for epoch in range(config["optimiser"]["nepoch"]):
         }
         print("Saving model...")
         model.save(state, args.model)
+    torch.cuda.empty_cache()
 writer.flush()
 
 end = timer()
