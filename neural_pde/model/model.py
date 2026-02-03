@@ -114,6 +114,7 @@ class NeuralPDEModel(torch.nn.Module):
         self.mean = mean
         self.std = std
 
+
         self.x_mean = self.mean[:n_func_in_dynamic, :].unsqueeze(0).to(torch.float32).to(device)
 
 
@@ -327,20 +328,29 @@ class NeuralPDEModel(torch.nn.Module):
 
         self.initialised = True
 
-    def forward(self, x, t_final):
-        """Forward pass of the model
-        :arg x: input tensor of shape (batch_size, n_func_in_dynamic + n_func_in_ancillary, n_vertex)
-        :arg t_final: final time for each sample, tensor of shape (batch_size,)
-        """
+    def normalise_data(self, x):
         x_mean = self.x_mean.to(x.device)
+        print(f"X_mean is {torch.max(x_mean)}")
         x_std = self.x_std.to(x.device)
         x_normalised = x.clone()
         x_normalised[:, : self.n_func_in_dynamic, :] = (
             x[:, : self.n_func_in_dynamic, :] - x_mean
         ) / x_std
+        print(f"xnorm is on device {x_normalised.device}")
+        print(f"Max of xnorm is {torch.max(x_normalised)}")
+        print(f"Difference between x and x_normalised is {torch.max(x_normalised - x)}")
+        return x_normalised
+
+    def forward(self, x, t_final):
+        """Forward pass of the model
+        :arg x: input tensor of shape (batch_size, n_func_in_dynamic + n_func_in_ancillary, n_vertex)
+        :arg t_final: final time for each sample, tensor of shape (batch_size,)
+        """
+        x_normalised = self.normalise_data(x)
 
         y = self.PatchEncoder(x_normalised)
         z = self.NeuralSolver(y, t_final)
+
         if hasattr(self, "PatchDecoder"):
             w = self.PatchDecoder(z)
         elif hasattr(self, "Decoder"):
@@ -385,13 +395,14 @@ class NeuralPDEModel(torch.nn.Module):
         :arg directory: directory to load model from
         :arg checkpoint: dictionary with state of the model
         """
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         with open(
             os.path.join(directory, "checkpoint.json"), "r", encoding="utf8"
         ) as f:
             config = json.load(f)
 
-        tensor_mean = torch.FloatTensor(config["mean"])
-        tensor_std = torch.FloatTensor(config["std"])
+        tensor_mean = torch.FloatTensor(config["mean"]).to(device)
+        tensor_std = torch.FloatTensor(config["std"]).to(device)
 
         if not self.initialised:
             self.setup(

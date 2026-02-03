@@ -21,8 +21,8 @@ from neural_pde.model.model import build_model, load_model
 gc.collect()
 torch.cuda.empty_cache()
 
-print(torch.version.cuda)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+#torch.set_default_device(device)
 
 start = timer()
 
@@ -158,6 +158,7 @@ for epoch in range(config["optimiser"]["nepoch"]):
         yv = yv.to(device)  # move to GPU
         tv = tv.to(device)  # move to GPU
         yv_pred = model(Xv, tv)  # make a prediction
+        
         loss = loss_fn(yv_pred, yv, overall_mean, overall_std)  # calculate the loss
 
         valid_loss += loss.item() / (

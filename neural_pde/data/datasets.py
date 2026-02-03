@@ -501,9 +501,9 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
         # choose which fields to record over the simulation
         diagnostic_fields = [
-            Sum("D", "topography"),
-            Divergence("u"),
             RelativeVorticity(),
+            Divergence("u"),
+            Sum("D", "topography")
         ]
         io = IO(domain, output, diagnostic_fields=diagnostic_fields)
 
