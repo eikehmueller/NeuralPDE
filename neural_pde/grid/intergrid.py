@@ -5,6 +5,7 @@ to another."""
 import torch
 from firedrake import *
 from firedrake.__future__ import interpolate
+import numpy as np
 
 __all__ = ["Interpolator", "AdjointInterpolator"]
 
