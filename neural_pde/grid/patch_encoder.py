@@ -119,6 +119,8 @@ class PatchEncoder(torch.nn.Module):
         x = torch.permute(x, idx)
         print(f"x2 is on device {x.device}")
         print(f"Max of x2 is {torch.max(x)}")
+        print(f"Min of x2 is {torch.min(x)}")
+        print(f"{x.isnan().any()}")
         # x now has shape (B,n_patches,n_func,patchsize)
         # Part III: encoding on patches
         x_ancillary = self._ancillary_encoder_model(x[..., self._n_dynamic :, :])

@@ -126,6 +126,7 @@ model = model.to(device)  # transfer the model to the GPU
 print(f"Running on device {device}")
 writer = SummaryWriter("../results/runs", flush_secs=5)
 # main training loop
+print("STARTING TRAINING LOOP")
 for epoch in range(config["optimiser"]["nepoch"]):
     print(
         f"epoch {epoch + 1 + prev_epoch} of {config["optimiser"]["nepoch"] + prev_epoch}"
@@ -134,6 +135,8 @@ for epoch in range(config["optimiser"]["nepoch"]):
     function_loss = torch.zeros(train_ds.n_func_target).to(device)
     model.train(True)
     for (Xb, tb), yb in tqdm.tqdm(train_dl):
+
+        print(f"Model input is {torch.max(Xb[0])}")
         Xb = Xb.to(device)
         yb = yb.to(device)
         tb = tb.to(device)
