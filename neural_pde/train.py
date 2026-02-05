@@ -137,6 +137,7 @@ for epoch in range(config["optimiser"]["nepoch"]):
 
         Xb = Xb.to(device)
         yb = yb.to(device)
+        tb /= train_ds.timescale
         tb = tb.to(device)
         y_pred = model(Xb, tb)  # make a prediction
         optimiser.zero_grad()  # resets all of the gradients to zero, otherwise the gradients are accumulated
@@ -157,6 +158,7 @@ for epoch in range(config["optimiser"]["nepoch"]):
     for (Xv, tv), yv in valid_dl:
         Xv = Xv.to(device)  # move to GPU
         yv = yv.to(device)  # move to GPU
+        tv /= train_ds.timescale
         tv = tv.to(device)  # move to GPU
         yv_pred = model(Xv, tv)  # make a prediction
         

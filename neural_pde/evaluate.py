@@ -95,6 +95,7 @@ model.train(False)
 avg_loss = 0
 individual_loss = np.zeros(3)
 for (Xv, tv), yv in dataloader:
+    tv /= dataset.timescale
     yv_pred = model(Xv, tv)
     loss = metric(yv_pred, yv, overall_mean, overall_std)
     avg_loss += loss.item() / (dataset.n_samples / batch_size)
@@ -108,9 +109,9 @@ mesh = UnitIcosahedralSphereMesh(dataset.n_ref)
 V = FunctionSpace(mesh, "CG", 1)
 V_DG = FunctionSpace(mesh, "DG", 0)
 (X, _), __ = next(iter(dataset))
-dt = config["architecture"]["dt"]
-t_initial = dataset._t_initial
-t_final = dataset._t_final
+dt = config["architecture"]["dt"] / 26349.050394344416
+t_initial = dataset._t_initial / 26349.050394344416
+t_final = dataset._t_final / 26349.050394344416
 animation_file_nn = VTKFile(os.path.join(args.output, "animation.pvd"))
 h_pred = Function(V, name="h")
 div_pred = Function(V, name="div")
@@ -165,6 +166,7 @@ if args.plot_dataset_and_model:
     print("Plotting dataset and model")
     fig, ax = plt.subplots()
     for j, ((X, t), y_target) in enumerate(iter(dataset)):
+        t /= dataset.timescale
         X = torch.unsqueeze(X, 0)
         y_pred = model(X, t)
         y_pred = torch.squeeze(y_pred, 0)

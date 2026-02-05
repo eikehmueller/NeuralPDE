@@ -131,6 +131,7 @@ class SphericalFunctionSpaceDataset(Dataset):
         n_func_in_ancillary,
         n_func_target,
         radius,
+        timescale,
         n_ref,
         nsamples,
         data=None,
@@ -145,6 +146,7 @@ class SphericalFunctionSpaceDataset(Dataset):
         :arg n_func_in_ancillary number of ancillary input functions
         :arg n_func_target: number of output functions
         :arg radius: the radius of the sphere
+        :arg timescale: characteristic timescale
         :arg n_ref: number of mesh refinements
         :arg nsamples: number of samples
         :arg data: data to initialise with
@@ -158,6 +160,7 @@ class SphericalFunctionSpaceDataset(Dataset):
         self.n_func_target = n_func_target
         self.n_ref = n_ref
         self.radius = radius
+        self.timescale = timescale
         self.dtype = torch.get_default_dtype() if dtype is None else dtype
         self.mesh = IcosahedralSphereMesh(
             radius=self.radius, refinement_level=n_ref, name="IcosahedralMesh"
@@ -225,6 +228,7 @@ class SphericalFunctionSpaceDataset(Dataset):
             f.attrs["n_func_in_ancillary"] = int(self.n_func_in_ancillary)
             f.attrs["n_func_target"] = int(self.n_func_target)
             f.attrs["radius"] = float(self.radius)
+            f.attrs["timescale"] = float(self.timescale)
             f.attrs["n_ref"] = int(self.n_ref)
             f.attrs["n_dof"] = int(self._fs.dof_count)
             f.attrs["n_samples"] = int(self.n_samples)
@@ -265,11 +269,13 @@ class SolidBodyRotationDataset(SphericalFunctionSpaceDataset):
         n_func_in_ancillary = 3
         n_func_target = 1
         radius = 1
+        timescale = 1
         super().__init__(
             n_func_in_dynamic,
             n_func_in_ancillary,
             n_func_target,
             radius,
+            timescale,
             nref,
             nsamples,
         )
@@ -359,6 +365,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         omega=7.292e-5,
         g=9.8,
         radius=1,
+        timescale=1,
         t_interval=10,
         t_sigma=1,
         t_lowest=0,
@@ -373,6 +380,8 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         :arg t_final_max: maximum final time
         :arg omega: rotation speed - angular rotation of the earth
         :arg g: gravitational acceleration on the earth
+        :arg radius: radius of sphere
+        :arg timescale: characteristic time scale
         :arg t_interval: expected value of a sampled time interval
         :arg t_sigma: standard deviation from end time of t_interval
         :arg t_lowest: lowest possible sampled time (used to split training
@@ -392,13 +401,13 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
             n_func_in_ancillary,
             n_func_target,
             radius,
+            timescale,
             n_ref,
             nsamples,
         )
 
         self.omega = omega
         self.g = g
-        self.radius = radius
         self.save_diagnostics = save_diagnostics
 
         self.metadata = {
