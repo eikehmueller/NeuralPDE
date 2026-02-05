@@ -6,14 +6,15 @@ from firedrake import *
 class IcosahedralDualMesh:
     """Class that defines the dual of an icosahedral mesh on the unit sphere.
 
+    :arg radius: radius of the icosahedral mesh
     :arg nref: number of refinements of the icosahedral mesh
     """
 
-    def __init__(self, nref):
+    def __init__(self, radius, nref):
         self.nref = nref
         #mesh = UnitIcosahedralSphereMesh(nref)
         #plex = mesh.topology_dm
-        self._mesh = UnitIcosahedralSphereMesh(nref)
+        self._mesh = IcosahedralSphereMesh(radius, nref)
         plex = self._mesh.topology_dm
         dim = plex.getCoordinateDim()
         vertex_coords = np.asarray(plex.getCoordinates()).reshape([-1, dim])

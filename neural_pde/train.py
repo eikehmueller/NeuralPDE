@@ -53,8 +53,6 @@ parser.add_argument(
     default="../data/",
 )
 
-print(torch.cuda.memory_allocated())
-print(torch.cuda.max_memory_allocated())
 args, _ = parser.parse_known_args()
 
 with open(args.config, "rb") as f:
@@ -103,6 +101,7 @@ if not ("checkpoint.pt" in os.listdir(args.model)):  # load model or initialise 
         config["architecture"],
         mean=torch.from_numpy(train_ds.mean),
         std=torch.from_numpy(train_ds.std),
+        radius=train_ds.radius
     )
     optimiser = torch.optim.Adam(
         model.parameters(), lr=config["optimiser"]["initial_learning_rate"]
@@ -136,7 +135,6 @@ for epoch in range(config["optimiser"]["nepoch"]):
     model.train(True)
     for (Xb, tb), yb in tqdm.tqdm(train_dl):
 
-        print(f"Model input is {torch.max(Xb[0])}")
         Xb = Xb.to(device)
         yb = yb.to(device)
         tb = tb.to(device)

@@ -19,7 +19,7 @@ class SphericalPatch:
     of around dtheta = r_theta/n_theta.
     """
 
-    def __init__(self, n_normal, r_theta, n_theta):
+    def __init__(self, radius, n_normal, r_theta, n_theta):
         """Initialise new instance
 
         :arg n_normal: vector defining the centre of the patch, will
@@ -57,16 +57,16 @@ class SphericalPatch:
         # rotate to the position defined by the normal vector
         north_pole = np.array([0, 0, 1])
         if np.linalg.norm(self._n_normal - north_pole) < 1.0e-14:
-            self._points = p
+            self._points = p * radius
         elif np.linalg.norm(self._n_normal + north_pole) < 1.0e-14:
-            self._points = p
+            self._points = p * radius
             self._points[:, 2] *= -1.0
         else:
             rotvec = np.cross(north_pole, self._n_normal)
             rotvec /= np.linalg.norm(rotvec)
             angle = np.arccos(np.dot(north_pole, self._n_normal))
             rot = sp.spatial.transform.Rotation.from_rotvec(angle * rotvec)
-            self._points = rot.apply(p)
+            self._points = rot.apply(p) * radius
 
     @property
     def n_points(self):
@@ -88,16 +88,17 @@ class SphericalPatchCovering:
     The centres of the patches are arranged to form the dual of a refined
     icosahedral mesh, which implies that each patch has exactly three neighbours.
 
+    :arg radius: the radius of the icosahedral mesh
     :arg nref: number of refinements of the icosahedral mesh
     :arg patch_n: number of radial points in each patch
     :arg patch_radius: radius of the patches. If unspecified this is set to the average
         distance between neighbouring points in the mesh
     """
 
-    def __init__(self, nref, patch_n, patch_radius=None):
+    def __init__(self, radius, nref, patch_n, patch_radius=None):
         self.patch_radius = patch_radius
         self.patch_n = patch_n
-        self.dual_mesh = IcosahedralDualMesh(nref)
+        self.dual_mesh = IcosahedralDualMesh(radius, nref)
         cell_centres = self.dual_mesh.vertices
         if patch_radius is None:
             # Work out edge lengths
@@ -112,7 +113,7 @@ class SphericalPatchCovering:
             r_theta = patch_radius
         # construct patches
         self._patches = [
-            SphericalPatch(cell_centres[j, :], r_theta, patch_n)
+            SphericalPatch(radius, cell_centres[j, :], r_theta, patch_n)
             for j in range(cell_centres.shape[0])
         ]
 

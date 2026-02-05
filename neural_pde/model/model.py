@@ -26,6 +26,7 @@ def build_model(
     architecture,
     mean=0,
     std=1,
+    radius=1
 ):
     """
     Construct encoder - processor - decoder model
@@ -47,6 +48,7 @@ def build_model(
         architecture,
         mean,
         std,
+        radius,
     )
     return model
 
@@ -89,8 +91,9 @@ class NeuralPDEModel(torch.nn.Module):
         n_func_in_ancillary,
         n_func_target,
         architecture,
-        mean=0,
-        std=1,
+        mean,
+        std,
+        radius
     ):
         """
         Initialise new instance with model
@@ -113,7 +116,7 @@ class NeuralPDEModel(torch.nn.Module):
         self.n_func_in_dynamic = n_func_in_dynamic
         self.mean = mean
         self.std = std
-
+        self.radius = radius
 
         self.x_mean = self.mean[:n_func_in_dynamic, :].unsqueeze(0).to(torch.float32).to(device)
         self.x_std = self.std[:n_func_in_dynamic, :].unsqueeze(0).to(torch.float32).to(device)
@@ -132,7 +135,7 @@ class NeuralPDEModel(torch.nn.Module):
 
         # construct spherical patch covering
         spherical_patch_covering = SphericalPatchCovering(
-            architecture["dual_ref"], architecture["n_radial"]
+            self.radius, architecture["dual_ref"], architecture["n_radial"]
         )
         print(
             f"  points per patch                     = {spherical_patch_covering.patch_size}",
@@ -143,7 +146,7 @@ class NeuralPDEModel(torch.nn.Module):
         print(
             f"  number of points in all patches      = {spherical_patch_covering.n_points}",
         )
-        mesh = UnitIcosahedralSphereMesh(n_ref)  # create the mesh
+        mesh = IcosahedralSphereMesh(self.radius, n_ref)  # create the mesh
         V = FunctionSpace(mesh, "CG", 1)  # define the function space
         print(f"  number of unknowns of function space = {V.dof_count}")
         print(
@@ -184,9 +187,6 @@ class NeuralPDEModel(torch.nn.Module):
                 out_features=architecture["latent_ancillary_dim"],
             ),
         )
-
-        for name, param in ancillary_encoder_model.named_parameters():
-            print(name, param.data)
         # Full model: encoder + processor + decoder
         self.add_module(
             "PatchEncoder",
@@ -331,22 +331,18 @@ class NeuralPDEModel(torch.nn.Module):
 
     def normalise_data(self, x):
         x_mean = self.x_mean.to(x.device)
-        print(f"X_mean is {torch.max(x_mean)}")
-        print(f"Shape of x_mean is {x_mean.shape}")
         x_std = self.x_std.to(x.device)
         x_normalised = x.clone()
         x_normalised[:, : self.n_func_in_dynamic, :] = (
             x[:, : self.n_func_in_dynamic, :] - x_mean
         ) / x_std
         x_normalised[:, self.n_func_in_dynamic:, :] = (
-            x[:, self.n_func_in_dynamic:, :] / 6371220.0)
-        print(f"xnorm is on device {x_normalised.device}")
-        print(f"Max of xnorm is {torch.max(x_normalised)}")
-        print(f"Difference between x and x_normalised is {torch.max(x_normalised - x)}")
+            x[:, self.n_func_in_dynamic:, :] / self.radius)
         return x_normalised
     
     def denormalise_data(self, x):
-        return
+        x_denormalised = x * self.w_std + self.w_mean
+        return x_denormalised
 
     def forward(self, x, t_final):
         """Forward pass of the model
@@ -354,11 +350,8 @@ class NeuralPDEModel(torch.nn.Module):
         :arg t_final: final time for each sample, tensor of shape (batch_size,)
         """
         x_normalised = self.normalise_data(x)
-        print(f"Normalised x is {x_normalised}")
         y = self.PatchEncoder(x_normalised)
-        print(f"Patch encoder output is {y}")
         z = self.NeuralSolver(y, t_final)
-
         if hasattr(self, "PatchDecoder"):
             w = self.PatchDecoder(z)
         elif hasattr(self, "Decoder"):
@@ -366,12 +359,8 @@ class NeuralPDEModel(torch.nn.Module):
             w = self.Decoder(z, x_ancil)
         else:
             raise RuntimeError("Model has no decoder attribute!")
-        # w2 = x_normalised[:, :self.n_func_in_dynamic, :]
-        w_final = w * self.w_std + self.w_mean
-        print(f"Output of forward model is {torch.max(w_final)}")
-        # w2_final = w2 * self.w_std + self.w_mean
 
-        # print(f'Error is {torch.mean(x[:, :self.n_func_in_dynamic, :] - w2_final)}')
+        w_final = self.denormalise_data(w)
         return w_final
 
     def save(self, state, directory):
@@ -392,6 +381,7 @@ class NeuralPDEModel(torch.nn.Module):
             architecture=self.architecture,
             mean=self.mean.numpy().tolist(),
             std=self.std.numpy().tolist(),
+            radius=self.radius
         )
         with open(
             os.path.join(directory, "checkpoint.json"), "w", encoding="utf8"
@@ -412,6 +402,7 @@ class NeuralPDEModel(torch.nn.Module):
 
         tensor_mean = torch.FloatTensor(config["mean"]).to(device)
         tensor_std = torch.FloatTensor(config["std"]).to(device)
+        tensor_radius = torch.FloatTensor(config["radius"]).to(device)
 
         if not self.initialised:
             self.setup(
@@ -422,6 +413,7 @@ class NeuralPDEModel(torch.nn.Module):
                 config["architecture"],
                 tensor_mean,
                 tensor_std,
+                tensor_radius
             )
         self.load_state_dict(checkpoint["state_dict"])
 

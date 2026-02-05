@@ -107,24 +107,17 @@ def multivariate_normalised_rmse_with_data(y_pred, y_target, mean, std):
 
     std  = torch.unsqueeze(std, dim=-1)
     mean  = torch.unsqueeze(mean, dim=-1)
-    print(f"Mean is {mean}")
-    print(f"Std is {std}")
     #mean = torch.unsqueeze(torch.mean(y_target, dim=(0,2)), dim=-1)
     #std = torch.unsqueeze(torch.std(y_target, dim=(0,2)), dim=-1)
 
     yp = (y_pred - mean) / std
     yt = (y_target - mean) / std
 
-    print(f"Max is {torch.max(yt)}")
-    print(f"Max is {torch.max(yp)}")
-
     loss = torch.mean(
         torch.sqrt(
             torch.sum(((yp - yt) ) ** 2,  dim=2) 
             / torch.sum((yt) ** 2, dim=2) 
         ), dim=0)
-    
-    print(f"Loss is {loss}")
 
     return torch.mean(loss)
 

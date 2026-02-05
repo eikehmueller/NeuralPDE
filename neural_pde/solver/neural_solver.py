@@ -57,6 +57,7 @@ class ForwardEulerNeuralSolver(torch.nn.Module):
         self.dual_mesh = dual_mesh
         self.interaction_model = interaction_model
         self.stepsize = stepsize
+        print(f"stepsize is {stepsize}")
         # Construct nested list of the form
         #
         #   [[0,n^0_0,n^0_1,n^0_2,]... [j,n^j_0,n^j_1,n^j_2],...]
@@ -77,6 +78,8 @@ class ForwardEulerNeuralSolver(torch.nn.Module):
         index = self.index.expand(x.shape[:-2] + (-1, -1, x.shape[-1]))
         dim = x.dim()
         t = 0
+
+        print(f"x in the neural solver is {torch.max(x)}")
         while True:
             # The masked stepsize dt_{masked} is defined as
             #
@@ -99,7 +102,7 @@ class ForwardEulerNeuralSolver(torch.nn.Module):
                 dim - 2,
                 index,
             )
-
+            print(f"z in the neural solver is {torch.max(z)}")
             # ---- stage 2 ---- apply interaction model to obtain tensor of shape
             #                   (B,n_patch,d_{lat}^{dynamic})
             fz = self.interaction_model(z)

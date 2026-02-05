@@ -108,8 +108,7 @@ class PatchEncoder(torch.nn.Module):
             self._function_to_patch.forward(x),
             (*x.shape[:-1], self._npatches, self._patchsize),
         )
-        print(f"x1 is on device {x.device}")
-        print(f"Max of x1 is {torch.max(x)}")
+
         # x now has shape (B,n_func,n_patches,patchsize)
         # Part II: permutation
         dim = x.dim()
@@ -117,21 +116,11 @@ class PatchEncoder(torch.nn.Module):
         # d = 3: idx = [1,0,2], d = 4: idx = [0,2,1,3], d = 5: idx = [0,1,3,2,4]
         idx = list(range(dim - 3)) + [dim - 2, dim - 3, dim - 1]
         x = torch.permute(x, idx)
-        print(f"x2 is on device {x.device}")
-        print(f"Max of x2 is {torch.max(x)}")
-        print(f"Min of x2 is {torch.min(x)}")
-        print(f"{x.isnan().any()}")
         # x now has shape (B,n_patches,n_func,patchsize)
         # Part III: encoding on patches
         x_ancillary = self._ancillary_encoder_model(x[..., self._n_dynamic :, :])
-        print(f"xancil is on device {x_ancillary.device}")
-        print(f"Max of xancil is {torch.max(x_ancillary)}")
         x_dynamic = self._dynamic_encoder_model(x)
-        print(f"xdyn is on device {x_dynamic.device}")
-        print(f"Max of xdyn is {torch.max(x_dynamic)}")
         x = torch.cat((x_dynamic, x_ancillary), dim=-1)
-        print(f"x is on device {x.device}")
-        print(f"Max of x is {torch.max(x)}")
         
 
         # x now has shape (B,n_patches,d_dynamic+d_ancillary)
