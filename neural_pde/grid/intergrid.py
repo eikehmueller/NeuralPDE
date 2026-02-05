@@ -2,6 +2,7 @@
 differentiable interpolation functions from one function space
 to another."""
 
+import numpy as np
 import torch
 from firedrake import *
 from firedrake.__future__ import interpolate
