@@ -400,9 +400,9 @@ class NeuralPDEModel(torch.nn.Module):
         ) as f:
             config = json.load(f)
 
-        tensor_mean = torch.FloatTensor(config["mean"]).to(device)
-        tensor_std = torch.FloatTensor(config["std"]).to(device)
-        tensor_radius = torch.FloatTensor(config["radius"]).to(device)
+        tensor_mean = torch.FloatTensor(config["mean"])
+        tensor_std = torch.FloatTensor(config["std"])
+        tensor_radius = config["radius"]
 
         if not self.initialised:
             self.setup(
