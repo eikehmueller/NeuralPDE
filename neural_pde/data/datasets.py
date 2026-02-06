@@ -424,6 +424,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         self.t_lowest = t_lowest
         self.t_highest = t_highest
         self.t_sigma = t_sigma
+        self.timescale = timescale
 
         x, y, z = SpatialCoordinate(self._fs.mesh())  # spatial coordinate
         self._x = Function(self._fs).interpolate(x)  # collect data on x,y,z coordinates
@@ -661,8 +662,8 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 self._data[j, 7, :] = divergence_tar.dat.data
                 self._data[j, 8, :] = vorticity_tar.dat.data
                 # time data
-                self._t_initial[j] = start * self.dt
-                self._t_final[j] = end * self.dt
+                self._t_initial[j] = start * self.dt / self.timescale
+                self._t_final[j] = end * self.dt / self.timescale
 
         end_timer1 = timer()
         print(
