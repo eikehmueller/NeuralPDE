@@ -355,7 +355,7 @@ class NeuralPDEModel(torch.nn.Module):
         if hasattr(self, "PatchDecoder"):
             w = self.PatchDecoder(z)
         elif hasattr(self, "Decoder"):
-            x_ancil = x[:, self.dimensions["n_func_in_dynamic"] :, :]
+            x_ancil = x[:, self.dimensions["n_func_in_dynamic"] :, :] / self.radius
             w = self.Decoder(z, x_ancil)
         else:
             raise RuntimeError("Model has no decoder attribute!")
