@@ -79,7 +79,6 @@ class ForwardEulerNeuralSolver(torch.nn.Module):
         dim = x.dim()
         t = 0
 
-        print(f"x in the neural solver is {torch.max(x)}")
         while True:
             # The masked stepsize dt_{masked} is defined as
             #
@@ -102,7 +101,6 @@ class ForwardEulerNeuralSolver(torch.nn.Module):
                 dim - 2,
                 index,
             )
-            print(f"z in the neural solver is {torch.max(z)}")
             # ---- stage 2 ---- apply interaction model to obtain tensor of shape
             #                   (B,n_patch,d_{lat}^{dynamic})
             fz = self.interaction_model(z)
