@@ -81,6 +81,14 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--timescale",
+    type=float,
+    action="store",
+    help="characteristic timescale of the simulation",
+    default=1,
+)
+
+parser.add_argument(
     "--dt",
     type=float,
     action="store",
@@ -155,6 +163,7 @@ print(f"  nref                   = {args.nref}")
 print(f"  omega                  = {args.omega}")
 print(f"  g                      = {args.g}")
 print(f"  radius                 = {args.radius}")
+print(f"  timescale              = {args.timescale}")
 print(f"  dt                     = {args.dt}")
 print(f"  tfinalmax              = {args.tfinalmax}")
 print(f"  t_lowest               = {args.t_lowest}")
@@ -183,6 +192,7 @@ elif args.PDE == "SWE":
         omega=args.omega,
         g=args.g,
         radius=args.radius,
+        timescale=args.timescale,
         t_interval=args.t_interval,
         t_sigma=args.t_sigma,
         t_lowest=args.t_lowest,
