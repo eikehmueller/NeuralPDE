@@ -111,8 +111,8 @@ if not ("checkpoint.pt" in os.listdir(args.model)):  # load model or initialise 
         train_ds.n_func_in_ancillary,
         train_ds.n_func_target,
         config["architecture"],
-        mean=torch.from_numpy(train_ds.mean),
-        std=torch.from_numpy(train_ds.std),
+        mean=torch.from_numpy(train_ds.mean).to(device),
+        std=torch.from_numpy(train_ds.std).to(device),
         radius=train_ds.radius
     )
 
