@@ -379,8 +379,8 @@ class NeuralPDEModel(torch.nn.Module):
         config = dict(
             dimensions=self.dimensions,
             architecture=self.architecture,
-            mean=self.mean.numpy().tolist(),
-            std=self.std.numpy().tolist(),
+            mean=self.mean.cpu().numpy().tolist(),
+            std=self.std.cpu().numpy().tolist(),
             radius=self.radius
         )
         with open(
