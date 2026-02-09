@@ -29,6 +29,14 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--dataset",
+    type=str,
+    action="store",
+    help="whether to use the training, testing, or validation dataset",
+    default="test",
+)
+
+parser.add_argument(
     "--animate",
     action="store_true",
     help="whether to produce an animation using the neural network model",
@@ -38,6 +46,12 @@ parser.add_argument(
     "--plot_dataset_and_model",
     action="store_true",
     help="whether to produce vtu files for the dataset",
+)
+
+parser.add_argument(
+    "--animate_dataset",
+    action="store_true",
+    help="whether to animate the given dataset (default test dataset)",
 )
 
 parser.add_argument(
@@ -73,12 +87,12 @@ print()
 print("==== data ====")
 print()
 
-show_hdf5_header(f"{args.data_directory}{config["data"]["test"]}")
+show_hdf5_header(f"{args.data_directory}{config["data"][args.dataset]}")
 print()
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-dataset = load_hdf5_dataset(f"{args.data_directory}{config["data"]["test"]}")
+dataset = load_hdf5_dataset(f"{args.data_directory}{config["data"][args.dataset]}")
 
 batch_size = len(dataset)
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
@@ -109,13 +123,13 @@ print(f"average relative error: {100 * avg_loss:6.3f} %")
 if not os.path.exists(args.output):
     os.makedirs(args.output)
 
-mesh = UnitIcosahedralSphereMesh(dataset.n_ref)
+mesh = IcosahedralSphereMesh(dataset.radius, dataset.n_ref)
 V = FunctionSpace(mesh, "CG", 1)
 V_DG = FunctionSpace(mesh, "DG", 0)
 (X, _), __ = next(iter(dataset))
 dt = config["architecture"]["dt"] / 26349.050394344416
-t_initial = dataset._t_initial / 26349.050394344416
-t_final = dataset._t_final / 26349.050394344416
+t_initial = dataset._t_initial 
+t_final = dataset._t_final 
 animation_file_nn = VTKFile(os.path.join(args.output, "animation.pvd"))
 h_pred = Function(V, name="h")
 div_pred = Function(V, name="div")
@@ -152,6 +166,28 @@ with CheckpointFile("results/gusto_output/chkpt.h5", "r") as afile:
     X[0, 5, :] = z_fun.dat.data  # z coord data
     X = torch.tensor(X, dtype=torch.float32)
 
+if args.animate_dataset:
+    sorted_t, indices = torch.sort(torch.tensor(dataset._t_initial))
+    sorted_X = torch.tensor(dataset._data[indices, :, :])
+
+    for i in range(len(sorted_t)):
+        f_input_d = Function(V, name=f"height")
+        f_input_d.dat.data[:] = sorted_X.detach().cpu().numpy()[i, 0, :]
+        f_input_div = Function(V, name="divergence")
+        f_input_div.dat.data[:] = sorted_X.detach().cpu().numpy()[i, 1, :]
+        f_input_vor = Function(V, name="vorticity")
+        f_input_vor.dat.data[:] = sorted_X.detach().cpu().numpy()[i, 2, :]
+
+    file = VTKFile(
+            os.path.join(args.output, f"dataset_animation/order_{i}.pvd")
+        )
+    file.write(
+        f_input_d,
+        f_input_div,
+        f_input_vor,
+    )
+
+
 if args.animate:
     t = 0
     while t < 20:
@@ -165,6 +201,7 @@ if args.animate:
         t += dt
 
         print(f"time = {t:8.4f}")
+
 
 if args.plot_dataset_and_model:
     print("Plotting dataset and model")
@@ -217,11 +254,6 @@ if args.plot_dataset_and_model:
             f_pred_div,
             f_pred_vor,
         )
-        # file.write(f_input_d, f_target_d, f_pred_d,)
-        # f_target1 = torch.unsqueeze(f_target, 0)
-        # f_pred1 = torch.unsqueeze(f_pred, 0)
-
-        # ax.plot(t, metric(f_target1, f_pred1, overall_mean, overall_std), color="black")
     ax.set_xlabel(r"Time $t$")
     ax.set_ylabel("Model RMSE")
     ax.set_title("Total model error")
