@@ -94,7 +94,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 dataset = load_hdf5_dataset(f"{args.data_directory}{config["data"][args.dataset]}")
 
-batch_size = len(dataset)
+batch_size = config["optimiser"]["batchsize"]
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 train_ds = load_hdf5_dataset(f"{args.data_directory}{config["data"]["train"]}")
 overall_mean = torch.mean(torch.from_numpy(train_ds.mean), axis=1)[
@@ -105,7 +105,7 @@ overall_std = torch.mean(torch.from_numpy(train_ds.std), axis=1)[
 ].to(device)
 
 model, _, _ = load_model(args.model)
-
+'''
 # validation
 model.train(False)
 avg_loss = 0
@@ -165,7 +165,7 @@ with CheckpointFile("results/gusto_output/chkpt.h5", "r") as afile:
     X[0, 4, :] = y_fun.dat.data  # y coord data
     X[0, 5, :] = z_fun.dat.data  # z coord data
     X = torch.tensor(X, dtype=torch.float32)
-
+'''
 if args.animate_dataset:
     sorted_t, indices = torch.sort(torch.tensor(dataset._t_initial))
     sorted_X = torch.tensor(dataset._data[indices, :, :])
