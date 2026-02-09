@@ -93,28 +93,31 @@ valid_dl = DataLoader(
 
 ### Tensors for input for model
 
-n_ref = train_ds.n_ref
-n_func_in_dynamic = train_ds.n_func_in_dynamic
-n_func_in_ancillary = train_ds.n_func_in_ancillary
-n_func_target = train_ds.n_func_target
-arc = config["architecture"]
-mean = torch.from_numpy(train_ds.mean).to(device)
-std = torch.from_numpy(train_ds.std).to(device)
-radius = train_ds.radius
+#n_ref = train_ds.n_ref
+#n_func_in_dynamic = train_ds.n_func_in_dynamic
+#n_func_in_ancillary = train_ds.n_func_in_ancillary
+#n_func_target = train_ds.n_func_target
+#arc = config["architecture"]
+#mean = torch.from_numpy(train_ds.mean).to(device)
+#std = torch.from_numpy(train_ds.std).to(device)
+#radius = train_ds.radius
 
 
 if not ("checkpoint.pt" in os.listdir(args.model)):  # load model or initialise new one
     print("Building model and optimiser")
     model = build_model(
-        n_ref,
-        n_func_in_dynamic,
-        n_func_in_ancillary,
-        n_func_target,
-        arc,
-        mean=mean,
-        std=std,
-        radius=radius
+        train_ds.n_ref,
+        train_ds.n_func_in_dynamic,
+        train_ds.n_func_in_ancillary,
+        train_ds.n_func_target,
+        config["architecture"],
+        mean=torch.from_numpy(train_ds.mean),
+        std=torch.from_numpy(train_ds.std),
+        radius=train_ds.radius
     )
+
+    model = model.to(device)  # transfer the model to the GPU
+
     optimiser = torch.optim.Adam(
         model.parameters(), lr=config["optimiser"]["initial_learning_rate"]
     )
@@ -133,7 +136,6 @@ gamma = (
 
 scheduler = torch.optim.lr_scheduler.ExponentialLR(optimiser, gamma=gamma)
 
-model = model.to(device)  # transfer the model to the GPU
 print(f"Running on device {device}")
 writer = SummaryWriter("../results/runs", flush_secs=5)
 # main training loop
