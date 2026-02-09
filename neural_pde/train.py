@@ -93,14 +93,14 @@ valid_dl = DataLoader(
 
 ### Tensors for input for model
 
-n_ref = train_ds.n_ref.to(device)
-n_func_in_dynamic = train_ds.n_func_in_dynamic.to(device)
-n_func_in_ancillary = train_ds.n_func_in_ancillary.to(device)
-n_func_target = train_ds.n_func_target.to(device)
-arc = config["architecture"].to(device)
+n_ref = train_ds.n_ref
+n_func_in_dynamic = train_ds.n_func_in_dynamic
+n_func_in_ancillary = train_ds.n_func_in_ancillary
+n_func_target = train_ds.n_func_target
+arc = config["architecture"]
 mean = torch.from_numpy(train_ds.mean).to(device)
 std = torch.from_numpy(train_ds.std).to(device)
-radius = train_ds.radius.to(device)
+radius = train_ds.radius
 
 
 if not ("checkpoint.pt" in os.listdir(args.model)):  # load model or initialise new one
