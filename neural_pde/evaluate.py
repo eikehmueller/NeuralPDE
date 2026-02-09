@@ -85,10 +85,10 @@ dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 train_ds = load_hdf5_dataset(f"{args.data_directory}{config["data"]["train"]}")
 overall_mean = torch.mean(torch.from_numpy(train_ds.mean), axis=1)[
     train_ds.n_func_in_dynamic + train_ds.n_func_in_ancillary :
-]
+].to(device)
 overall_std = torch.mean(torch.from_numpy(train_ds.std), axis=1)[
     train_ds.n_func_in_dynamic + train_ds.n_func_in_ancillary :
-]
+].to(device)
 
 model, _, _ = load_model(args.model)
 
