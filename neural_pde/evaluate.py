@@ -76,6 +76,8 @@ print()
 show_hdf5_header(f"{args.data_directory}{config["data"]["test"]}")
 print()
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 dataset = load_hdf5_dataset(f"{args.data_directory}{config["data"]["test"]}")
 
 batch_size = len(dataset)
@@ -95,7 +97,9 @@ model.train(False)
 avg_loss = 0
 individual_loss = np.zeros(3)
 for (Xv, tv), yv in dataloader:
-    tv /= dataset.timescale
+    Xv = Xv.to(device)
+    tv = tv.to(device)
+    yv = yv.to(device)
     yv_pred = model(Xv, tv)
     loss = metric(yv_pred, yv, overall_mean, overall_std)
     avg_loss += loss.item() / (dataset.n_samples / batch_size)
@@ -166,7 +170,9 @@ if args.plot_dataset_and_model:
     print("Plotting dataset and model")
     fig, ax = plt.subplots()
     for j, ((X, t), y_target) in enumerate(iter(dataset)):
-        t /= dataset.timescale
+        X = X.to(device)
+        t = t.to(device)
+        y_target = y_target.to(device)
         X = torch.unsqueeze(X, 0)
         y_pred = model(X, t)
         y_pred = torch.squeeze(y_pred, 0)

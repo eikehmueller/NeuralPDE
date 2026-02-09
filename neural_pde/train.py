@@ -22,7 +22,6 @@ gc.collect()
 torch.cuda.empty_cache()
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-#torch.set_default_device(device)
 
 start = timer()
 
@@ -91,17 +90,6 @@ valid_dl = DataLoader(
     valid_ds, batch_size=config["optimiser"]["batchsize"], drop_last=True
 )
 
-### Tensors for input for model
-
-#n_ref = train_ds.n_ref
-#n_func_in_dynamic = train_ds.n_func_in_dynamic
-#n_func_in_ancillary = train_ds.n_func_in_ancillary
-#n_func_target = train_ds.n_func_target
-#arc = config["architecture"]
-#mean = torch.from_numpy(train_ds.mean).to(device)
-#std = torch.from_numpy(train_ds.std).to(device)
-#radius = train_ds.radius
-
 
 if not ("checkpoint.pt" in os.listdir(args.model)):  # load model or initialise new one
     print("Building model and optimiser")
@@ -151,7 +139,6 @@ for epoch in range(config["optimiser"]["nepoch"]):
 
         Xb = Xb.to(device)
         yb = yb.to(device)
-        #tb /= train_ds.timescale
         tb = tb.to(device)
         y_pred = model(Xb, tb)  # make a prediction
         optimiser.zero_grad()  # resets all of the gradients to zero, otherwise the gradients are accumulated
@@ -172,7 +159,6 @@ for epoch in range(config["optimiser"]["nepoch"]):
     for (Xv, tv), yv in valid_dl:
         Xv = Xv.to(device)  # move to GPU
         yv = yv.to(device)  # move to GPU
-        #tv /= train_ds.timescale
         tv = tv.to(device)  # move to GPU
         yv_pred = model(Xv, tv)  # make a prediction
         

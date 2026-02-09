@@ -107,7 +107,6 @@ class NeuralPDEModel(torch.nn.Module):
         :arg architecture: dictionary that describes network architecture
         """
         assert not self.initialised
-        #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.architecture = architecture
         self.dimensions = dict(
             n_ref=n_ref,
@@ -120,20 +119,20 @@ class NeuralPDEModel(torch.nn.Module):
         self.std = std
         self.radius = radius
 
-        self.x_mean = self.mean[:n_func_in_dynamic, :].unsqueeze(0).to(torch.float32)#.to(device)
-        self.x_std = self.std[:n_func_in_dynamic, :].unsqueeze(0).to(torch.float32)#.to(device)
+        self.x_mean = self.mean[:n_func_in_dynamic, :].unsqueeze(0).to(torch.float32)
+        self.x_std = self.std[:n_func_in_dynamic, :].unsqueeze(0).to(torch.float32)
 
         self.w_mean = (
             self.mean[n_func_in_dynamic + n_func_in_ancillary :, :]
             .unsqueeze(0)
             .to(torch.float32)
-        )#.to(device)
+        )
 
         self.w_std = (
             self.std[n_func_in_dynamic + n_func_in_ancillary :, :]
             .unsqueeze(0)
             .to(torch.float32)
-        )#.to(device)
+        )
 
         # construct spherical patch covering
         spherical_patch_covering = SphericalPatchCovering(
