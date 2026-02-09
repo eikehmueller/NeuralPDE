@@ -396,14 +396,14 @@ class NeuralPDEModel(torch.nn.Module):
         :arg directory: directory to load model from
         :arg checkpoint: dictionary with state of the model
         """
-        #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         with open(
             os.path.join(directory, "checkpoint.json"), "r", encoding="utf8"
         ) as f:
             config = json.load(f)
 
-        tensor_mean = torch.FloatTensor(config["mean"])
-        tensor_std = torch.FloatTensor(config["std"])
+        tensor_mean = torch.FloatTensor(config["mean"]).to(device)
+        tensor_std = torch.FloatTensor(config["std"]).to(device)
         tensor_radius = config["radius"]
 
         if not self.initialised:
