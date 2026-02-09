@@ -178,14 +178,14 @@ if args.animate_dataset:
         f_input_vor = Function(V, name="vorticity")
         f_input_vor.dat.data[:] = sorted_X.detach().cpu().numpy()[i, 2, :]
 
-    file = VTKFile(
-            os.path.join(args.output, f"dataset_animation/order_{i}.pvd")
+        file = VTKFile(
+                os.path.join(args.output, f"dataset_animation/order_{i}.pvd")
+            )
+        file.write(
+            f_input_d,
+            f_input_div,
+            f_input_vor,
         )
-    file.write(
-        f_input_d,
-        f_input_div,
-        f_input_vor,
-    )
 
 
 if args.animate:
