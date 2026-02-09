@@ -91,17 +91,29 @@ valid_dl = DataLoader(
     valid_ds, batch_size=config["optimiser"]["batchsize"], drop_last=True
 )
 
+### Tensors for input for model
+
+n_ref = train_ds.n_ref.to(device)
+n_func_in_dynamic = train_ds.n_func_in_dynamic.to(device)
+n_func_in_ancillary = train_ds.n_func_in_ancillary.to(device)
+n_func_target = train_ds.n_func_target.to(device)
+arc = config["architecture"].to(device)
+mean = torch.from_numpy(train_ds.mean).to(device)
+std = torch.from_numpy(train_ds.std).to(device)
+radius = train_ds.radius.to(device)
+
+
 if not ("checkpoint.pt" in os.listdir(args.model)):  # load model or initialise new one
     print("Building model and optimiser")
     model = build_model(
-        train_ds.n_ref,
-        train_ds.n_func_in_dynamic,
-        train_ds.n_func_in_ancillary,
-        train_ds.n_func_target,
-        config["architecture"],
-        mean=torch.from_numpy(train_ds.mean),
-        std=torch.from_numpy(train_ds.std),
-        radius=train_ds.radius
+        n_ref,
+        n_func_in_dynamic,
+        n_func_in_ancillary,
+        n_func_target,
+        arc,
+        mean=mean,
+        std=std,
+        radius=radius
     )
     optimiser = torch.optim.Adam(
         model.parameters(), lr=config["optimiser"]["initial_learning_rate"]
