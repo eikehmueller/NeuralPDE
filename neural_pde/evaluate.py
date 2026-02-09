@@ -105,7 +105,7 @@ overall_std = torch.mean(torch.from_numpy(train_ds.std), axis=1)[
 ].to(device)
 
 model, _, _ = load_model(args.model)
-'''
+
 # validation
 model.train(False)
 avg_loss = 0
@@ -165,7 +165,7 @@ with CheckpointFile("results/gusto_output/chkpt.h5", "r") as afile:
     X[0, 4, :] = y_fun.dat.data  # y coord data
     X[0, 5, :] = z_fun.dat.data  # z coord data
     X = torch.tensor(X, dtype=torch.float32)
-'''
+
 if args.animate_dataset:
     sorted_t, indices = torch.sort(torch.tensor(dataset._t_initial))
     sorted_X = torch.tensor(dataset._data[indices, :, :])
