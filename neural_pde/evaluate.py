@@ -157,9 +157,9 @@ if args.animate:
     while t < 20:
         y_pred = model(X, torch.tensor(t))
 
-        h_pred.dat.data[:] = y_pred.detach().numpy()[0, 0, :]
-        div_pred.dat.data[:] = y_pred.detach().numpy()[0, 1, :]
-        vor_pred.dat.data[:] = y_pred.detach().numpy()[0, 2, :]
+        h_pred.dat.data[:] = y_pred.detach().cpu().numpy()[0, 0, :]
+        div_pred.dat.data[:] = y_pred.detach().cpu().numpy()[0, 1, :]
+        vor_pred.dat.data[:] = y_pred.detach().cpu().numpy()[0, 2, :]
         animation_file_nn.write(h_pred, div_pred, vor_pred, time=t)
 
         t += dt
@@ -181,26 +181,26 @@ if args.plot_dataset_and_model:
         X = torch.squeeze(X, 0)
 
         f_input_d = Function(V, name=f"input_d")
-        f_input_d.dat.data[:] = X.detach().numpy()[0, :]
+        f_input_d.dat.data[:] = X.detach().cpu().numpy()[0, :]
         f_input_div = Function(V, name="input_div")
-        f_input_div.dat.data[:] = X.detach().numpy()[1, :]
+        f_input_div.dat.data[:] = X.detach().cpu().numpy()[1, :]
         f_input_vor = Function(V, name="input_vor")
-        f_input_vor.dat.data[:] = X.detach().numpy()[2, :]
+        f_input_vor.dat.data[:] = X.detach().cpu().numpy()[2, :]
 
         f_target_d = Function(V, name=f"target_d_t={t:6.3f}")
-        f_target_d.dat.data[:] = y_target.detach().numpy()[0, :]
+        f_target_d.dat.data[:] = y_target.cpu().detach().numpy()[0, :]
         f_target_div = Function(V, name="target_div")
-        f_target_div.dat.data[:] = y_target.detach().numpy()[1, :]
+        f_target_div.dat.data[:] = y_target.cpu().detach().numpy()[1, :]
         f_target_vor = Function(V, name="target_vor")
-        f_target_vor.dat.data[:] = y_target.detach().numpy()[2, :]
+        f_target_vor.dat.data[:] = y_target.cpu().detach().numpy()[2, :]
         f_target = y_target.detach()[0:2, :]
 
         f_pred_d = Function(V, name=f"pred_d_t={t:6.3f}")
-        f_pred_d.dat.data[:] = y_pred.detach().numpy()[0, :]
+        f_pred_d.dat.data[:] = y_pred.detach().cpu().numpy()[0, :]
         f_pred_div = Function(V, name="pred_div")
-        f_pred_div.dat.data[:] = y_pred.detach().numpy()[1, :]
+        f_pred_div.dat.data[:] = y_pred.detach().cpu().numpy()[1, :]
         f_pred_vor = Function(V, name="pred_vor")
-        f_pred_vor.dat.data[:] = y_pred.detach().numpy()[2, :]
+        f_pred_vor.dat.data[:] = y_pred.detach().cpu().numpy()[2, :]
         f_pred = y_pred.detach()[0:2, :]
 
         file = VTKFile(
