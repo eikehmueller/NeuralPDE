@@ -58,9 +58,11 @@ def load_model(directory):
 
     :arg directory: directory containing the saved model"""
     checkpoint = torch.load(os.path.join(directory, "checkpoint.pt"))
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     model = NeuralPDEModel()
     model.load(directory, checkpoint)
+    model = model.to(device)
 
     optimiser = torch.optim.Adam(model.parameters())
     optimiser.load_state_dict(checkpoint["optimizer"])
