@@ -197,7 +197,7 @@ class NeuralPDEModel(torch.nn.Module):
                 ancillary_encoder_model,
                 n_func_in_dynamic,
             ),
-        ).cuda()
+        )
         
         if architecture["neural_solver"] == "symplectic":
             n_hidden_hamiltonian = 32
