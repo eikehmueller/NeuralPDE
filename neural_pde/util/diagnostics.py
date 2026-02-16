@@ -4,7 +4,7 @@ from firedrake import *
 class Diagnostics:
     """Compute vorticity and divergence from HDiv velocity field on the sphere"""
 
-    def __init__(self, fs_hdiv, fs):
+    def __init__(self, fs_hdiv, fs, radius=1):
         """Initialise new instance
 
         :arg fs_hdiv: HDiv conforming space which contains the velocity
@@ -13,7 +13,7 @@ class Diagnostics:
         self._fs = fs
         self._fs_hdiv = fs_hdiv
         mesh = fs_hdiv.mesh()
-        X = SpatialCoordinate(mesh)
+        X = SpatialCoordinate(mesh) / radius
         n = X 
         self._u = Function(fs_hdiv)
         phi = TestFunction(fs)
@@ -26,7 +26,7 @@ class Diagnostics:
             "ksp_rtol": 1e-12,
         }
         a_mass = phi * psi * dx
-        b_vorticity = (- inner(cross(n,grad(phi)), self._u)) * dx
+        b_vorticity = (- inner(cross(n, grad(phi)), self._u)) * dx
 
         lvp_vorticity = LinearVariationalProblem(a_mass, b_vorticity, self._vorticity)
         self._lvs_vorticity = LinearVariationalSolver(

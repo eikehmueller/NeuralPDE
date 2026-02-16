@@ -588,7 +588,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
             nt = int(self.t_final_max / self.dt)
 
-            diagnostics = dg.Diagnostics(V_BDM, V_CG)
+            diagnostics = dg.Diagnostics(V_BDM, V_CG, self.radius)
             if self.save_diagnostics:
                 file = VTKFile("results/gusto_output/diagnostics.pvd")
 
