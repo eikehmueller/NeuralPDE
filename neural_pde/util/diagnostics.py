@@ -14,8 +14,7 @@ class Diagnostics:
         self._fs_hdiv = fs_hdiv
         mesh = fs_hdiv.mesh()
         X = SpatialCoordinate(mesh)
-        n = X / norm(X)
-        phi = TestFunction
+        n = X 
         self._u = Function(fs_hdiv)
         phi = TestFunction(fs)
         psi = TrialFunction(fs)
@@ -60,7 +59,7 @@ class Diagnostics:
         return Function(self._fs).assign(self._divergence)
 
 if __name__=='__main__':
-    nref = 4
+    nref = 5
 
     mesh = UnitIcosahedralSphereMesh(nref)
     fs = FunctionSpace(mesh, "CG", 1)
@@ -70,7 +69,7 @@ if __name__=='__main__':
     x, y, z = X
 
     u1 = Function(fs_hdiv, name="velocity").project(
-        as_vector([2 * x * y * z, z * x**2, x * y * z**3])
+        as_vector([-y/2, x/2, 0])
     )
 
     diagnostics = Diagnostics(fs_hdiv, fs)

@@ -586,7 +586,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
             p1 = Proj(V_BDM, V_CG)
             p2 = Proj(V_DG, V_CG)
 
-            nt = int(self.t_final_max / self.dt)
+            nt = 0 #int(self.t_final_max / self.dt)
 
             diagnostics = dg.Diagnostics(V_BDM, V_CG)
             if self.save_diagnostics:
@@ -609,12 +609,17 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
             for j in tqdm.tqdm(range(self.n_samples)):
 
                 # randomly sample the generated data
-
                 highest = self.t_highest / self.dt
                 lowest = (
-                    self.t_lowest / self.dt + 1
+                    self.t_lowest / self.dt 
                 )  # there is an error in gusto at t = 0 in the divergence
-                start = np.random.randint(lowest, highest)
+
+
+                if highest == lowest:
+                    start = highest
+                    end = highest
+                else: 
+                    start = np.random.randint(lowest, highest)
 
                 if np.isclose(0, interval):
                     end = start

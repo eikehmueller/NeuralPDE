@@ -115,7 +115,7 @@ def multivariate_normalised_rmse_with_data(y_pred, y_target, mean, std):
 
     loss = torch.mean(
         torch.sqrt(
-            torch.sum(((yp - yt) ) ** 2,  dim=2) 
+            torch.sum((yp - yt)  ** 2,  dim=2) 
             / torch.sum((yt) ** 2, dim=2) 
         ), dim=0)
 
