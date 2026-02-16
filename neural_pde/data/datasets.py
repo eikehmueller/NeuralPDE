@@ -586,7 +586,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
             p1 = Proj(V_BDM, V_CG)
             p2 = Proj(V_DG, V_CG)
 
-            nt = 0 #int(self.t_final_max / self.dt)
+            nt = int(self.t_final_max / self.dt)
 
             diagnostics = dg.Diagnostics(V_BDM, V_CG)
             if self.save_diagnostics:
@@ -614,17 +614,19 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                     self.t_lowest / self.dt 
                 )  # there is an error in gusto at t = 0 in the divergence
 
-
                 if highest == lowest:
-                    start = highest
+                    start = lowest
                     end = highest
                 else: 
                     start = np.random.randint(lowest, highest)
 
                 if np.isclose(0, interval):
                     end = start
-                else:
+                elif sigma == 0:
+                    end = start + interval
+                elif sigma != 0:
                     mu = start + interval
+                    
                     t_norm = truncnorm(
                         (start - mu) / sigma,
                         (highest - mu) / sigma,
@@ -632,10 +634,8 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                         scale=sigma,
                     )
                     end = round(t_norm.rvs(1)[0])
-
-                if j == 100:
-                    print(f"Start timestep is {start}")
-                    print(f"End timestep is {end}")
+                else:
+                    print("Error in sampling the time interval")
 
                 if end > highest:
                     end = highest
