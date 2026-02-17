@@ -107,8 +107,6 @@ def multivariate_normalised_rmse_with_data(y_pred, y_target, mean, std):
 
     std  = torch.unsqueeze(std, dim=-1)
     mean  = torch.unsqueeze(mean, dim=-1)
-    #mean = torch.unsqueeze(torch.mean(y_target, dim=(0,2)), dim=-1)
-    #std = torch.unsqueeze(torch.std(y_target, dim=(0,2)), dim=-1)
 
     yp = (y_pred - mean) / std
     yt = (y_target - mean) / std

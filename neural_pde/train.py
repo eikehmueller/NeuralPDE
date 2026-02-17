@@ -154,6 +154,7 @@ for epoch in range(config["optimiser"]["nepoch"]):
 
     # validation
     model.train(False)
+    print("STARTING VALIDATION LOOP")
     valid_loss = 0
     percent_loss = 0
     for (Xv, tv), yv in valid_dl:
@@ -171,11 +172,6 @@ for epoch in range(config["optimiser"]["nepoch"]):
         function_loss += loss2 / (
             valid_ds.n_samples // config["optimiser"]["batchsize"]
         )
-
-        #loss3 = loss_fn3(yv_pred, yv)
-        #percent_loss += loss3.item() / (
-        #    valid_ds.n_samples // config["optimiser"]["batchsize"]
-        #)
 
     print(f"    training loss: {train_loss:8.3e}, validation loss: {valid_loss:8.3e}")
     print(f"    Loss for individual functions: {100 * function_loss[0]:6.3f}%, {100 * function_loss[1]:6.3f}%, {100 * function_loss[2]:6.3f}%")
