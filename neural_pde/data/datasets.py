@@ -411,6 +411,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         self.omega = omega
         self.g = g
         self.save_diagnostics = save_diagnostics
+        self.mean_depth = 5960  # reference depth (m)
 
         self.metadata = {
             "omega": f"{self.omega:}",
@@ -431,18 +432,6 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         self._y = Function(self._fs).interpolate(y)
         self._z = Function(self._fs).interpolate(z)
 
-    def generate_full_dataset(self):
-        """
-        Generate the full data for the shallow water equations using gusto.
-        The dataset used to train the model is sampled from this data.
-        """
-
-        start_timer = timer()
-
-        radius = 6371220.0  # planetary radius (m)
-        mean_depth = 5960  # reference depth (m)
-        g = 9.80616  # acceleration due to gravity (m/s^2)
-        u_max = 20.0  # max amplitude of the zonal wind (m/s)
         mountain_height = 3000.0  # height of mountain (m)
         R0 = pi / 9.0  # radius of mountain (rad)
         lamda_a = pi / 6.0
@@ -455,11 +444,6 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         phi_c = pi / 6.0  # latitudinal centre of mountain (rad)
 
         # THE PROBLEM IS THE MESH
-
-        element_order = 1  # CG method
-        domain = Domain(self.mesh, self.dt, "BDM", element_order)
-
-        x, y, z = SpatialCoordinate(self.mesh)
         lamda, phi, _ = lonlatr_from_xyz(x, y, z)  # latitide and longitude
 
         # mountain parameters
@@ -487,11 +471,28 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         r6 = sqrt(rsq6)
         tpexpr6 = mountain_height * (1 - r6 / R0)
 
-        tpexpr = tpexpr1 + tpexpr2 + tpexpr3 + tpexpr4 + tpexpr5 + tpexpr6
+        self.tpexpr = tpexpr1 + tpexpr2 + tpexpr3 + tpexpr4 + tpexpr5 + tpexpr6
+
+    def generate_full_dataset(self):
+        """
+        Generate the full data for the shallow water equations using gusto.
+        The dataset used to train the model is sampled from this data.
+        """
+
+        start_timer = timer()
+
+        radius = 6371220.0  # planetary radius (m)
+        g = 9.80616  # acceleration due to gravity (m/s^2)
+        u_max = 20.0  # max amplitude of the zonal wind (m/s)
+
+        element_order = 1  # CG method
+        domain = Domain(self.mesh, self.dt, "BDM", element_order)
+
+        x, y, z = SpatialCoordinate(self.mesh)
 
         # initialise parameters object
         parameters = ShallowWaterParameters(
-            self.mesh, H=mean_depth, g=g, topog_expr=tpexpr
+            self.mesh, H=self.mean_depth, g=g, topog_expr=self.tpexpr
         )
 
         # set up the finite element form
@@ -548,15 +549,15 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
         uexpr = as_vector([-u_max * y / radius, u_max * x / radius, 0.0])
         Dexpr = (
-            mean_depth
-            - tpexpr
+            self.mean_depth
+            - self.tpexpr
             - (radius * Omega * u_max + 0.5 * u_max**2) * (z / radius) ** 2 / g
         )
         u0.project(uexpr)
         D0.interpolate(Dexpr)
 
         # reference velocity is zero, reference depth is H
-        Dbar = Function(D0.function_space()).assign(mean_depth)
+        Dbar = Function(D0.function_space()).assign(self.mean_depth)
         stepper.set_reference_profiles([("D", Dbar)])
 
         # run the simulation
@@ -582,6 +583,9 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
 
             h_inp = Function(V_CG)  # input function for h
             h_tar = Function(V_CG)  # target function for h
+
+            topograph = Function(V_CG)
+            topograph.interpolate(self.tpexpr - self.mean_depth)
 
             p1 = Proj(V_BDM, V_CG)
             p2 = Proj(V_DG, V_CG)
@@ -646,7 +650,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 h1 = afile.load_function(mesh_h5, "D", idx=start)
                 h2 = afile.load_function(mesh_h5, "D", idx=end)
 
-                p2.apply(h1, h_inp)
+                p2.apply(h1, h_inp) # project from 
                 p2.apply(h2, h_tar)
 
                 vorticity_inp = diagnostics.vorticity(w1)
@@ -655,7 +659,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 divergence_tar = diagnostics.divergence(w2)
 
                 # input data - dynamic variables
-                self._data[j, 0, :] = h_inp.dat.data  # h data, take away mean depth
+                self._data[j, 0, :] = h_inp.dat.data + topograph.dat.data#
                 self._data[j, 1, :] = divergence_inp.dat.data
                 self._data[j, 2, :] = vorticity_inp.dat.data
                 # coordinate data - auxiliary variables
@@ -663,7 +667,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 self._data[j, 4, :] = self._y.dat.data  # y coord data
                 self._data[j, 5, :] = self._z.dat.data  # z coord data
                 # output data - target data
-                self._data[j, 6, :] = h_tar.dat.data  # h data
+                self._data[j, 6, :] = h_tar.dat.data + topograph.dat.data # h data
                 self._data[j, 7, :] = divergence_tar.dat.data
                 self._data[j, 8, :] = vorticity_tar.dat.data
                 # time data
