@@ -117,7 +117,7 @@ def multivariate_normalised_rmse_with_data(y_pred, y_target, mean, std):
             / torch.sum((yt) ** 2, dim=2) 
         ), dim=0)
 
-    return torch.mean(loss)
+    return 0.5 *(loss[0] + loss[2]) #torch.mean(loss)
 
 def individual_function_rmse(y_pred, y_target, mean, std):
     """Calculate the function-wise normalised L2 error between two pytorch tensors
@@ -142,16 +142,10 @@ def individual_function_rmse(y_pred, y_target, mean, std):
     std  = torch.unsqueeze(std, dim=-1)
     mean  = torch.unsqueeze(mean, dim=-1)
 
-    #mean = torch.unsqueeze(torch.mean(y_target, dim=(0,2)), dim=-1)
-    #std = torch.unsqueeze(torch.std(y_target, dim=(0,2)), dim=-1)
 
     yp = (y_pred - mean) / std
     yt = (y_target - mean) / std
 
-    #print(f"Mean of yp is {torch.mean(yp, dim=(0,2))}")
-    #print(f"Std of yp is {torch.std(yp, dim=(0,2))}")
-    #print(f"Mean of yt is {torch.mean(yt, dim=(0,2))}")
-    #print(f"Std of yt is {torch.std(yt, dim=(0,2))}")
 
 
     loss = torch.mean(

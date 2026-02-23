@@ -442,6 +442,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         lamda_f = - 5 * pi / 6
         phi_a = - pi / 6.0
         phi_c = pi / 6.0  # latitudinal centre of mountain (rad)
+        u_max = 20.0  # max amplitude of the zonal wind (m/s)
 
         # THE PROBLEM IS THE MESH
         lamda, phi, _ = lonlatr_from_xyz(x, y, z)  # latitide and longitude
@@ -472,6 +473,11 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         tpexpr6 = mountain_height * (1 - r6 / R0)
 
         self.tpexpr = tpexpr1 + tpexpr2 + tpexpr3 + tpexpr4 + tpexpr5 + tpexpr6
+
+        self.steady_depth = (
+            self.mean_depth
+            - (radius * omega * u_max + 0.5 * u_max**2) * (z / radius) ** 2 / g
+        )
 
     def generate_full_dataset(self):
         """
@@ -585,7 +591,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
             h_tar = Function(V_CG)  # target function for h
 
             topograph = Function(V_CG)
-            topograph.interpolate(self.tpexpr - self.mean_depth)
+            topograph.interpolate(self.tpexpr - self.steady_depth)
 
             p1 = Proj(V_BDM, V_CG)
             p2 = Proj(V_DG, V_CG)
