@@ -4,6 +4,7 @@ import torch
 from torch.utils.data import DataLoader
 from firedrake import *
 import os
+import shutil
 import tomllib
 import argparse
 import numpy as np
@@ -186,6 +187,20 @@ if args.animate_dataset:
             f_input_div,
             f_input_vor,
         )
+    
+    for item in os.listdir(f"{args.output}/dataset_animation"):
+        if item.endswith(".pvd"):
+            pass
+        else:
+            subfolder = os.path.join(f"{args.output}/dataset_animation", item)
+            for subitem in os.listdir(subfolder):
+                subitem
+                itempath = os.path.join(subfolder, subitem)
+                itemnewpath = os.path.join(f"{args.output}/dataset_animation", subitem)
+                shutil.move(itempath, itemnewpath)
+                itemnewname = os.path.join(f"{args.output}/dataset_animation", subitem[:-6] + subitem[-4:])
+                os.rename(itemnewpath, itemnewname)
+    
 
 
 if args.animate:
@@ -254,8 +269,3 @@ if args.plot_dataset_and_model:
             f_pred_div,
             f_pred_vor,
         )
-    ax.set_xlabel(r"Time $t$")
-    ax.set_ylabel("Model RMSE")
-    ax.set_title("Total model error")
-    plt.tight_layout()
-    plt.savefig("../results/model_RMSE_over_time.png")
