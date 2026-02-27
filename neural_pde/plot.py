@@ -4,17 +4,13 @@ import torch
 from torch.utils.data import DataLoader
 from firedrake import *
 import os
-import shutil
 import tomllib
 import argparse
 import numpy as np
 from neural_pde.util.diagnostics import Diagnostics
 from neural_pde.data.datasets import load_hdf5_dataset, show_hdf5_header
 from neural_pde.util.velocity_functions import Projector as Proj
-from neural_pde.util.loss_functions import (
-    multivariate_normalised_rmse_with_data as metric,
-)
-from neural_pde.util.loss_functions import individual_function_rmse as metric2
+
 from neural_pde.model.model import load_model
 import matplotlib.pyplot as plt
 
@@ -85,6 +81,13 @@ args, _ = parser.parse_known_args()
 with open(args.config, "rb") as f:
     config = tomllib.load(f)
 
+print()
+print("==== data ====")
+print()
+
+show_hdf5_header(f"{args.data_directory}{config["data"][args.dataset]}")
+print()
+
 
 if not os.path.exists(args.output):
     os.makedirs(args.output)
@@ -111,9 +114,11 @@ model, _, _ = load_model(args.model)
 mesh = IcosahedralSphereMesh(dataset.radius, dataset.n_ref)
 V = FunctionSpace(mesh, "CG", 1)
 V_DG = FunctionSpace(mesh, "DG", 0)
-dt = config["architecture"]["dt"] / 26349.050394344416
-t_initial = dataset._t_initial 
-t_final = dataset._t_final 
+dt = config["architecture"]["dt"]# / 26349.050394344416
+t_initial = dataset._t_initial * 26349.050394344416
+t_final = dataset._t_final * 26349.050394344416
+
+X_all = torch.tensor(dataset._data)
 
 
 def find_initial_data():
@@ -146,43 +151,45 @@ def find_initial_data():
         X[0, 3, :] = x_fun.dat.data  # x coord data
         X[0, 4, :] = y_fun.dat.data  # y coord data
         X[0, 5, :] = z_fun.dat.data  # z coord data
-        X = torch.tensor(X, dtype=torch.float32)    
+        X = torch.tensor(X, dtype=torch.float32).to(device) 
     return X
 
 
 if args.animate_dataset:
     # TRY THIS WITHOUT SORTING!!
     print("Plotting dataset")
-    sorted_t, indices = torch.sort(torch.tensor(dataset._t_initial))
+    sorted_t, indices = torch.sort(torch.tensor(t_initial))
     sorted_X = torch.tensor(dataset._data[indices, :, :])
     dataset_file = VTKFile(os.path.join(args.output, "dataset_animation.pvd"))
 
     for i in range(len(sorted_t)):
-        f_input_d = Function(V, name=f"height")
-        f_input_d.dat.data[:] = sorted_X.detach().cpu().numpy()[i, 0, :]
-        f_input_div = Function(V, name="divergence")
-        f_input_div.dat.data[:] = sorted_X.detach().cpu().numpy()[i, 1, :]
-        f_input_vor = Function(V, name="vorticity")
-        f_input_vor.dat.data[:] = sorted_X.detach().cpu().numpy()[i, 2, :]
+        if not(np.isclose(sorted_t[i], sorted_t[i-1], atol=0.1)):
+            f_input_d = Function(V, name=f"height")
+            f_input_d.dat.data[:] = sorted_X.detach().cpu().numpy()[i, 0, :]
+            f_input_div = Function(V, name="divergence")
+            f_input_div.dat.data[:] = sorted_X.detach().cpu().numpy()[i, 1, :]
+            f_input_vor = Function(V, name="vorticity")
+            f_input_vor.dat.data[:] = sorted_X.detach().cpu().numpy()[i, 2, :]
 
-        dataset_file.write(
-            f_input_d,
-            f_input_div,
-            f_input_vor,
-            time=sorted_t[i]
-        )
-    
+            dataset_file.write(
+                f_input_d,
+                f_input_div,
+                f_input_vor,
+                time=sorted_t[i].numpy()/dt
+            )
+        
 
 if args.animate_model:
     print("Plotting model")
     animation_file_nn = VTKFile(os.path.join(args.output, "model_animation.pvd"))
     t = 0
-    X = find_initial_data()
+    X = find_initial_data().to(device)
     h_pred = Function(V, name="h")
     div_pred = Function(V, name="div")
     vor_pred = Function(V, name="vor")
     while t < 20:
-        y_pred = model(X, torch.tensor(t))
+        t = torch.tensor(t).to(device)
+        y_pred = model(X, t)
 
         h_pred.dat.data[:] = y_pred.detach().cpu().numpy()[0, 0, :]
         div_pred.dat.data[:] = y_pred.detach().cpu().numpy()[0, 1, :]

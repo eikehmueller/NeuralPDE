@@ -541,7 +541,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
             DGUpwind(eqns, "D", advective_then_flux=True),
         ]
         stepper = SemiImplicitQuasiNewton(
-            eqns, io, transported_fields, transport_methods, tau_values={"D": 1.0}
+            eqns, io, transported_fields, transport_methods,
         )
 
         # setting the initial conditions for velocity
