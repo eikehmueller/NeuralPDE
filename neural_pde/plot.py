@@ -175,7 +175,7 @@ if args.animate_dataset:
                 f_input_d,
                 f_input_div,
                 f_input_vor,
-                time=sorted_t[i].numpy()/dt
+                time=sorted_t[i].numpy() * config["data"]["timescale"] / config["architecture"]["dt"]
             )
         
 
