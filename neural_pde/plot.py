@@ -57,7 +57,7 @@ parser.add_argument(
     type=str,
     action="store",
     help="path to output folder",
-    default="../results/",
+    default="results/",
 )
 
 parser.add_argument(
@@ -109,50 +109,35 @@ overall_std = torch.mean(torch.from_numpy(train_ds.std), axis=1)[
     train_ds.n_func_in_dynamic + train_ds.n_func_in_ancillary :
 ].to(device)
 
-model, _, _ = load_model(args.model)
-
 mesh = IcosahedralSphereMesh(dataset.radius, dataset.n_ref)
 V = FunctionSpace(mesh, "CG", 1)
 V_DG = FunctionSpace(mesh, "DG", 0)
-dt = config["architecture"]["dt"]# / 26349.050394344416
+dt = config["time"]["dt"]
+dt_scaled = torch.tensor(config["time"]["dt"] / 26349.050394344416).float()
 t_initial = dataset._t_initial * 26349.050394344416
 t_final = dataset._t_final * 26349.050394344416
-
+t_final_max_scaled = torch.tensor(config["time"]["tfinalmax"] / 26349.050394344416)
 X_all = torch.tensor(dataset._data)
 
 
 def find_initial_data():
     # for the animation, we don't need any testing data, only the inital state!
-    with CheckpointFile("results/gusto_output/chkpt.h5", "r") as afile:
 
-        mesh_h5 = afile.load_mesh("IcosahedralMesh")
-        x, y, z = SpatialCoordinate(mesh_h5)  # spatial coordinate
-        V_DG = FunctionSpace(mesh_h5, "DG", 1)
-        V_CG = FunctionSpace(mesh_h5, "CG", 1)
-        V_BDM = FunctionSpace(mesh_h5, "BDM", 2)
-        x_fun = Function(V_CG).interpolate(x)  # collect data on x,y,z coordinates
-        y_fun = Function(V_CG).interpolate(y)
-        z_fun = Function(V_CG).interpolate(z)
+    _, indices = torch.sort(torch.tensor(t_initial))
+    sorted_X = torch.tensor(dataset._data[indices, :, :])
 
-        h_inp = Function(V_CG)  # input function for h
-        w1 = afile.load_function(mesh_h5, "u", idx=0)
-        h1 = afile.load_function(mesh_h5, "D", idx=0)
-        p2 = Proj(V_DG, V_CG)
-        p2.apply(h1, h_inp)
-        diagnostics = Diagnostics(V_BDM, V_CG)
-        vorticity_inp = diagnostics.vorticity(w1)
-        divergence_inp = diagnostics.divergence(w1)
-        X = np.zeros((1, 6, mesh_h5.num_vertices()), dtype=np.float64)
+    X = torch.zeros(1, 6, len(sorted_X[0,0,:]))
         # input data
-        X[0, 0, :] = h_inp.dat.data  # h data
-        X[0, 1, :] = divergence_inp.dat.data
-        X[0, 2, :] = vorticity_inp.dat.data
+    X[0, 0, :] = sorted_X[0, 0, :]  # h data
+    X[0, 1, :] = sorted_X[0, 1, :]
+    X[0, 2, :] = sorted_X[0, 2, :]
 
-        X[0, 3, :] = x_fun.dat.data  # x coord data
-        X[0, 4, :] = y_fun.dat.data  # y coord data
-        X[0, 5, :] = z_fun.dat.data  # z coord data
-        X = torch.tensor(X, dtype=torch.float32).to(device) 
+    X[0, 3, :] = sorted_X[0, 3, :]
+    X[0, 4, :] = sorted_X[0, 4, :]
+    X[0, 5, :] = sorted_X[0, 5, :]
+    X = torch.tensor(X, dtype=torch.float32).to(device) 
     return X
+    
 
 
 if args.animate_dataset:
@@ -181,29 +166,34 @@ if args.animate_dataset:
 
 if args.animate_model:
     print("Plotting model")
+    model, _, _ = load_model(args.model)
     animation_file_nn = VTKFile(os.path.join(args.output, "model_animation.pvd"))
-    t = 0
+    t = torch.tensor(0.).to(device)
     X = find_initial_data().to(device)
     h_pred = Function(V, name="h")
     div_pred = Function(V, name="div")
     vor_pred = Function(V, name="vor")
-    while t < 20:
+
+    print(f"t_final_max_scaled is {t_final_max_scaled}")
+    while t < t_final_max_scaled:
         t = torch.tensor(t).to(device)
         y_pred = model(X, t)
 
         h_pred.dat.data[:] = y_pred.detach().cpu().numpy()[0, 0, :]
         div_pred.dat.data[:] = y_pred.detach().cpu().numpy()[0, 1, :]
         vor_pred.dat.data[:] = y_pred.detach().cpu().numpy()[0, 2, :]
-        animation_file_nn.write(h_pred, div_pred, vor_pred, time=t)
+        #X[0, 0, :] = y_pred[0, 0, :]  # h data
+        #X[0, 1, :] = y_pred[0, 1, :]
+        #X[0, 2, :] = y_pred[0, 2, :]
 
-        t += dt
+        t_actual = 26349.050394344416 * t.detach().cpu().numpy()
+        animation_file_nn.write(h_pred, div_pred, vor_pred, time=t_actual)
 
-        print(f"time = {t:8.4f}")
-
+        t += dt_scaled
 
 if args.dataset_and_model:
     print("Plotting dataset and model")
-    fig, ax = plt.subplots()
+    model, _, _ = load_model(args.model)
 
     file = VTKFile(os.path.join(args.output, f"dataset_and_model.pvd"))
     for j, ((X, t), y_target) in enumerate(iter(dataset)):
