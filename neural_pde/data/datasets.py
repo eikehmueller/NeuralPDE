@@ -554,11 +554,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         Omega = parameters.Omega
 
         uexpr = as_vector([-u_max * y / radius, u_max * x / radius, 0.0])
-        Dexpr = (
-            self.mean_depth
-            - self.tpexpr
-            - (radius * Omega * u_max + 0.5 * u_max**2) * (z / radius) ** 2 / g
-        )
+        Dexpr = self.steady_depth - self.tpexpr
         u0.project(uexpr)
         D0.interpolate(Dexpr)
 
