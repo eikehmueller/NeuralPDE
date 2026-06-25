@@ -11,7 +11,7 @@ from neural_pde.util.loss_functions import (
     multivariate_normalised_rmse_with_data as metric,
 )
 from neural_pde.model.model import load_model
-
+from neural_pde.util.loss_functions import individual_function_rmse as loss_fn2
 # Create argparse arguments
 parser = argparse.ArgumentParser()
 
@@ -78,9 +78,12 @@ overall_std = torch.mean(torch.from_numpy(train_ds.std), axis=1)[
 
 model, _, _ = load_model(args.model)
 
+num_batches = len(dataloader)
+
 # validation
 model.train(False)
 avg_loss = 0
+function_loss = torch.zeros(train_ds.n_func_target).to(device)
 individual_loss = np.zeros(3)
 for (Xv, tv), yv in dataloader:
     Xv = Xv.to(device)
@@ -88,6 +91,12 @@ for (Xv, tv), yv in dataloader:
     yv = yv.to(device)
     yv_pred = model(Xv, tv)
     loss = metric(yv_pred, yv, overall_mean, overall_std)
-    avg_loss += loss.item() / (dataset.n_samples / batch_size)
+    avg_loss += loss.item() 
+    loss2 = loss_fn2(yv_pred, yv, overall_mean, overall_std)
+    function_loss += loss2
+avg_loss /= num_batches
+function_loss /= num_batches
+
+print(f"    Loss for individual functions: {100 * function_loss[0]:6.3f}%, {100 * function_loss[1]:6.3f}%, {100 * function_loss[2]:6.3f}%")
 
 print(f"average relative error: {100 * avg_loss:6.3f} %")

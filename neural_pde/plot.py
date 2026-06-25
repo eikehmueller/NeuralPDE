@@ -116,6 +116,7 @@ dt = config["time"]["dt"]
 dt_scaled = torch.tensor(config["time"]["dt"] / 26349.050394344416).float()
 t_initial = dataset._t_initial * 26349.050394344416
 t_final = dataset._t_final * 26349.050394344416
+t_split = torch.tensor(config["time"]["tsplit"] / 26349.050394344416)
 t_final_max_scaled = torch.tensor(config["time"]["tfinalmax"] / 26349.050394344416)
 X_all = torch.tensor(dataset._data)
 
@@ -144,6 +145,7 @@ if args.animate_dataset:
     # TRY THIS WITHOUT SORTING!!
     print("Plotting dataset")
     sorted_t, indices = torch.sort(torch.tensor(t_initial))
+
     sorted_X = torch.tensor(dataset._data[indices, :, :])
     dataset_file = VTKFile(os.path.join(args.output, "dataset_animation.pvd"))
 
@@ -168,25 +170,21 @@ if args.animate_model:
     print("Plotting model")
     model, _, _ = load_model(args.model)
     animation_file_nn = VTKFile(os.path.join(args.output, "model_animation.pvd"))
-    t = torch.tensor(0.).to(device)
+    t = torch.tensor(0.)
     X = find_initial_data().to(device)
     h_pred = Function(V, name="h")
     div_pred = Function(V, name="div")
     vor_pred = Function(V, name="vor")
 
-    print(f"t_final_max_scaled is {t_final_max_scaled}")
-    while t < t_final_max_scaled:
+
+    while t < t_final_max_scaled - t_split:
         t = torch.tensor(t).to(device)
         y_pred = model(X, t)
 
         h_pred.dat.data[:] = y_pred.detach().cpu().numpy()[0, 0, :]
         div_pred.dat.data[:] = y_pred.detach().cpu().numpy()[0, 1, :]
         vor_pred.dat.data[:] = y_pred.detach().cpu().numpy()[0, 2, :]
-        #X[0, 0, :] = y_pred[0, 0, :]  # h data
-        #X[0, 1, :] = y_pred[0, 1, :]
-        #X[0, 2, :] = y_pred[0, 2, :]
-
-        t_actual = 26349.050394344416 * t.detach().cpu().numpy()
+        t_actual = 26349.050394344416 * (t.detach().cpu().numpy() + t_split.detach().cpu().numpy())
         animation_file_nn.write(h_pred, div_pred, vor_pred, time=t_actual)
 
         t += dt_scaled
