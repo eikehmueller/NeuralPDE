@@ -551,12 +551,11 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         D0 = stepper.fields("D")
         g = parameters.g
         H = parameters.H
-        Omega = parameters.Omega
 
         uexpr = as_vector([-u_max * y / radius, u_max * x / radius, 0.0])
         Dexpr = self.steady_depth - self.tpexpr
-        u0.project(uexpr)
-        D0.interpolate(Dexpr)
+        u0.project(uexpr)     # initial condition
+        D0.interpolate(Dexpr) # initial condition
 
         # reference velocity is zero, reference depth is H
         Dbar = Function(D0.function_space()).assign(self.mean_depth)
@@ -568,7 +567,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         print(f"Gusto runtime: {timedelta(seconds=end_timer-start_timer)}")
 
     def prepare_for_model(self, filename):
-        """Sample the data from the generated dataset and save as a np array
+        """Sample the data from the generated dataset and save as a h5 array
 
         :arg filename: name of checkpoint file to read from
         """
@@ -652,7 +651,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 h1 = afile.load_function(mesh_h5, "D", idx=start)
                 h2 = afile.load_function(mesh_h5, "D", idx=end)
 
-                p2.apply(h1, h_inp) # project from 
+                p2.apply(h1, h_inp) # project  
                 p2.apply(h2, h_tar)
 
                 vorticity_inp = diagnostics.vorticity(w1)
@@ -661,7 +660,7 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 divergence_tar = diagnostics.divergence(w2)
 
                 # input data - dynamic variables
-                self._data[j, 0, :] = h_inp.dat.data + topograph.dat.data#
+                self._data[j, 0, :] = h_inp.dat.data + topograph.dat.data 
                 self._data[j, 1, :] = divergence_inp.dat.data
                 self._data[j, 2, :] = vorticity_inp.dat.data
                 # coordinate data - auxiliary variables
@@ -675,6 +674,10 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 # time data
                 self._t_initial[j] = start * self.dt / self.timescale
                 self._t_final[j] = end * self.dt / self.timescale
+
+            mean_height = np.mean(self._data[:, 0, :])
+            std_height = np.std(self._data[:, 0, :])
+            self._data[:, 0, :] = (self._data[:, 0, :] - mean_height) / std_height
 
         end_timer1 = timer()
         print(
