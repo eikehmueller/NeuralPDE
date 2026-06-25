@@ -611,6 +611,12 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
             interval = self.t_interval / self.dt
             sigma = self.t_sigma / self.dt
 
+            #w1 = afile.load_function(mesh_h5, "u", idx=start)
+            #w2 = afile.load_function(mesh_h5, "u", idx=end)
+
+            h1 = afile.load_function(mesh_h5, "D")
+            print(h1)
+
             for j in tqdm.tqdm(range(self.n_samples)):
 
                 # randomly sample the generated data
