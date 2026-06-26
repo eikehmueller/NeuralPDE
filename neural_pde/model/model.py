@@ -24,9 +24,9 @@ def build_model(
     n_func_in_ancillary,
     n_func_target,
     architecture,
-    mean=0,
-    std=1,
-    radius=1
+    #mean=0,
+    #std=1,
+    #radius=1
 ):
     """
     Construct encoder - processor - decoder model
@@ -46,9 +46,9 @@ def build_model(
         n_func_in_ancillary,
         n_func_target,
         architecture,
-        mean,
-        std,
-        radius,
+        #mean,
+        #std,
+        #radius,
     )
     return model
 
@@ -93,9 +93,9 @@ class NeuralPDEModel(torch.nn.Module):
         n_func_in_ancillary,
         n_func_target,
         architecture,
-        mean,
-        std,
-        radius
+        #mean,
+        #std,
+        #radius
     ):
         """
         Initialise new instance with model
@@ -115,28 +115,10 @@ class NeuralPDEModel(torch.nn.Module):
             n_func_target=n_func_target,
         )
         self.n_func_in_dynamic = n_func_in_dynamic
-        self.mean = mean
-        self.std = std
-        self.radius = radius
-
-        self.x_mean = self.mean[:n_func_in_dynamic, :].unsqueeze(0).to(torch.float32)
-        self.x_std = self.std[:n_func_in_dynamic, :].unsqueeze(0).to(torch.float32)
-
-        self.w_mean = (
-            self.mean[n_func_in_dynamic + n_func_in_ancillary :, :]
-            .unsqueeze(0)
-            .to(torch.float32)
-        )
-
-        self.w_std = (
-            self.std[n_func_in_dynamic + n_func_in_ancillary :, :]
-            .unsqueeze(0)
-            .to(torch.float32)
-        )
 
         # construct spherical patch covering
         spherical_patch_covering = SphericalPatchCovering(
-            self.radius, architecture["dual_ref"], architecture["n_radial"]
+            1, architecture["dual_ref"], architecture["n_radial"]
         )
         print(
             f"  points per patch                     = {spherical_patch_covering.patch_size}",
@@ -147,7 +129,7 @@ class NeuralPDEModel(torch.nn.Module):
         print(
             f"  number of points in all patches      = {spherical_patch_covering.n_points}",
         )
-        mesh = IcosahedralSphereMesh(self.radius, n_ref)  # create the mesh
+        mesh = IcosahedralSphereMesh(1, n_ref)  # create the mesh
         V = FunctionSpace(mesh, "CG", 1)  # define the function space
         print(f"  number of unknowns of function space = {V.dof_count}")
         print(
@@ -158,7 +140,7 @@ class NeuralPDEModel(torch.nn.Module):
         # dynamic encoder model: map all fields to the latent space
         # input:  (n_dynamic+n_ancillary, patch_size)
         # output: (latent_dynamic_dim)
-        n_hidden = 32
+        n_hidden = 64
         dynamic_encoder_model = torch.nn.Sequential(
             torch.nn.Flatten(start_dim=-2, end_dim=-1),
             torch.nn.Linear(
@@ -201,7 +183,7 @@ class NeuralPDEModel(torch.nn.Module):
         )
         
         if architecture["neural_solver"] == "symplectic":
-            n_hidden_hamiltonian = 32
+            n_hidden_hamiltonian = 64
             # local Hamiltonians
             H_q_local = torch.nn.Sequential(
                 torch.nn.Linear(
@@ -241,7 +223,7 @@ class NeuralPDEModel(torch.nn.Module):
                 ),
             )
         elif architecture["neural_solver"] == "forward_euler":
-            n_hidden_interaction = 32
+            n_hidden_interaction = 64
             # interaction model: function on latent space
             interaction_model = torch.nn.Sequential(
                 torch.nn.Flatten(start_dim=-2, end_dim=-1),
@@ -350,19 +332,18 @@ class NeuralPDEModel(torch.nn.Module):
         :arg x: input tensor of shape (batch_size, n_func_in_dynamic + n_func_in_ancillary, n_vertex)
         :arg t_final: final time for each sample, tensor of shape (batch_size,)
         """
-        x_normalised = self.normalise_data(x)
-        y = self.PatchEncoder(x_normalised)
+  
+        y = self.PatchEncoder(x)
         z = self.NeuralSolver(y, t_final)
         if hasattr(self, "PatchDecoder"):
             w = self.PatchDecoder(z)
         elif hasattr(self, "Decoder"):
-            x_ancil = x[:, self.dimensions["n_func_in_dynamic"] :, :] / self.radius
+            x_ancil = x[:, self.dimensions["n_func_in_dynamic"] :, :] 
             w = self.Decoder(z, x_ancil)
         else:
             raise RuntimeError("Model has no decoder attribute!")
 
-        w_final = self.denormalise_data(w)
-        return w_final
+        return w
 
     def save(self, state, directory):
         """Save model to disk
@@ -380,9 +361,7 @@ class NeuralPDEModel(torch.nn.Module):
         config = dict(
             dimensions=self.dimensions,
             architecture=self.architecture,
-            mean=self.mean.cpu().numpy().tolist(),
-            std=self.std.cpu().numpy().tolist(),
-            radius=self.radius
+
         )
         with open(
             os.path.join(directory, "checkpoint.json"), "w", encoding="utf8"
@@ -395,15 +374,11 @@ class NeuralPDEModel(torch.nn.Module):
         :arg directory: directory to load model from
         :arg checkpoint: dictionary with state of the model
         """
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        #evice = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         with open(
             os.path.join(directory, "checkpoint.json"), "r", encoding="utf8"
         ) as f:
             config = json.load(f)
-
-        tensor_mean = torch.FloatTensor(config["mean"]).to(device)
-        tensor_std = torch.FloatTensor(config["std"]).to(device)
-        tensor_radius = config["radius"]
 
         if not self.initialised:
             self.setup(
@@ -412,9 +387,6 @@ class NeuralPDEModel(torch.nn.Module):
                 config["dimensions"]["n_func_in_ancillary"],
                 config["dimensions"]["n_func_target"],
                 config["architecture"],
-                tensor_mean,
-                tensor_std,
-                tensor_radius
             )
         self.load_state_dict(checkpoint["state_dict"])
 

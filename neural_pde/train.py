@@ -12,10 +12,11 @@ import os
 import gc
 from neural_pde.data.datasets import load_hdf5_dataset, show_hdf5_header
 from neural_pde.util.loss_functions import (
-    multivariate_normalised_rmse_with_data as loss_fn,
+    rmse as loss_fn,
 )
-from neural_pde.util.loss_functions import individual_function_rmse as loss_fn2
-from neural_pde.util.loss_functions import multivariate_normalised_rmse as loss_fn3
+from neural_pde.util.loss_functions import calculate_r
+#from neural_pde.util.loss_functions import individual_function_rmse as loss_fn2
+from neural_pde.util.loss_functions import multivariate_rmse as loss_fn3
 from neural_pde.model.model import build_model, load_model
 
 gc.collect()
@@ -76,12 +77,12 @@ print()
 train_ds = load_hdf5_dataset(f"{args.data_directory}{config["data"]["train"]}")
 valid_ds = load_hdf5_dataset(f"{args.data_directory}{config["data"]["valid"]}")
 
-overall_mean = torch.mean(torch.from_numpy(train_ds.mean), axis=1)[
-    train_ds.n_func_in_dynamic + train_ds.n_func_in_ancillary :
-].to(device)
-overall_std = torch.mean(torch.from_numpy(train_ds.std), axis=1)[
-    train_ds.n_func_in_dynamic + train_ds.n_func_in_ancillary :
-].to(device)
+#overall_mean = torch.mean(torch.from_numpy(train_ds.mean), axis=1)[
+#    train_ds.n_func_in_dynamic + train_ds.n_func_in_ancillary :
+#].to(device)
+#overall_std = torch.mean(torch.from_numpy(train_ds.std), axis=1)[
+#    train_ds.n_func_in_dynamic + train_ds.n_func_in_ancillary :
+#].to(device)
 
 train_dl = DataLoader(
     train_ds, batch_size=config["optimiser"]["batchsize"], shuffle=True, drop_last=True
@@ -99,9 +100,9 @@ if not ("checkpoint.pt" in os.listdir(args.model)):  # load model or initialise 
         train_ds.n_func_in_ancillary,
         train_ds.n_func_target,
         config["architecture"],
-        mean=torch.from_numpy(train_ds.mean).to(device),
-        std=torch.from_numpy(train_ds.std).to(device),
-        radius=train_ds.radius
+        #mean=torch.from_numpy(train_ds.mean).to(device),
+        #std=torch.from_numpy(train_ds.std).to(device),
+        #radius=train_ds.radius
     )
 
     model = model.to(device)  # transfer the model to the GPU
@@ -112,9 +113,12 @@ if not ("checkpoint.pt" in os.listdir(args.model)):  # load model or initialise 
     prev_epoch = 0
 else:
     print("Loading model and optimiser")
-    model, optimiser, prev_epoch = load_model(
+    model, _, prev_epoch = load_model(
         args.model,
     )
+    optimiser = torch.optim.Adam(
+        model.parameters(), lr=config["optimiser"]["initial_learning_rate"]
+    ) # reinitialise optimiser
     print(f"Previous epoch is {prev_epoch}")
 
 gamma = (
@@ -139,10 +143,11 @@ for epoch in range(config["optimiser"]["nepoch"]):
 
         Xb = Xb.to(device)
         yb = yb.to(device)
-        tb = tb.to(device)
+        tb = tb.to(device)  
+
         y_pred = model(Xb, tb)  # make a prediction
         optimiser.zero_grad()  # resets all of the gradients to zero, otherwise the gradients are accumulated
-        loss = loss_fn(y_pred, yb, overall_mean, overall_std)  # calculate the loss
+        loss = loss_fn(y_pred, yb)  # calculate the loss
         loss.backward()  # take the backwards gradient
         optimiser.step()  # adjust the parameters by the gradient collected in the backwards pass
         # data collection for the model
@@ -160,21 +165,23 @@ for epoch in range(config["optimiser"]["nepoch"]):
         Xv = Xv.to(device)  # move to GPU
         yv = yv.to(device)  # move to GPU
         tv = tv.to(device)  # move to GPU
+
+
         yv_pred = model(Xv, tv)  # make a prediction
         
-        loss = loss_fn(yv_pred, yv, overall_mean, overall_std)  # calculate the loss
+        loss = loss_fn(yv_pred, yv)  # calculate the loss
 
         valid_loss += loss.item() / (
             valid_ds.n_samples // config["optimiser"]["batchsize"]
         )
-        loss2 = loss_fn2(yv_pred, yv, overall_mean, overall_std)
+        loss2 = loss_fn3(yv_pred, yv)
         function_loss += loss2 / (
             valid_ds.n_samples // config["optimiser"]["batchsize"]
         )
 
-    print(f"    training loss: {train_loss:8.3e}, validation loss: {valid_loss:8.3e}")
-    print(f"    Loss for individual functions: {100 * function_loss[0]:6.3f}%, {100 * function_loss[1]:6.3f}%, {100 * function_loss[2]:6.3f}%")
-    print(f"    Average percentage loss: {100 * train_loss:6.3f}%")
+    print(f"    Training loss: {train_loss:8.3e}, Validation loss: {valid_loss:8.3e}")
+    print(f"    Validation loss for individual functions: {100 * function_loss[0]:6.3f}%, {100 * function_loss[1]:6.3f}%, {100 * function_loss[2]:6.3f}%")
+    print(f"    R value percentage for the model: {100 * calculate_r(train_loss):6.3f}%")
     writer.add_scalars(
         "loss",
         {"train": train_loss, "valid": valid_loss},

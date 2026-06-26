@@ -566,7 +566,64 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         end_timer = timer()
         print(f"Gusto runtime: {timedelta(seconds=end_timer-start_timer)}")
 
-    def prepare_for_model(self, filename):
+    def extract_gusto_statistics(self, filename):
+        """extract the mean and std height from the entire gusto simulation"""
+        
+        nt = int(self.t_final_max / self.dt)
+
+        with CheckpointFile(filename, "r") as afile:
+            mesh_h5 = afile.load_mesh("IcosahedralMesh")
+            V_BDM = FunctionSpace(mesh_h5, "BDM", 2)
+            V_CG = FunctionSpace(mesh_h5, "CG", 1)
+            V_DG = FunctionSpace(mesh_h5, "DG", 1)
+            p1 = Proj(V_BDM, V_CG)
+            p2 = Proj(V_DG, V_CG)
+            h_cg = Function(V_CG)  # input function for h
+            topograph = Function(V_CG)
+            topograph.interpolate(self.tpexpr - self.steady_depth)
+
+            height_data = []
+            divergence_data = []
+            vorticity_data = []
+
+            diagnostics = dg.Diagnostics(V_BDM, V_CG, self.radius)
+
+            print("Extracting gusto statistics...")
+
+            for i in tqdm.tqdm(range(nt)):
+
+                h1 = afile.load_function(mesh_h5, "D", idx=i)
+                p2.apply(h1, h_cg) # project  
+
+                height_data.append(h_cg.dat.data + topograph.dat.data)
+
+                u_func = [Function(V_CG) for _ in range(3)]
+
+                u = afile.load_function(mesh_h5, "u", idx=i)
+                p1.apply(u, u_func)  # input u data
+
+                vorticity = diagnostics.vorticity(u)
+                divergence = diagnostics.divergence(u)
+
+                divergence_data.append(divergence.dat.data)
+                vorticity_data.append(vorticity.dat.data)
+
+            height_data_tensor = torch.tensor(height_data)
+            div_data_tensor = torch.tensor(divergence_data)
+            vort_data_tensor = torch.tensor(vorticity_data)
+            mean_height = torch.mean(height_data_tensor)
+            std_height = torch.std(height_data_tensor)
+            mean_div = torch.mean(div_data_tensor)
+            std_div = torch.std(div_data_tensor)
+            mean_vort = torch.mean(vort_data_tensor)
+            std_vort = torch.std(vort_data_tensor)
+            stats = np.array([mean_height, std_height, mean_div, std_div, mean_vort, std_vort])
+
+            with h5py.File("results/gusto_output/swe_statistics.h5", "w") as f:
+                f.create_dataset("swe_statistics", data=stats)
+            return
+
+    def prepare_for_model(self, filename, statistics_filename):
         """Sample the data from the generated dataset and save as a h5 array
 
         :arg filename: name of checkpoint file to read from
@@ -574,6 +631,15 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
         start_timer1 = timer()
 
         print(f"Filename is {filename}")
+
+        with h5py.File(statistics_filename, "r") as statsfile:
+            stats = statsfile["swe_statistics"]
+            mean_h = stats[0]
+            std_h = stats[1]
+            mean_div = stats[2]
+            std_div = stats[3]
+            mean_vor = stats[4]
+            std_vor = stats[5]
 
         with CheckpointFile(filename, "r") as afile:
             print("we have opened the checkpoint file")
@@ -611,11 +677,6 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
             interval = self.t_interval / self.dt
             sigma = self.t_sigma / self.dt
 
-            #w1 = afile.load_function(mesh_h5, "u", idx=start)
-            #w2 = afile.load_function(mesh_h5, "u", idx=end)
-
-            h1 = afile.load_function(mesh_h5, "D")
-            print(h1)
 
             for j in tqdm.tqdm(range(self.n_samples)):
 
@@ -666,24 +727,20 @@ class ShallowWaterEquationsDataset(SphericalFunctionSpaceDataset):
                 divergence_tar = diagnostics.divergence(w2)
 
                 # input data - dynamic variables
-                self._data[j, 0, :] = h_inp.dat.data + topograph.dat.data 
-                self._data[j, 1, :] = divergence_inp.dat.data
-                self._data[j, 2, :] = vorticity_inp.dat.data
+                self._data[j, 0, :] = (h_inp.dat.data + topograph.dat.data - mean_h) / std_h
+                self._data[j, 1, :] = (divergence_inp.dat.data - mean_div) / std_div
+                self._data[j, 2, :] = (vorticity_inp.dat.data - mean_vor) / std_vor
                 # coordinate data - auxiliary variables
-                self._data[j, 3, :] = self._x.dat.data  # x coord data
-                self._data[j, 4, :] = self._y.dat.data  # y coord data
-                self._data[j, 5, :] = self._z.dat.data  # z coord data
+                self._data[j, 3, :] = self._x.dat.data / self.radius # x coord data
+                self._data[j, 4, :] = self._y.dat.data / self.radius  # y coord data
+                self._data[j, 5, :] = self._z.dat.data / self.radius  # z coord data
                 # output data - target data
-                self._data[j, 6, :] = h_tar.dat.data + topograph.dat.data # h data
-                self._data[j, 7, :] = divergence_tar.dat.data
-                self._data[j, 8, :] = vorticity_tar.dat.data
+                self._data[j, 6, :] = (h_tar.dat.data + topograph.dat.data - mean_h) / std_h# h data
+                self._data[j, 7, :] = (divergence_tar.dat.data - mean_div) / std_div
+                self._data[j, 8, :] = (vorticity_tar.dat.data - mean_vor) / std_vor
                 # time data
                 self._t_initial[j] = start * self.dt / self.timescale
                 self._t_final[j] = end * self.dt / self.timescale
-
-            mean_height = np.mean(self._data[:, 0, :])
-            std_height = np.std(self._data[:, 0, :])
-            self._data[:, 0, :] = (self._data[:, 0, :] - mean_height) / std_height
 
         end_timer1 = timer()
         print(

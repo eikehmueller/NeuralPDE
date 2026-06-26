@@ -202,15 +202,17 @@ elif args.PDE == "SWE":
     if not os.path.isdir(args.gusto_output_file_path):
         print("Generating the full simulation")
         dataset.generate_full_dataset()
+        dataset.extract_gusto_statistics(os.path.join(args.gusto_output_file_path, "chkpt.h5"))
     elif args.regenerate_data:
         print("Regenerating the full simulation")
         shutil.rmtree(args.gusto_output_file_path)
         dataset.generate_full_dataset()
+        dataset.extract_gusto_statistics(os.path.join(args.gusto_output_file_path, "chkpt.h5"))
     else:
         print("Opening previously generated simulation")
 
     print("Extracting the data for the training, test, and validation sets")
-    dataset.prepare_for_model(os.path.join(args.gusto_output_file_path, "chkpt.h5"))
+    dataset.prepare_for_model(os.path.join(args.gusto_output_file_path, "chkpt.h5"), os.path.join(args.gusto_output_file_path, "swe_statistics.h5"))
 
     print("Saving the data in h5 format")
     dataset.save(args.filename)

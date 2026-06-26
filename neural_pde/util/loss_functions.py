@@ -30,6 +30,22 @@ def normalised_mse(y_pred, y_target):
     return loss
 
 
+def rmse(y_pred, y_target):
+    return torch.mean(torch.sqrt(torch.mean((y_pred - y_target) ** 2, dim=(1, 2))))
+
+def multivariate_rmse(y_pred, y_target):
+    loss = torch.mean(
+        torch.sqrt(
+            torch.mean((y_pred - y_target) ** 2, dim=2)
+        ),
+        dim=0,
+    )
+
+    return loss
+
+def calculate_r(rmse):
+    return 1 - rmse**2
+
 def normalised_rmse(y_pred, y_target):
     """Calculate the normalised L2 error between two pytorch tensors
 
@@ -47,6 +63,8 @@ def normalised_rmse(y_pred, y_target):
     :arg y_pred: prediction, tensor of size (batchsize, n_func, n_dof)
     :arg y_target: target tensor of size (batchsize, n_func, n_dof)
     """
+
+    print(f"the value is {torch.sqrt(torch.mean(y_target**2))}")
 
     loss = torch.mean(
         torch.sqrt(
